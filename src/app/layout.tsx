@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import AppProvider from '@/context/app.context'
 import { ThemeProvider } from '@/components/theme-provider'
 import Header from '@/components/header'
+import Footer from '@/components/footer'
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' })
 export const metadata: Metadata = {
    title: 'Create Next App',
@@ -23,7 +24,8 @@ export default function RootLayout({
             <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
                <AppProvider>
                   <Header />
-                  {children}
+                  <main className='py-5 container'>{children}</main>
+                  <Footer />
                </AppProvider>
                <ToastContainer />
             </ThemeProvider>

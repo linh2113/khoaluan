@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { LoginBody, LoginBodyType } from '@/schemaValidations/auth.schema'
 import Link from 'next/link'
 
-export default function Login() {
+export default function Register() {
    const form = useForm<LoginBodyType>({
       resolver: zodResolver(LoginBody),
       defaultValues: {
@@ -21,8 +21,8 @@ export default function Login() {
    return (
       <Card className='mx-auto max-w-sm mt-10'>
          <CardHeader>
-            <CardTitle className='text-2xl'>Đăng nhập</CardTitle>
-            <CardDescription>Nhập email và mật khẩu của bạn để đăng nhập vào hệ thống</CardDescription>
+            <CardTitle className='text-2xl'>Đăng ký</CardTitle>
+            <CardDescription>Nhập email và mật khẩu của bạn để đăng ký vào hệ thống</CardDescription>
          </CardHeader>
          <CardContent>
             <Form {...form}>
@@ -66,9 +66,9 @@ export default function Login() {
                         Đăng nhập
                      </button>
                      <p className='text-center'>
-                        Bạn chưa có tài khoản?{' '}
-                        <Link className='text-secondaryColor hover:underline' href={'/register'}>
-                           Đăng ký
+                        Bạn đã có tài khoản?{' '}
+                        <Link className='text-secondaryColor hover:underline' href={'/login'}>
+                           Đăng nhậpp
                         </Link>
                      </p>
                   </div>

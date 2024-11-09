@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
             hostname: 'cdn2.fptshop.com.vn',
             port: '',
             pathname: '/**'
+         },
+         {
+            protocol: 'https',
+            hostname: 'cdn.tgdd.vn',
+            port: '',
+            pathname: '/**'
          }
       ]
    }

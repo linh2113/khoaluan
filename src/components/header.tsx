@@ -20,7 +20,7 @@ export default function Header() {
             </div>
          </div>
          <div className='container flex items-center'>
-            <div className='w-1/5'>
+            <Link href={'/'} className='w-1/5'>
                <Image
                   src={
                      'https://cdn2.fptshop.com.vn/unsafe/360x0/filters:quality(100)/small/fptshop_logo_c5ac91ae46.png'
@@ -31,7 +31,7 @@ export default function Header() {
                   height={40}
                   className='w-[150px] h-10 flex-shrink-0'
                />
-            </div>
+            </Link>
             <form className='w-3/5 flex-1 flex items-center'>
                <Input
                   placeholder='Bạn muốn tìm gì...'

@@ -1,6 +1,6 @@
 export default function Footer() {
    return (
-      <footer className='py-4 text-center leading-loose'>
+      <footer className='py-4 text-center leading-loose bg-secondary'>
          <div className='container'>
             <p className='mb-4'> FPT Shop</p>
             <p>

@@ -8,9 +8,8 @@ import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import RatingStars from '@/components/rating-stars'
 import { Button } from '@/components/ui/button'
-import { formatCurrency, formatNumberToK } from '@/lib/utils'
-import ProductRating from '@/components/product-rating'
 import Paginate from '@/components/paginate'
+import ProductItem from '@/components/product-item'
 export default function Home() {
    const [currentPage, setCurrentPage] = useState<number>(1)
    return (
@@ -119,27 +118,7 @@ export default function Home() {
                      {Array(10)
                         .fill(0)
                         .map((item, index) => (
-                           <div
-                              key={index}
-                              className='flex flex-col gap-2 p-3 hover:-translate-y-0.5 transition-all duration-300'
-                           >
-                              <Image
-                                 src={'https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'}
-                                 alt=''
-                                 width={100}
-                                 height={100}
-                                 className='aspect-square'
-                              />
-                              <p>Điện thoại, smartphone chính hãng giá rẻ</p>
-                              <div className='flex items-center gap-3'>
-                                 <span className='line-through'>{formatCurrency(1000000)}</span>
-                                 <span className='text-secondaryColor'>{formatCurrency(2000000)}</span>
-                              </div>
-                              <div className='flex items-center gap-3'>
-                                 <ProductRating rating={3.5} />
-                                 <span>{formatNumberToK(1245)} đã bán</span>
-                              </div>
-                           </div>
+                           <ProductItem key={index} />
                         ))}
                   </div>
                   <Paginate

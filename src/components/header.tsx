@@ -4,7 +4,14 @@ import { Bell, Search, ShoppingCart } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
-
+import {
+   DropdownMenu,
+   DropdownMenuContent,
+   DropdownMenuGroup,
+   DropdownMenuItem,
+   DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { formatCurrency } from '@/lib/utils'
 export default function Header() {
    return (
       <header className='bg-primaryColor py-3'>
@@ -44,10 +51,51 @@ export default function Header() {
                </button>
             </form>
             <div className='w-1/5 flex items-center justify-center text-white'>
-               <div className='relative'>
-                  <ShoppingCart />
-                  <div className='absolute top-[-4px] right-[-8px] bg-secondaryColor px-2 text-xs rounded-lg'>1</div>
-               </div>
+               <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                     <div className='relative cursor-pointer'>
+                        <ShoppingCart />
+                        <div className='absolute top-[-4px] right-[-8px] bg-secondaryColor px-2 text-xs rounded-lg'>
+                           1
+                        </div>
+                     </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className='w-96'>
+                     <DropdownMenuGroup className='p-0'>
+                        {/* <div className='flex flex-col justify-center items-center gap-3'>
+                           <Image
+                              src={'/no-product.png'}
+                              alt='no-product'
+                              width={100}
+                              height={100}
+                              className='w-[100px] h-[100px]'
+                           />
+                           Chưa có sản phẩm
+                        </div> */}
+                        <p className='p-3'>Sản phẩm mới thêm</p>
+                        <DropdownMenuItem className='flex items-center gap-2'>
+                           <Image
+                              src={'https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'}
+                              alt=''
+                              width={40}
+                              height={40}
+                              className='aspect-square w-10 h-10 flex-shrink-0'
+                           />
+                           <h3 className='truncate'>Điện thoại Apple Iphone 12 64GB - Hàng chính hãng VNA</h3>
+                           <span className='text-secondaryColor'>{formatCurrency(2000000)}</span>
+                        </DropdownMenuItem>
+                        <div className='flex items-center justify-between p-3'>
+                           <span>Thêm hàng vào giỏ</span>
+                           <Link
+                              href={'/cart'}
+                              className='px-5 py-2 bg-secondaryColor text-white button-primary rounded-sm'
+                           >
+                              Xem giỏ hàng
+                           </Link>
+                        </div>
+                     </DropdownMenuGroup>
+                  </DropdownMenuContent>
+               </DropdownMenu>
             </div>
          </div>
       </header>

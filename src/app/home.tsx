@@ -7,7 +7,6 @@ import { Filter, ListFilter } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import RatingStars from '@/components/rating-stars'
-import { Button } from '@/components/ui/button'
 import Paginate from '@/components/paginate'
 import ProductItem from '@/components/product-item'
 export default function Home() {
@@ -107,11 +106,11 @@ export default function Home() {
                   <button className='px-5 py-2 bg-primaryColor text-white button-primary rounded'>Phổ biến</button>
                   <button className='px-5 py-2 bg-primaryColor text-white button-primary rounded'>Bán chạy</button>
                   <button className='px-5 py-2 bg-primaryColor text-white button-primary rounded'>Tất cả</button> */}
-                  <Button>Tất cả</Button>
-                  <Button>Phổ biến</Button>
-                  <Button>Bán chạy</Button>
-                  <Button>Giá thấp đến cao</Button>
-                  <Button>Giá cao đến thấp</Button>
+                  <button className='btn !py-2'>Tất cả</button>
+                  <button className='btn !py-2'>Phổ biến</button>
+                  <button className='btn !py-2'>Bán chạy</button>
+                  <button className='btn !py-2'>Giá thấp đến cao</button>
+                  <button className='btn !py-2'>Giá cao đến thấp</button>
                </div>
                <div className='bg-secondary rounded-lg'>
                   <div className='grid grid-cols-5'>

@@ -68,7 +68,7 @@ export default function Register() {
                      <p className='text-center'>
                         Bạn đã có tài khoản?{' '}
                         <Link className='text-secondaryColor hover:underline' href={'/login'}>
-                           Đăng nhậpp
+                           Đăng nhập
                         </Link>
                      </p>
                   </div>

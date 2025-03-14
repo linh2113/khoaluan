@@ -7,6 +7,7 @@ import AppProvider from '@/context/app.context'
 import { ThemeProvider } from '@/components/theme-provider'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
+import NextTopLoader from 'nextjs-toploader'
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' })
 export const metadata: Metadata = {
    title: 'Create Next App',
@@ -23,6 +24,7 @@ export default function RootLayout({
          <body className={`${manrope.className} antialiased text-sm font-normal`}>
             <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
                <AppProvider>
+                  <NextTopLoader color='#ff424e' showSpinner={false} />
                   <Header />
                   <main className='py-5 container'>{children}</main>
                   <Footer />

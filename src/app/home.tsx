@@ -12,7 +12,7 @@ import ProductItem from '@/components/product-item'
 export default function Home() {
    const [currentPage, setCurrentPage] = useState<number>(1)
    return (
-      <>
+      <div className='container py-5'>
          <Carousel
             plugins={[
                Autoplay({
@@ -129,6 +129,6 @@ export default function Home() {
                </div>
             </div>
          </div>
-      </>
+      </div>
    )
 }

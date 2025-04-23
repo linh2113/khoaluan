@@ -5,7 +5,6 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import AppProvider from '@/context/app.context'
 import { ThemeProvider } from '@/components/theme-provider'
-import Header from '@/components/header'
 import Footer from '@/components/footer'
 import NextTopLoader from 'nextjs-toploader'
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' })
@@ -25,8 +24,7 @@ export default function RootLayout({
             <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
                <AppProvider>
                   <NextTopLoader color='#ff424e' showSpinner={false} />
-                  <Header />
-                  <main className='py-5 container'>{children}</main>
+                  <main>{children}</main>
                   <Footer />
                   <button className='fixed bottom-5 right-5 w-10 h-10 animate-bounce'>
                      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 -15 800 800'>

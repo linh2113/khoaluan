@@ -1,4 +1,4 @@
-import ProductDetail from '@/app/[id]/product-detail'
+import ProductDetail from '@/app/(user)/[id]/product-detail'
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
    const id = (await params).id

@@ -1,4 +1,4 @@
-import Cart from '@/app/cart/cart'
+import Cart from '@/app/(user)/cart/cart'
 import React from 'react'
 
 export default function page() {

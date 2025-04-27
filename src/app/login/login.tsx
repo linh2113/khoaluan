@@ -8,8 +8,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { LoginBody, LoginBodyType } from '@/schemaValidations/auth.schema'
 import Link from 'next/link'
 import { useLogin } from '@/queries/useAuth'
+import { useAppContext } from '@/context/app.context'
 
 export default function Login() {
+   const { setUserId } = useAppContext()
    const { mutate, isPending } = useLogin()
    const form = useForm<LoginBodyType>({
       resolver: zodResolver(LoginBody),
@@ -20,7 +22,11 @@ export default function Login() {
    })
 
    const onSubmit = (data: LoginBodyType) => {
-      mutate(data)
+      mutate(data, {
+         onSuccess: (res) => {
+            setUserId(res.data.data.user.id)
+         }
+      })
    }
 
    return (

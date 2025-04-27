@@ -115,7 +115,7 @@ class Http {
       document.cookie = `refresh_token=${this.refreshToken}; path=/; max-age=604800; SameSite=Strict`
    }
 
-   private clearTokens() {
+   public clearTokens() {
       this.accessToken = ''
       this.refreshToken = ''
       // Xóa cookie
@@ -137,6 +137,7 @@ class Http {
 }
 
 const http = new Http()
-// Khởi tạo token khi tạo instance
 http.setTokenFromCookie()
 export default http.instance
+// Export instance của Http class để có thể gọi clearTokens
+export { http }

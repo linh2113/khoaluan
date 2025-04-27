@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
    // Các route cần auth
    const authRoutes = ['/dashboard']
    // Các route chỉ dành cho guest
-   const guestRoutes = ['/login', '/register', '/forgot-password', '/reset-password']
+   const guestRoutes = ['/login', '/register', '/forgot-password']
 
    const isAuthRoute = authRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
    const isGuestRoute = guestRoutes.some((route) => request.nextUrl.pathname.startsWith(route))

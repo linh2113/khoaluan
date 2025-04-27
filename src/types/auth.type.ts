@@ -1,10 +1,6 @@
-export interface LoginResType {
-   success: boolean
-   message: string
-   data: Data
-   timestamp: string
-}
+import { ResponseData } from '@/types/utils.type'
 
+export type LoginResType = ResponseData<Data>
 export interface Data {
    token: string
    refreshToken: string

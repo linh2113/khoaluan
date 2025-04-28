@@ -3,7 +3,7 @@ import { ResponseData } from '@/types/utils.type'
 export type GetAllProductType = ResponseData<Data>
 
 export interface Data {
-   content: Content[]
+   content: ProductType[]
    pageable: Pageable
    last: boolean
    totalPages: number
@@ -16,7 +16,7 @@ export interface Data {
    empty: boolean
 }
 
-export interface Content {
+export interface ProductType {
    id: number
    categoryId: number
    categoryName: string

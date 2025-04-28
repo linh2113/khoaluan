@@ -11,3 +11,5 @@ export const forgotPassword = (email: string) => http.post('/auth/forgot-passwor
 export const resetPassword = (body: { token: string; newPassword: string }) => http.post('/auth/reset-password', body)
 
 export const refreshToken = (refreshToken: string) => http.post<LoginResType>('/auth/refresh-token', { refreshToken })
+
+export const verifyEmail = (token: string) => http.get('/auth/verify-email?token=' + token)

@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
    const accessToken = request.cookies.get('access_token')?.value || request.headers.get('Authorization')?.split(' ')[1]
 
    // Các route cần auth
-   const authRoutes = ['/dashboard']
+   const authRoutes = ['/dashboard', '/profile']
    // Các route chỉ dành cho guest
    const guestRoutes = ['/login', '/register', '/forgot-password']
 

@@ -1,5 +1,12 @@
-import { registerAccount, forgotPassword, resetPassword, loginAccount, refreshToken } from '@/apiRequest/auth'
-import { useMutation } from '@tanstack/react-query'
+import {
+   registerAccount,
+   forgotPassword,
+   resetPassword,
+   loginAccount,
+   refreshToken,
+   verifyEmail
+} from '@/apiRequest/auth'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
 import { useRouter } from 'next/navigation'
 
@@ -64,5 +71,13 @@ export const useRefreshToken = () => {
       onError: () => {
          toast.error('refreshToken thất bại')
       }
+   })
+}
+
+export const useVerifyEmail = (token: string) => {
+   return useQuery({
+      queryKey: ['verifyEmail', token],
+      queryFn: () => verifyEmail(token),
+      enabled: !!token
    })
 }

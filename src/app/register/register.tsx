@@ -174,8 +174,8 @@ export default function Register() {
                         className='w-full bg-primaryColor text-white h-9 rounded button-primary'
                      >
                         {isPending ? (
-                           <div className='flex items-center gap-2'>
-                              <div className='w-10 h-10 border-4 border-blue-500 rounded-full animate-spin border-t-transparent'></div>
+                           <div className='flex items-center justify-center gap-2'>
+                              <div className='w-5 h-5 border-4 border-white rounded-full animate-spin border-t-transparent'></div>
                               Đang đăng ký...
                            </div>
                         ) : (

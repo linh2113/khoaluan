@@ -79,12 +79,14 @@ export default function Login() {
                            'Đăng nhập'
                         )}
                      </button>
-                     <div className='flex justify-between'>
-                        <Link className='text-primaryColor hover:underline' href='/forgot-password'>
-                           Quên mật khẩu?
-                        </Link>
-                        <Link className='text-primaryColor hover:underline' href='/register'>
-                           Đăng ký
+                     <div className='text-center'>
+                        Chưa có tài khoản?{' '}
+                        <Link className='text-primaryColor hover:underline' href={'/login'}>
+                           Đăng nhập
+                        </Link>{' '}
+                        |{' '}
+                        <Link className='text-primaryColor hover:underline' href={'/forgot-password'}>
+                           Quên mật khẩu
                         </Link>
                      </div>
                   </form>

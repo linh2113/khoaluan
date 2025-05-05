@@ -7,19 +7,21 @@ import Image from 'next/image'
 import React, { useState } from 'react'
 import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
-import ProductItem from '@/components/product-item'
 import { Textarea } from '@/components/ui/textarea'
 import { useGetProduct } from '@/queries/useProduct'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
+import { useAddToCart } from '@/queries/useCart'
+import { useAppContext } from '@/context/app.context'
 
 export default function ProductDetail({ id }: { id: string }) {
+   const { userId } = useAppContext()
    const [buyCount, setBuyCount] = useState<number>(1)
    const handleBuyCount = (value: number) => {
       setBuyCount(value)
    }
-
+   const addToCart = useAddToCart()
    const { data, isLoading } = useGetProduct(Number(getIdFromNameId(id)))
    const product = data?.data.data
 
@@ -184,6 +186,7 @@ export default function ProductDetail({ id }: { id: string }) {
                {/* Nút mua hàng */}
                <div className='flex items-center gap-4 text-base'>
                   <button
+                     onClick={() => addToCart.mutate({ userId: userId!, productId: product.id, quantity: buyCount })}
                      className='px-5 py-3 flex items-center gap-2 rounded border border-secondaryColor bg-secondaryColor/10 hover:bg-secondaryColor/0 text-secondaryColor'
                      disabled={product.stock === 0}
                   >
@@ -327,9 +330,7 @@ export default function ProductDetail({ id }: { id: string }) {
                   {Array(10)
                      .fill(0)
                      .map((_, index) => (
-                        <CarouselItem key={index} className='basis-1/6 pl-4'>
-                           <ProductItem />
-                        </CarouselItem>
+                        <CarouselItem key={index} className='basis-1/6 pl-4'></CarouselItem>
                      ))}
                </CarouselContent>
                <CarouselPrevious />

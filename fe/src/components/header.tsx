@@ -1,7 +1,7 @@
 'use client'
 import { ModeToggle } from '@/components/mode-toggle'
 import { Input } from '@/components/ui/input'
-import { Bell, LayoutDashboard, LogOut, Search, ShoppingCart, User } from 'lucide-react'
+import { Bell, LayoutDashboard, LogOut, Search, ShoppingCart, User, WalletCards } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { Fragment } from 'react'
@@ -87,6 +87,13 @@ export default function Header() {
                                  >
                                     <LayoutDashboard size={20} />
                                     Quản lý
+                                 </Link>
+                                 <Link
+                                    className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2'
+                                    href={'/purchase'}
+                                 >
+                                    <WalletCards size={20} />
+                                    Đơn mua
                                  </Link>
                                  <button
                                     onClick={() => setShowLogoutDialog(true)}

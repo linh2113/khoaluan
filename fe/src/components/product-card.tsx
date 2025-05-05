@@ -6,12 +6,17 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ShoppingCart, Star } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { useAddToCart } from '@/queries/useCart'
+import { useAppContext } from '@/context/app.context'
 
 interface ProductCardProps {
    product: ProductType
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+   const { userId } = useAppContext()
+   const addToCart = useAddToCart()
+
    // Đảm bảo product.name và product.id tồn tại trước khi tạo URL
    const productUrl = product?.name && product?.id ? `/${generateNameId({ name: product.name, id: product.id })}` : '#'
 
@@ -78,6 +83,7 @@ export default function ProductCard({ product }: ProductCardProps) {
          </CardContent>
          <CardFooter className='p-4 pt-0'>
             <Button
+               onClick={() => addToCart.mutate({ userId: userId!, productId: product.id, quantity: 1 })}
                variant='outline'
                size='sm'
                className='w-full border-primaryColor text-primaryColor hover:bg-primaryColor hover:text-white transition-colors'

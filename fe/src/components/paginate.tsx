@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import ReactPaginate from 'react-paginate'
 import Tippy from '@tippyjs/react'
 import 'tippy.js/animations/perspective-extreme.css'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MoveHorizontal } from 'lucide-react'
 interface Props {
    totalPages: number
    currentPage: number
@@ -21,19 +21,38 @@ export default function Paginate({ currentPage, handlePageClick, totalPages, set
       }
    }
    return (
-      <div className='my-3 flex items-center justify-center gap-x-1'>
+      <div className='my-5 flex items-center justify-center gap-x-3'>
          <ReactPaginate
             pageCount={totalPages} // Tổng số trang
             marginPagesDisplayed={1} // Số lượng trang được hiển thị trước và sau trang hiện tại
-            pageRangeDisplayed={1} // Số lượng trang được hiển thị trong phân đoạn paginate
+            pageRangeDisplayed={2} // Số lượng trang được hiển thị trong phân đoạn paginate
             breakLabel='...'
-            nextLabel={currentPage < totalPages && <ChevronRight />}
+            nextLabel={
+               currentPage < totalPages ? (
+                  <div className='flex items-center justify-center w-9 h-9 rounded-md border  transition-colors'>
+                     <ChevronRight className='h-4 w-4' />
+                  </div>
+               ) : null
+            }
             onPageChange={handlePageClick}
             forcePage={currentPage - 1} // Đặt trang hiện tại là trang active
-            previousLabel={currentPage > 1 && <ChevronLeft />}
+            previousLabel={
+               currentPage > 1 ? (
+                  <div className='flex items-center justify-center w-9 h-9 rounded-md border transition-colors'>
+                     <ChevronLeft className='h-4 w-4' />
+                  </div>
+               ) : null
+            }
             renderOnZeroPageCount={null}
-            containerClassName={'flex items-center gap-x-5 justify-center text-xl font-bold list-none'} // Class cho container của paginate
-            activeClassName={'text-primaryColor'} // Class cho trang hiện tại
+            containerClassName={'flex items-center gap-x-2 justify-center text-sm font-medium list-none'}
+            pageClassName={''}
+            pageLinkClassName={'flex items-center justify-center w-9 h-9 rounded-md border transition-colors'}
+            activeClassName={''}
+            activeLinkClassName={'!bg-secondaryColor  !border-secondaryColor hover:!bg-secondaryColor/90'}
+            breakClassName={'flex items-center justify-center'}
+            breakLinkClassName={'flex items-center justify-center w-9 h-9 text-gray-500'}
+            disabledClassName={'opacity-50 cursor-not-allowed'}
+            disabledLinkClassName={'cursor-not-allowed'}
          />
          <Tippy
             animation={'perspective-extreme'}
@@ -47,39 +66,46 @@ export default function Paginate({ currentPage, handlePageClick, totalPages, set
                      handlePageClick({ selected: value - 1 })
                      setOpenPaginate(false)
                   }}
-                  className='bg-blue-500 text-white shadow rounded p-2 flex items-center gap-x-2'
+                  className='shadow-md rounded-lg p-3 flex items-center gap-x-2'
                >
-                  <input
-                     type='number'
-                     value={value}
-                     min={1}
-                     max={totalPages}
-                     onChange={handleChange}
-                     className='outline-none p-1 bg-transparent border border-white'
-                  />
-                  <button className='border border-white text-white p-1' type='submit'>
-                     Go
-                  </button>
+                  <div className='flex flex-col gap-1 w-full'>
+                     <label htmlFor='page-input' className='text-xs text-gray-500'>
+                        Đi đến trang:
+                     </label>
+                     <div className='flex gap-2'>
+                        <input
+                           id='page-input'
+                           type='number'
+                           value={value}
+                           min={1}
+                           max={totalPages}
+                           onChange={handleChange}
+                           className='w-16 outline-none p-2 text-sm border border-gray-300 rounded-md focus:border-secondaryColor focus:ring-1 focus:ring-secondaryColor'
+                        />
+                        <button
+                           className='bg-secondaryColor px-3 py-2 rounded-md hover:bg-secondaryColor/90 transition-colors text-sm font-medium'
+                           type='submit'
+                        >
+                           Đi
+                        </button>
+                     </div>
+                  </div>
                </form>
             }
             interactive={true}
-            arrow={false}
-            offset={[0, 6]}
-            placement={'top'}
+            arrow={true}
+            offset={[0, 8]}
+            placement={'bottom'}
          >
-            <button onClick={() => setOpenPaginate((prev) => !prev)}>
-               <svg
-                  stroke='currentColor'
-                  fill='currentColor'
-                  strokeWidth={0}
-                  viewBox='0 0 24 24'
-                  height='22px'
-                  width='22px'
-                  xmlns='http://www.w3.org/2000/svg'
-               >
-                  <path fill='none' d='M0 0h24v24H0z' />
-                  <path d='M3 5v6h5L7 7l4 1V3H5c-1.1 0-2 .9-2 2zm5 8H3v6c0 1.1.9 2 2 2h6v-5l-4 1 1-4zm9 4l-4-1v5h6c1.1 0 2-.9 2-2v-6h-5l1 4zm2-14h-6v5l4-1-1 4h5V5c0-1.1-.9-2-2-2z' />
-               </svg>
+            <button
+               onClick={() => setOpenPaginate((prev) => !prev)}
+               className={`flex items-center justify-center w-9 h-9 rounded-md border ${
+                  openPaginate ? 'border-secondaryColor bg-secondaryColor/10 text-secondaryColor' : 'border-gray-200 '
+               } transition-colors`}
+               aria-label='Đi đến trang'
+               title='Đi đến trang'
+            >
+               <MoveHorizontal className='h-4 w-4' />
             </button>
          </Tippy>
       </div>

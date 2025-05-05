@@ -95,7 +95,7 @@ export default function ProductFilter({
                            placeholder='Nhập từ khóa tìm kiếm...'
                            value={filters.keyword || ''}
                            onChange={(e) => handleFilterChange('keyword', e.target.value)}
-                           className='pl-9 bg-background'
+                           className='bg-background'
                         />
                      </div>
                   </div>

@@ -90,10 +90,10 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
                />
             </button>
             <div className='flex items-center gap-1 mb-1.5'>
-               <Badge variant='outline' className='text-xs font-normal px-1.5 py-0 h-5 bg-muted/50'>
+               <Badge variant='outline' className='text-xs font-normal px-1.5 py-0 h-5 bg-primary-foreground'>
                   {product.categoryName || 'Danh mục'}
                </Badge>
-               <Badge variant='outline' className='text-xs font-normal px-1.5 py-0 h-5 bg-muted/50'>
+               <Badge variant='outline' className='text-xs font-normal px-1.5 py-0 h-5 bg-primary-foreground'>
                   {product.brand || 'Thương hiệu'}
                </Badge>
             </div>
@@ -112,7 +112,7 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
                   )}
                </div>
                {product.averageRating > 0 && (
-                  <div className='flex items-center text-xs bg-yellow-50 px-1.5 py-0.5 rounded'>
+                  <div className='flex items-center text-xs px-1.5 py-0.5 rounded'>
                      <Star className='h-3 w-3 fill-yellow-400 text-yellow-400 mr-0.5' />
                      <span className='font-medium'>{product.averageRating.toFixed(1)}</span>
                   </div>

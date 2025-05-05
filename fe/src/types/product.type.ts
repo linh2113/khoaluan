@@ -8,11 +8,11 @@ export interface Data {
    last: boolean
    totalPages: number
    totalElements: number
+   first: boolean
    size: number
    number: number
    sort: Sort2
    numberOfElements: number
-   first: boolean
    empty: boolean
 }
 
@@ -24,7 +24,7 @@ export interface ProductType {
    discountName: any
    name: string
    brand: string
-   image?: string
+   image: string
    price: number
    discountedPrice: number
    description: string
@@ -35,27 +35,12 @@ export interface ProductType {
    createBy: string
    status: boolean
    updateAt: string
-   updateBy?: string
+   updateBy: string
    stock: number
    averageRating: number
    reviewCount: number
    imageUrls: any[]
-   productDetail?: ProductDetail
-}
-
-export interface ProductDetail {
-   id: number
-   productId: number
-   processor: string
-   ram: string
-   storage: string
-   display: string
-   graphics: string
-   battery: string
-   camera: string
-   operatingSystem: string
-   connectivity: string
-   otherFeatures: string
+   productDetail: any
 }
 
 export interface Pageable {
@@ -63,8 +48,8 @@ export interface Pageable {
    pageSize: number
    sort: Sort
    offset: number
-   paged: boolean
    unpaged: boolean
+   paged: boolean
 }
 
 export interface Sort {
@@ -83,11 +68,14 @@ export interface Sort2 {
 export interface GetProductQueryParamsType {
    page?: number
    size?: number
-   sortBy?: number
-   discountId?: number
-   name?: string
-   price?: string
-   sort?: string
-   order?: string
+   sortBy?: string | 'id'
+   sortDir?: string | 'desc'
+   keyword?: string
+   brand?: string
+   minPrice?: number
+   maxPrice?: number
    categoryId?: number
+   isDiscount?: boolean
+   inStock?: boolean
+   filterType?: 'ALL' | 'TOP_SELLING' | 'NEW_ARRIVALS' | 'TOP_RATED' | 'RELATED' | 'DISCOUNTED'
 }

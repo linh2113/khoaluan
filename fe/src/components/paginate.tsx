@@ -1,8 +1,8 @@
 'use client'
 import React, { useState } from 'react'
 import ReactPaginate from 'react-paginate'
-// import Tippy from '@tippyjs/react'
-// import 'tippy.js/animations/perspective-extreme.css'
+import Tippy from '@tippyjs/react'
+import 'tippy.js/animations/perspective-extreme.css'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 interface Props {
    totalPages: number
@@ -35,7 +35,7 @@ export default function Paginate({ currentPage, handlePageClick, totalPages, set
             containerClassName={'flex items-center gap-x-5 justify-center text-xl font-bold list-none'} // Class cho container của paginate
             activeClassName={'text-primaryColor'} // Class cho trang hiện tại
          />
-         {/* <Tippy
+         <Tippy
             animation={'perspective-extreme'}
             visible={openPaginate}
             onClickOutside={() => setOpenPaginate(false)}
@@ -81,7 +81,7 @@ export default function Paginate({ currentPage, handlePageClick, totalPages, set
                   <path d='M3 5v6h5L7 7l4 1V3H5c-1.1 0-2 .9-2 2zm5 8H3v6c0 1.1.9 2 2 2h6v-5l-4 1 1-4zm9 4l-4-1v5h6c1.1 0 2-.9 2-2v-6h-5l1 4zm2-14h-6v5l4-1-1 4h5V5c0-1.1-.9-2-2-2z' />
                </svg>
             </button>
-         </Tippy> */}
+         </Tippy>
       </div>
    )
 }

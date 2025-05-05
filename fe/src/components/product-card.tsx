@@ -4,10 +4,13 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ShoppingCart, Star } from 'lucide-react'
+import { Heart, ShoppingCart, Star } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useAddToCart } from '@/queries/useCart'
 import { useAppContext } from '@/context/app.context'
+import { useAddToWishlist, useCheckProductInWishlist, useRemoveFromWishlist } from '@/queries/useWishlist'
+import { useState } from 'react'
+import { toast } from 'react-toastify'
 
 interface ProductCardProps {
    product: ProductType
@@ -16,6 +19,29 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
    const { userId } = useAppContext()
    const addToCart = useAddToCart()
+   const addToWishlist = useAddToWishlist()
+   const removeFromWishlist = useRemoveFromWishlist()
+   const { data: isInWishlist } = useCheckProductInWishlist(userId || 0, product.id)
+   const [isWishlistLoading, setIsWishlistLoading] = useState(false)
+
+   // Xử lý thêm/xóa sản phẩm khỏi danh sách yêu thích
+   const handleWishlistToggle = (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      if (!userId) {
+         toast.warning('Vui lòng đăng nhập để sử dụng tính năng này')
+         return
+      }
+
+      setIsWishlistLoading(true)
+
+      if (isInWishlist?.data.data) {
+         removeFromWishlist.mutate({ userId, productId: product.id }, { onSettled: () => setIsWishlistLoading(false) })
+      } else {
+         addToWishlist.mutate({ userId, productId: product.id }, { onSettled: () => setIsWishlistLoading(false) })
+      }
+   }
 
    // Đảm bảo product.name và product.id tồn tại trước khi tạo URL
    const productUrl = product?.name && product?.id ? `/${generateNameId({ name: product.name, id: product.id })}` : '#'
@@ -46,11 +72,21 @@ export default function ProductCard({ product }: ProductCardProps) {
                   alt={product.name || 'Product image'}
                   width={300}
                   height={300}
-                  className='w-full h-full object-cover transition-transform group-hover:scale-105'
+                  className='w-full h-full object-cover aspect-square transition-transform group-hover:scale-105'
                />
             </div>
          </Link>
-         <CardContent className='p-4'>
+         <CardContent className='p-4 relative'>
+            {/* Nút yêu thích */}
+            <button
+               onClick={handleWishlistToggle}
+               disabled={isWishlistLoading}
+               className='absolute top-2 right-2 z-10 p-1.5 bg-white/80 rounded-full shadow-sm hover:bg-white transition-colors'
+            >
+               <Heart
+                  className={`h-5 w-5 ${isInWishlist?.data.data ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
+               />
+            </button>
             <div className='flex items-center gap-1 mb-1.5'>
                <Badge variant='outline' className='text-xs font-normal px-1.5 py-0 h-5 bg-muted/50'>
                   {product.categoryName || 'Danh mục'}

@@ -14,6 +14,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { useAddToCart } from '@/queries/useCart'
 import { useAppContext } from '@/context/app.context'
+import { useAddToWishlist, useCheckProductInWishlist, useRemoveFromWishlist } from '@/queries/useWishlist'
+import { Heart } from 'lucide-react'
+import { toast } from 'react-toastify'
 
 export default function ProductDetail({ id }: { id: string }) {
    const { userId } = useAppContext()
@@ -22,8 +25,34 @@ export default function ProductDetail({ id }: { id: string }) {
       setBuyCount(value)
    }
    const addToCart = useAddToCart()
+   const addToWishlist = useAddToWishlist()
+   const removeFromWishlist = useRemoveFromWishlist()
+   const { data: isInWishlist } = useCheckProductInWishlist(userId || 0, Number(getIdFromNameId(id)))
+   const [isWishlistLoading, setIsWishlistLoading] = useState(false)
    const { data, isLoading } = useGetProduct(Number(getIdFromNameId(id)))
    const product = data?.data.data
+
+   // Xử lý thêm/xóa sản phẩm khỏi danh sách yêu thích
+   const handleWishlistToggle = () => {
+      if (!userId) {
+         toast.warning('Vui lòng đăng nhập để sử dụng tính năng này')
+         return
+      }
+
+      setIsWishlistLoading(true)
+
+      if (isInWishlist?.data.data) {
+         removeFromWishlist.mutate(
+            { userId, productId: Number(getIdFromNameId(id)) },
+            { onSettled: () => setIsWishlistLoading(false) }
+         )
+      } else {
+         addToWishlist.mutate(
+            { userId, productId: Number(getIdFromNameId(id)) },
+            { onSettled: () => setIsWishlistLoading(false) }
+         )
+      }
+   }
 
    // Tính phần trăm giảm giá
    const discountPercentage =
@@ -198,6 +227,18 @@ export default function ProductDetail({ id }: { id: string }) {
                      disabled={product.stock === 0}
                   >
                      Mua ngay
+                  </button>
+                  <button
+                     onClick={handleWishlistToggle}
+                     disabled={isWishlistLoading}
+                     className={`p-3 rounded-full border ${
+                        isInWishlist?.data.data
+                           ? 'border-red-500 bg-red-50 text-red-500'
+                           : 'border-gray-300 hover:border-red-500 hover:bg-red-50 hover:text-red-500'
+                     }`}
+                     aria-label={isInWishlist?.data.data ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
+                  >
+                     <Heart className={isInWishlist?.data.data ? 'fill-red-500' : ''} />
                   </button>
                </div>
             </div>

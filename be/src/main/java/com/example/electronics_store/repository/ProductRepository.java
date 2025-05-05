@@ -42,8 +42,8 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     List<Product> findTopSellingProducts();
     
     @Query(value = "SELECT p.* FROM products p " +
-            "JOIN (SELECT product_id, AVG(rating) as avg_rating FROM rating GROUP BY product_id ORDER BY avg_rating DESC LIMIT 10) r " +
-            "ON p.id = r.product_id WHERE p.status = 1", nativeQuery = true)
+            "JOIN (SELECT id_product, AVG(rating) as avg_rating FROM rating GROUP BY id_product ORDER BY avg_rating DESC LIMIT 10) r " +
+            "ON p.id = r.id_product WHERE p.status = 1", nativeQuery = true)
     List<Product> findTopRatedProducts();
 
     @Query(value = """
@@ -58,7 +58,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     Page<Product> findTopSellingProducts(Pageable pageable);
     @Query(value = """
         SELECT p.* FROM products p 
-        LEFT JOIN ratings r ON p.id = r.product_id 
+        LEFT JOIN rating r ON p.id = r.id_product 
         WHERE p.status = true 
         GROUP BY p.id 
         ORDER BY AVG(r.rating) DESC

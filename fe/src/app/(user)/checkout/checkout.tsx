@@ -6,7 +6,7 @@ import Image from 'next/image'
 
 export default function Checkout() {
    return (
-      <div className='flex items-start gap-5'>
+      <div className='flex items-start gap-5 my-10'>
          {/* Cột thông tin sản phẩm và địa chỉ */}
          <div className='w-2/3 bg-secondary rounded-lg shadow-lg p-5'>
             <h1 className='text-2xl font-medium mb-5'>Xác nhận đơn hàng</h1>

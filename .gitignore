@@ -41,3 +41,4 @@ fe/next-env.d.ts
 
 
 be/logs/techstore.log
+be/src/main/resources/application.properties

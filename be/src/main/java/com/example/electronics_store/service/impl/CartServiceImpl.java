@@ -243,6 +243,7 @@ public class CartServiceImpl implements CartService {
                 .price(cartItem.getPrice())
                 .totalPrice(totalPrice)
                 .createAt(cartItem.getCreateAt())
+                .stock(cartItem.getProduct().getStock())
                 .build();
     }
 }

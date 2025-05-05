@@ -373,7 +373,8 @@ public class UserServiceImpl implements UserService {
             helper.setTo(email);
             helper.setSubject("Password Reset Request");
 
-            String resetLink = frontendUrl + "/auth/verify-token?token=" + resetToken;
+            String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
+
             String emailContent = "<html><body>" +
                     "<h2>Password Change Request</h2>" +
                     "<p>Please click the link below to reset your password:</p>" +
@@ -398,7 +399,8 @@ public class UserServiceImpl implements UserService {
             helper.setTo(user.getEmail());
             helper.setSubject("Verify Your Email Address");
 
-            String verificationLink = frontendUrl + "/auth/verify-email?token=" + user.getHash();
+            String verificationLink = frontendUrl + "/verify-email?token=" + user.getHash();
+
             String emailContent = "<html><body>" +
                     "<h2>Email Verification</h2>" +
                     "<p>Thank you for registering! Please click the link below to verify your email address:</p>" +

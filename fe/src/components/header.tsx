@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Bell, LayoutDashboard, LogOut, Search, ShoppingCart, User } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
+import React, { Fragment } from 'react'
 import {
    Dialog,
    DialogContent,
@@ -21,18 +21,21 @@ import {
    DropdownMenuItem,
    DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, generateNameId } from '@/lib/utils'
 import { useAppContext } from '@/context/app.context'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useGetUserInfo } from '@/queries/useUser'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'react-toastify'
+import { useGetAllCart } from '@/queries/useCart'
 
 export default function Header() {
    const { userId, logout } = useAppContext()
    const { data } = useGetUserInfo(userId!)
    const userInfo = data?.data.data
    const [showLogoutDialog, setShowLogoutDialog] = React.useState(false)
+   const getAllCart = useGetAllCart(userId!)
+   const cartData = getAllCart.data?.data.data.items || []
 
    const handleLogout = () => {
       logout()
@@ -131,38 +134,49 @@ export default function Header() {
                   <DropdownMenu>
                      <DropdownMenuTrigger asChild>
                         <div className='relative cursor-pointer'>
-                           <ShoppingCart />
+                           <ShoppingCart size={30} />
                            <div className='absolute top-[-4px] right-[-8px] bg-secondaryColor px-2 text-xs rounded-lg'>
-                              1
+                              {cartData.length}
                            </div>
                         </div>
                      </DropdownMenuTrigger>
                      <DropdownMenuContent className='w-96'>
                         <DropdownMenuGroup className='p-0'>
-                           {/* <div className='flex flex-col justify-center items-center gap-3'>
-                              <Image
-                                 src={'/no-product.png'}
-                                 alt='no-product'
-                                 width={100}
-                                 height={100}
-                                 className='w-[100px] h-[100px]'
-                              />
-                              Chưa có sản phẩm
-                           </div> */}
+                           {cartData?.length === 0 && (
+                              <div className='flex flex-col justify-center items-center gap-3'>
+                                 <Image
+                                    src={'https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'}
+                                    alt='no-product'
+                                    width={100}
+                                    height={100}
+                                    className='w-[100px] h-[100px]'
+                                 />
+                                 Chưa có sản phẩm
+                              </div>
+                           )}
                            <p className='p-3'>Sản phẩm mới thêm</p>
-                           <DropdownMenuItem className='flex items-center gap-2'>
-                              <Image
-                                 src={'https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'}
-                                 alt=''
-                                 width={40}
-                                 height={40}
-                                 className='aspect-square w-10 h-10 flex-shrink-0'
-                              />
-                              <h3 className='truncate'>Điện thoại Apple Iphone 12 64GB - Hàng chính hãng VNA</h3>
-                              <span className='text-secondaryColor'>{formatCurrency(2000000)}</span>
-                           </DropdownMenuItem>
+                           {cartData?.length > 0 &&
+                              cartData.slice(0, 5)?.map((cart) => (
+                                 <Link
+                                    href={`/${generateNameId({ name: cart.productName, id: cart.productId })}`}
+                                    key={cart.id}
+                                 >
+                                    <DropdownMenuItem className='flex items-center gap-2 cursor-pointer'>
+                                       <Image
+                                          src={'/no-product.png'}
+                                          alt={cart.productName}
+                                          width={40}
+                                          height={40}
+                                          className='aspect-square w-10 h-10 flex-shrink-0'
+                                       />
+                                       <h3 className='truncate font-semibold'>{cart.productName}</h3>
+                                       <span className='text-secondaryColor'>{formatCurrency(cart.price)}</span>
+                                       <span className='ml-auto'>x{cart.quantity}</span>
+                                    </DropdownMenuItem>
+                                 </Link>
+                              ))}
                            <div className='flex items-center justify-between p-3'>
-                              <span>Thêm hàng vào giỏ</span>
+                              <span>{cartData.length > 5 && cartData.slice(5).length} Thêm hàng vào giỏ</span>
                               <Link
                                  href={'/cart'}
                                  className='px-5 py-2 bg-secondaryColor text-white button-primary rounded-sm'

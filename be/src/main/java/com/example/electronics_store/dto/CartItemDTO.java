@@ -21,4 +21,5 @@ public class CartItemDTO {
     private Float totalPrice;
     private LocalDateTime createAt;
     private Integer stock;
+    private Boolean selected;
 }

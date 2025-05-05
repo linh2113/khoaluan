@@ -60,36 +60,37 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO createOrder(Integer userId, OrderCreateDTO orderCreateDTO) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         Cart cart = cartRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Cart is empty"));
-        
-        List<CartItem> cartItems = cartItemRepository.findByCart(cart);
-        if (cartItems.isEmpty()) {
-            throw new RuntimeException("Cart is empty");
+
+        // Lấy các sản phẩm đã được chọn
+        List<CartItem> selectedCartItems = cartItemRepository.findByCartAndSelected(cart, true);
+        if (selectedCartItems.isEmpty()) {
+            throw new RuntimeException("No items selected for checkout");
         }
-        
+
         // Check if all products are in stock
-        for (CartItem cartItem : cartItems) {
+        for (CartItem cartItem : selectedCartItems) {
             Product product = cartItem.getProduct();
             if (product.getStock() < cartItem.getQuantity()) {
                 throw new RuntimeException("Not enough stock for product: " + product.getName());
             }
         }
-        
+
         // Get shipping method
         ShippingMethod shippingMethod = shippingMethodRepository.findById(orderCreateDTO.getShippingMethodId())
                 .orElseThrow(() -> new RuntimeException("Shipping method not found"));
-        
+
         // Get payment method
         PaymentMethod paymentMethod = paymentMethodRepository.findById(orderCreateDTO.getPaymentMethodId())
                 .orElseThrow(() -> new RuntimeException("Payment method not found"));
-        
+
         // Calculate total price
-        Float totalPrice = cartItems.stream()
+        Float totalPrice = selectedCartItems.stream()
                 .map(item -> item.getPrice() * item.getQuantity())
                 .reduce(0f, Float::sum);
-        
+
         // Apply discount if provided
         if (orderCreateDTO.getDiscountCode() != null && !orderCreateDTO.getDiscountCode().isEmpty()) {
             if (discountService.isDiscountValid(orderCreateDTO.getDiscountCode())) {
@@ -100,7 +101,7 @@ public class OrderServiceImpl implements OrderService {
                 throw new RuntimeException("Invalid or expired discount code");
             }
         }
-        
+
         // Create order
         Order order = new Order();
         order.setUser(user);
@@ -112,31 +113,30 @@ public class OrderServiceImpl implements OrderService {
         order.setPaymentMethod(paymentMethod);
         order.setPaymentStatus("Pending");
         order.setOrderStatus(0); // 0: Pending, 1: Processing, 2: Shipped, 3: Delivered, 4: Completed, 5: Cancelled
-        
+
         Order savedOrder = orderRepository.save(order);
-        
+
         // Create order details
         List<OrderDetail> orderDetails = new ArrayList<>();
-        for (CartItem cartItem : cartItems) {
+        List<Integer> cartItemIds = new ArrayList<>();
+        for (CartItem cartItem : selectedCartItems) {
             OrderDetail orderDetail = new OrderDetail();
             orderDetail.setOrder(savedOrder);
             orderDetail.setProduct(cartItem.getProduct());
             orderDetail.setQuantity(cartItem.getQuantity());
             orderDetail.setReviewStatus(false);
-            
+
             orderDetails.add(orderDetail);
-            
+
             // Update product stock
             Product product = cartItem.getProduct();
             product.setStock(product.getStock() - cartItem.getQuantity());
             productRepository.save(product);
+
+            cartItemIds.add(cartItem.getId());
         }
-        
         orderDetailRepository.saveAll(orderDetails);
-        
-        // Clear cart
-        cartService.clearCart(userId);
-        
+        cartItemRepository.deleteAllByIds(cartItemIds);
         return mapOrderToDTO(savedOrder);
     }
 

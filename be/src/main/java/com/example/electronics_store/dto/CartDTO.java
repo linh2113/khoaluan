@@ -19,4 +19,6 @@ public class CartDTO {
     private List<CartItemDTO> items;
     private Float totalPrice;
     private Integer totalItems;
+    private Float selectedTotalPrice;
+    private Integer selectedTotalItems;
 }

@@ -11,13 +11,13 @@ import com.example.electronics_store.repository.CartRepository;
 import com.example.electronics_store.repository.ProductRepository;
 import com.example.electronics_store.repository.UserRepository;
 import com.example.electronics_store.service.CartService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,7 +27,8 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    
+    @PersistenceContext
+    private EntityManager entityManager;
     @Autowired
     public CartServiceImpl(
             CartRepository cartRepository,
@@ -90,6 +91,7 @@ public class CartServiceImpl implements CartService {
             cartItem.setCart(cart);
             cartItem.setProduct(product);
             cartItem.setQuantity(quantity);
+            cartItem.setSelected(false);
             Float price = product.getDiscount() != null
                     ? (float) (product.getPrice() * (1 - product.getDiscount().getValue() / 100))
                     : product.getPrice().floatValue();
@@ -162,7 +164,7 @@ public class CartServiceImpl implements CartService {
         // Delete the cart item
         cartItemRepository.delete(cartItem);
         // Save the updated cart
-        cart = cartRepository.save(cart);
+        cartRepository.save(cart);
         // Refresh cart data
         cart = cartRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -199,7 +201,39 @@ public class CartServiceImpl implements CartService {
         
         return cartRepository.findByUser(user);
     }
-    
+
+    @Override
+    @Transactional
+    public CartDTO updateSelectedCartItems(Integer userId, List<Integer> selectedCartItemIds) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        if (selectedCartItemIds.isEmpty()) {
+            cartItemRepository.deselectOtherCartItems(Collections.emptyList(), cart.getId());
+        } else {
+            // Chọn các item trong danh sách
+            cartItemRepository.selectCartItems(selectedCartItemIds, cart.getId());
+            // Bỏ chọn các item không nằm trong danh sách
+            cartItemRepository.deselectOtherCartItems(selectedCartItemIds, cart.getId());
+        }
+
+        // Flush để đảm bảo các thay đổi được ghi vào database
+        entityManager.flush();
+
+        // Refresh đối tượng cart để cập nhật dữ liệu từ database
+        entityManager.refresh(cart);
+
+        // Refresh các cartItems
+        for (CartItem item : cart.getCartItems()) {
+            entityManager.refresh(item);
+        }
+
+        return mapCartToDTO(cart);
+    }
+
     // Helper methods
     private CartDTO mapCartToDTO(Cart cart) {
         // Đảm bảo cartItems không null
@@ -220,6 +254,18 @@ public class CartServiceImpl implements CartService {
                 .map(item -> item.getPrice() * item.getQuantity())
                 .reduce(0f, Float::sum);
 
+        // Tính tổng số lượng sản phẩm đã chọn
+        Integer selectedTotalItems = cartItems.stream()
+                .filter(CartItem::getSelected)
+                .mapToInt(CartItem::getQuantity)
+                .sum();
+
+        // Tính tổng tiền của các sản phẩm đã chọn
+        Float selectedTotalPrice = cartItems.stream()
+                .filter(CartItem::getSelected)
+                .map(item -> item.getPrice() * item.getQuantity())
+                .reduce(0f, Float::sum);
+
         return CartDTO.builder()
                 .id(cart.getId())
                 .userId(cart.getUser().getId())
@@ -227,8 +273,11 @@ public class CartServiceImpl implements CartService {
                 .items(cartItemDTOs)
                 .totalPrice(totalPrice)
                 .totalItems(totalItems)
+                .selectedTotalPrice(selectedTotalPrice)
+                .selectedTotalItems(selectedTotalItems)
                 .build();
     }
+
 
     private CartItemDTO mapCartItemToDTO(CartItem cartItem) {
         // Tính totalPrice cho từng item
@@ -244,6 +293,7 @@ public class CartServiceImpl implements CartService {
                 .totalPrice(totalPrice)
                 .createAt(cartItem.getCreateAt())
                 .stock(cartItem.getProduct().getStock())
+                .selected(cartItem.getSelected())
                 .build();
     }
 }

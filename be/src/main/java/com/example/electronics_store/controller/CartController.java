@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/cart")
 @CrossOrigin(origins = "*")
@@ -109,6 +111,18 @@ public class CartController {
             return ResponseEntity.ok(ApiResponse.success(total));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    @PutMapping("/select-items")
+    public ResponseEntity<ApiResponse<?>> selectCartItems(
+            @RequestParam Integer userId,
+            @RequestBody List<Integer> cartItemIds) {
+        try {
+            CartDTO cart = cartService.updateSelectedCartItems(userId, cartItemIds);
+            return ResponseEntity.ok(ApiResponse.success("Cart items selection updated", cart));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
         }
     }

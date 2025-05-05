@@ -40,7 +40,20 @@ export interface ProductType {
    averageRating: number
    reviewCount: number
    imageUrls: any[]
-   productDetail: any
+   productDetail: {
+      id: number
+      productId: number
+      processor: string
+      ram: string
+      storage: string
+      display: string
+      graphics: string
+      battery: string
+      camera: string
+      operatingSystem: string
+      connectivity: string
+      otherFeatures: string
+   }
 }
 
 export interface Pageable {

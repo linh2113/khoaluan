@@ -11,22 +11,17 @@ import { Skeleton } from '@/components/ui/skeleton'
 import ProductFilter from '@/components/product-filter'
 import { ShoppingBag, Star, TrendingUp, Zap } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
-
-// Giả lập dữ liệu danh mục và thương hiệu (thay thế bằng API thực tế sau)
-const mockCategories = [
-   { id: 1, name: 'Laptop' },
-   { id: 2, name: 'Điện thoại' },
-   { id: 3, name: 'Máy tính bảng' },
-   { id: 4, name: 'Phụ kiện' }
-]
+import { useGetAllCategories } from '@/queries/useCategory'
 
 const mockBrands = ['Apple', 'Samsung', 'Xiaomi', 'Dell', 'HP', 'Asus', 'Lenovo']
 
 export default function Home() {
+   const getAllCategories = useGetAllCategories()
+   const categories = getAllCategories.data?.data.data || []
    const [currentPage, setCurrentPage] = useState<number>(1)
    const [queryParams, setQueryParams] = useState<GetProductQueryParamsType>({
       page: currentPage - 1,
-      size: 12,
+      size: 3,
       sortBy: 'id',
       sortDir: 'desc'
    })
@@ -137,12 +132,12 @@ export default function Home() {
          {/* Layout chính: Filter bên trái, Sản phẩm bên phải */}
          <div className='flex flex-col lg:flex-row gap-6'>
             {/* Bộ lọc sản phẩm - Cột bên trái */}
-            <div className='w-full lg:w-1/4 lg:sticky lg:top-4 lg:self-start'>
+            <div className='w-full lg:w-1/4 lg:sticky lg:top-4 lg:self-start '>
                <ProductFilter
                   initialFilters={queryParams}
                   onFilterChange={handleFilterChange}
                   brands={mockBrands}
-                  categories={mockCategories}
+                  categories={categories}
                   maxPriceValue={50000000}
                />
             </div>

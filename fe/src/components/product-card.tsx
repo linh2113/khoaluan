@@ -22,7 +22,7 @@ export default function ProductCard({ product }: ProductCardProps) {
          : 0
 
    return (
-      <Card className='overflow-hidden transition-all hover:shadow-lg group border border-border/40'>
+      <Card className='overflow-hidden bg-secondary transition-all hover:shadow-lg group border border-border/40'>
          <Link href={productUrl}>
             <div className='h-52 overflow-hidden relative'>
                {discountPercentage > 0 && (
@@ -37,7 +37,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                   <Badge className='absolute top-2 right-2 z-10 bg-gray-500 hover:bg-gray-500'>Hết hàng</Badge>
                )}
                <Image
-                  src={'/placeholder.svg'}
+                  src={'https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'}
                   alt={product.name || 'Product image'}
                   width={300}
                   height={300}

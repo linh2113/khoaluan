@@ -15,7 +15,7 @@ interface ProductFilterProps {
    initialFilters: GetProductQueryParamsType
    onFilterChange: (filters: GetProductQueryParamsType) => void
    brands: string[]
-   categories: { id: number; name: string }[]
+   categories: { id: number; categoryName: string; status: number }[]
    maxPriceValue?: number
 }
 
@@ -68,7 +68,7 @@ export default function ProductFilter({
    }
 
    return (
-      <div className='bg-card rounded-xl shadow-md overflow-hidden border border-border/40'>
+      <div className='bg-secondary rounded-xl shadow-md overflow-hidden border border-border/40'>
          <div className='flex items-center justify-between p-4 bg-muted/30'>
             <div className='flex items-center gap-2'>
                <SlidersHorizontal className='h-5 w-5 text-primaryColor' />
@@ -118,7 +118,7 @@ export default function ProductFilter({
                            <SelectItem value='all'>Tất cả danh mục</SelectItem>
                            {categories.map((category) => (
                               <SelectItem key={category.id} value={category.id.toString()}>
-                                 {category.name}
+                                 {category.categoryName}
                               </SelectItem>
                            ))}
                         </SelectContent>

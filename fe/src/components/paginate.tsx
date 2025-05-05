@@ -13,7 +13,7 @@ interface Props {
 export default function Paginate({ currentPage, handlePageClick, totalPages, setCurrentPage }: Props) {
    const [value, setValue] = useState<number>(1)
    const [openPaginate, setOpenPaginate] = useState<boolean>(false)
-   //di chuyển đến trang đã nhập
+   // Di chuyển đến trang đã nhập
    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = parseInt(e.target.value)
       if (newValue >= 1 && newValue <= totalPages) {

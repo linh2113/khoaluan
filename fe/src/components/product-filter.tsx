@@ -82,12 +82,9 @@ export default function ProductFilter({
 
          <Collapsible open={isOpen} onOpenChange={setIsOpen}>
             <CollapsibleContent>
-               <div className='p-4 pt-2 space-y-5'>
+               <div className='p-4 pt-2 space-y-3'>
                   {/* Tìm kiếm theo từ khóa */}
                   <div>
-                     <Label htmlFor='keyword' className='text-sm font-medium mb-1.5 block'>
-                        Tìm kiếm sản phẩm
-                     </Label>
                      <div className='relative'>
                         <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                         <Input
@@ -102,9 +99,6 @@ export default function ProductFilter({
 
                   {/* Lọc theo danh mục */}
                   <div>
-                     <Label htmlFor='category' className='text-sm font-medium mb-1.5 block'>
-                        Danh mục
-                     </Label>
                      <Select
                         value={filters.categoryId?.toString() || 'all'}
                         onValueChange={(value) =>
@@ -127,9 +121,6 @@ export default function ProductFilter({
 
                   {/* Lọc theo thương hiệu */}
                   <div>
-                     <Label htmlFor='brand' className='text-sm font-medium mb-1.5 block'>
-                        Thương hiệu
-                     </Label>
                      <Select
                         value={filters.brand || 'all'}
                         onValueChange={(value) => handleFilterChange('brand', value === 'all' ? undefined : value)}
@@ -150,9 +141,6 @@ export default function ProductFilter({
 
                   {/* Loại sản phẩm */}
                   <div>
-                     <Label htmlFor='filterType' className='text-sm font-medium mb-1.5 block'>
-                        Loại sản phẩm
-                     </Label>
                      <Select
                         value={filters.filterType || 'ALL'}
                         onValueChange={(value) =>
@@ -174,9 +162,6 @@ export default function ProductFilter({
 
                   {/* Sắp xếp theo */}
                   <div>
-                     <Label htmlFor='sort' className='text-sm font-medium mb-1.5 block'>
-                        Sắp xếp theo
-                     </Label>
                      <Select
                         value={`${filters.sortBy || 'id'}-${filters.sortDir || 'desc'}`}
                         onValueChange={(value) => {
@@ -198,34 +183,31 @@ export default function ProductFilter({
                   </div>
 
                   {/* Khoảng giá */}
-                  <div>
-                     <Label className='text-sm font-medium mb-1.5 block'>Khoảng giá</Label>
-                     <div className='px-2 py-4'>
-                        <Slider
-                           defaultValue={[0, maxPriceValue]}
-                           max={maxPriceValue}
-                           step={100000}
-                           value={[priceRange[0], priceRange[1]]}
-                           onValueChange={handlePriceChange}
-                           className='mb-2'
-                        />
-                        <div className='flex justify-between text-sm text-muted-foreground'>
-                           <span>
-                              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
-                                 priceRange[0]
-                              )}
-                           </span>
-                           <span>
-                              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
-                                 priceRange[1]
-                              )}
-                           </span>
-                        </div>
+                  <div className='px-2 pt-2'>
+                     <Slider
+                        defaultValue={[0, maxPriceValue]}
+                        max={maxPriceValue}
+                        step={100000}
+                        value={[priceRange[0], priceRange[1]]}
+                        onValueChange={handlePriceChange}
+                        className='mb-2'
+                     />
+                     <div className='flex justify-between text-sm text-muted-foreground'>
+                        <span>
+                           {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                              priceRange[0]
+                           )}
+                        </span>
+                        <span>
+                           {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                              priceRange[1]
+                           )}
+                        </span>
                      </div>
                   </div>
 
                   {/* Các tùy chọn bổ sung */}
-                  <div className='space-y-3'>
+                  <div className='space-y-2'>
                      <div className='flex items-center space-x-2 bg-muted/30 p-3 rounded-lg'>
                         <Switch
                            id='isDiscount'

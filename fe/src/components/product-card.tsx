@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Heart, ShoppingCart, Star } from 'lucide-react'
+import { Heart, ShoppingCart, Star, Scale } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useAddToCart } from '@/queries/useCart'
 import { useAppContext } from '@/context/app.context'
@@ -14,9 +14,11 @@ import { toast } from 'react-toastify'
 
 interface ProductCardProps {
    product: ProductType
+   onSelectForCompare?: (product: ProductType) => void
+   isSelectedForCompare?: boolean
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, onSelectForCompare, isSelectedForCompare = false }: ProductCardProps) {
    const { userId } = useAppContext()
    const addToCart = useAddToCart()
    const addToWishlist = useAddToWishlist()
@@ -117,7 +119,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                )}
             </div>
          </CardContent>
-         <CardFooter className='p-4 pt-0'>
+         <CardFooter className='p-4 pt-0 flex flex-col gap-2'>
             <Button
                onClick={() => addToCart.mutate({ userId: userId!, productId: product.id, quantity: 1 })}
                variant='outline'
@@ -127,6 +129,18 @@ export default function ProductCard({ product }: ProductCardProps) {
                <ShoppingCart className='h-4 w-4 mr-2' />
                Thêm vào giỏ
             </Button>
+
+            {onSelectForCompare && (
+               <Button
+                  onClick={() => onSelectForCompare(product)}
+                  variant={isSelectedForCompare ? 'default' : 'outline'}
+                  size='sm'
+                  className={`w-full ${isSelectedForCompare ? 'bg-primaryColor' : 'border-gray-300'}`}
+               >
+                  <Scale className='h-4 w-4 mr-2' />
+                  {isSelectedForCompare ? 'Đã chọn' : 'So sánh'}
+               </Button>
+            )}
          </CardFooter>
       </Card>
    )

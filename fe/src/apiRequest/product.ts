@@ -7,3 +7,6 @@ export const getProduct = (id: number) => http.get<ResponseData<ProductType>>(`/
 
 export const getAllProducts = (queryParams: GetProductQueryParamsType) =>
    http.get<GetAllProductType>('/products?' + queryString.stringify(queryParams))
+
+export const compareProducts = (productIds: number[]) =>
+   http.get<ResponseData<ProductType[]>>(`/products/compare?${productIds.map((id) => `ids=${id}`).join('&')}`)

@@ -4,27 +4,32 @@ import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import Image from 'next/image'
 import { useGetAllProducts } from '@/queries/useProduct'
-import { GetProductQueryParamsType } from '@/types/product.type'
+import { GetProductQueryParamsType, ProductType } from '@/types/product.type'
 import Paginate from '@/components/paginate'
 import ProductCard from '@/components/product-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import ProductFilter from '@/components/product-filter'
-import { ShoppingBag, Star, TrendingUp, Zap } from 'lucide-react'
+import { ShoppingBag, Star, TrendingUp, Zap, Scale } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { useGetAllCategories } from '@/queries/useCategory'
+import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
+import { toast } from 'react-toastify'
 
 const mockBrands = ['Apple', 'Samsung', 'Xiaomi', 'Dell', 'HP', 'Asus', 'Lenovo']
 
 export default function Home() {
+   const router = useRouter()
    const getAllCategories = useGetAllCategories()
    const categories = getAllCategories.data?.data.data || []
    const [currentPage, setCurrentPage] = useState<number>(1)
    const [queryParams, setQueryParams] = useState<GetProductQueryParamsType>({
       page: currentPage - 1,
-      size: 3,
+      size: 6,
       sortBy: 'id',
       sortDir: 'desc'
    })
+   const [selectedProducts, setSelectedProducts] = useState<ProductType[]>([])
 
    const { data, isLoading } = useGetAllProducts(queryParams)
    const products = data?.data.data.content || []
@@ -65,6 +70,41 @@ export default function Home() {
          default:
             return null
       }
+   }
+
+   // Xử lý chọn sản phẩm để so sánh
+   const handleSelectProductForCompare = (product: ProductType) => {
+      // Kiểm tra nếu sản phẩm đã được chọn
+      if (selectedProducts.some((p) => p.id === product.id)) {
+         setSelectedProducts((prev) => prev.filter((p) => p.id !== product.id))
+         return
+      }
+
+      // Kiểm tra số lượng sản phẩm đã chọn
+      if (selectedProducts.length >= 4) {
+         toast.warning('Chỉ có thể so sánh tối đa 4 sản phẩm')
+         return
+      }
+
+      // Kiểm tra danh mục sản phẩm
+      if (selectedProducts.length > 0 && selectedProducts[0].categoryId !== product.categoryId) {
+         toast.warning('Chỉ có thể so sánh các sản phẩm cùng danh mục')
+         return
+      }
+
+      setSelectedProducts((prev) => [...prev, product])
+   }
+
+   // Xử lý so sánh sản phẩm
+   const handleCompareProducts = () => {
+      if (selectedProducts.length < 2) {
+         toast.warning('Vui lòng chọn ít nhất 2 sản phẩm để so sánh')
+         return
+      }
+
+      // Chuyển đến trang so sánh với danh sách ID sản phẩm
+      const productIds = selectedProducts.map((p) => p.id).join(',')
+      router.push(`/compare?ids=${productIds}`)
    }
 
    return (
@@ -176,7 +216,12 @@ export default function Home() {
                      {products.length > 0 ? (
                         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
                            {products.map((product) => (
-                              <ProductCard key={product.id} product={product} />
+                              <ProductCard
+                                 key={product.id}
+                                 product={product}
+                                 onSelectForCompare={handleSelectProductForCompare}
+                                 isSelectedForCompare={selectedProducts.some((p) => p.id === product.id)}
+                              />
                            ))}
                         </div>
                      ) : (
@@ -208,6 +253,54 @@ export default function Home() {
                )}
             </div>
          </div>
+
+         {/* Hiển thị thanh so sánh sản phẩm khi có sản phẩm được chọn */}
+         {selectedProducts.length > 0 && (
+            <div className='fixed bottom-0 left-0 right-0 bg-primary-foreground shadow-lg border-t p-4 z-50'>
+               <div className='container mx-auto flex items-center justify-between'>
+                  <div className='flex items-center gap-4'>
+                     <Scale className='h-5 w-5 text-primaryColor' />
+                     <span className='font-medium'>So sánh sản phẩm ({selectedProducts.length}/4)</span>
+                     <div className='flex items-center gap-5'>
+                        {selectedProducts.map((product) => (
+                           <div
+                              key={product.id}
+                              className='relative aspect-square w-20
+                           '
+                           >
+                              <Image
+                                 src={product.imageUrls?.[0] || '/placeholder.svg'}
+                                 alt={product.name}
+                                 width={40}
+                                 height={40}
+                                 className='rounded border'
+                              />
+                              <button
+                                 onClick={() => setSelectedProducts((prev) => prev.filter((p) => p.id !== product.id))}
+                                 className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs'
+                              >
+                                 ×
+                              </button>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                     <Button variant='outline' size='sm' onClick={() => setSelectedProducts([])}>
+                        Xóa tất cả
+                     </Button>
+                     <Button
+                        variant='default'
+                        size='sm'
+                        onClick={handleCompareProducts}
+                        disabled={selectedProducts.length < 2}
+                     >
+                        So sánh ngay
+                     </Button>
+                  </div>
+               </div>
+            </div>
+         )}
       </div>
    )
 }

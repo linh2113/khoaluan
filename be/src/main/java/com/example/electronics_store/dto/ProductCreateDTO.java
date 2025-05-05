@@ -17,11 +17,11 @@ public class ProductCreateDTO {
     private Integer categoryId;
     
     private Integer discountId;
-    
+
+    private Integer brandId;
+
     @NotBlank(message = "Product name is required")
     private String name;
-    
-    private String brand;
     
     @NotNull(message = "Price is required")
     @Min(value = 0, message = "Price must be greater than or equal to 0")

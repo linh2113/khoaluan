@@ -1,5 +1,6 @@
 package com.example.electronics_store.repository;
 
+import com.example.electronics_store.model.Brand;
 import com.example.electronics_store.model.Category;
 import com.example.electronics_store.model.Product;
 import org.springframework.data.domain.Page;
@@ -32,9 +33,8 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     
     @Query("SELECT p FROM Product p WHERE p.stock < 10 AND p.status = true")
     List<Product> findLowStockProducts();
-    
     @Query("SELECT p FROM Product p WHERE p.brand = :brand AND p.status = true")
-    List<Product> findByBrand(@Param("brand") String brand);
+    List<Product> findByBrandAndStatusTrue(@Param("brand")Brand brand);
 
     @Query(value = "SELECT p.* FROM products p " +
             "JOIN (SELECT id_product, COUNT(*) as order_count FROM order_details GROUP BY id_product ORDER BY order_count DESC LIMIT 10) od " +

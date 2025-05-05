@@ -25,8 +25,10 @@ public class Product {
     private Discount discount;
     
     private String name;
-    
-    private String brand;
+
+    @ManyToOne
+    @JoinColumn(name = "id_brand")
+    private Brand brand;
     
     private String image;
     

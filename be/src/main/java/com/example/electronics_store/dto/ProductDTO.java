@@ -18,8 +18,9 @@ public class ProductDTO {
     private String categoryName;
     private Integer discountId;
     private String discountName;
+    private Integer brandId;
+    private String brandName;
     private String name;
-    private String brand;
     private String image;
     private Integer price;
     private Integer discountedPrice;

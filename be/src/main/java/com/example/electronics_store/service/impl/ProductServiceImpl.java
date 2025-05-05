@@ -34,6 +34,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductDetailRepository productDetailRepository;
     private final ProductImageRepository productImageRepository;
     private final RatingRepository ratingRepository;
+    private final BrandRepository brandRepository;
     @Autowired
     private Cloudinary cloudinary;
     @Value("${app.upload.dir:${user.home}/techstore/uploads}")
@@ -46,13 +47,14 @@ public class ProductServiceImpl implements ProductService {
             DiscountRepository discountRepository,
             ProductDetailRepository productDetailRepository,
             ProductImageRepository productImageRepository,
-            RatingRepository ratingRepository) {
+            RatingRepository ratingRepository, BrandRepository brandRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.discountRepository = discountRepository;
         this.productDetailRepository = productDetailRepository;
         this.productImageRepository = productImageRepository;
         this.ratingRepository = ratingRepository;
+        this.brandRepository = brandRepository;
     }
 
     @Override
@@ -68,13 +70,18 @@ public class ProductServiceImpl implements ProductService {
             discount = discountRepository.findById(productCreateDTO.getDiscountId())
                     .orElseThrow(() -> new RuntimeException("Discount not found"));
         }
-
+        // Get brand if provided
+        Brand brand = null;
+        if (productCreateDTO.getBrandId() != null) {
+            brand = brandRepository.findById(productCreateDTO.getBrandId())
+                    .orElseThrow(() -> new RuntimeException("Brand not found"));
+        }
         // Create product
         Product product = new Product();
         product.setCategory(category);
         product.setDiscount(discount);
         product.setName(productCreateDTO.getName());
-        product.setBrand(productCreateDTO.getBrand());
+        product.setBrand(brand);
         product.setPrice(productCreateDTO.getPrice());
         product.setDescription(productCreateDTO.getDescription());
         product.setWarranty(productCreateDTO.getWarranty());
@@ -136,8 +143,11 @@ public class ProductServiceImpl implements ProductService {
         if (productUpdateDTO.getName() != null) {
             product.setName(productUpdateDTO.getName());
         }
-        if (productUpdateDTO.getBrand() != null) {
-            product.setBrand(productUpdateDTO.getBrand());
+        // Update brand if provided
+        if (productUpdateDTO.getBrandId() != null) {
+            Brand brand = brandRepository.findById(productUpdateDTO.getBrandId())
+                    .orElseThrow(() -> new RuntimeException("Brand not found"));
+            product.setBrand(brand);
         }
         if (productUpdateDTO.getPrice() != null) {
             product.setPrice(productUpdateDTO.getPrice());
@@ -267,7 +277,7 @@ public class ProductServiceImpl implements ProductService {
 
             // Lọc theo brand
             if (StringUtils.hasText(filter.getBrand())) {
-                predicates.add(cb.equal(root.get("brand"), filter.getBrand()));
+                predicates.add(cb.equal(root.get("brand").get("brandName"), filter.getBrand()));
             }
 
             // Lọc theo khoảng giá
@@ -353,8 +363,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductDTO> getProductsByBrand(String brand) {
-        return productRepository.findByBrand(brand).stream()
+    public List<ProductDTO> getProductsByBrand(String brandName) {
+        Brand brand = brandRepository.findByBrandName(brandName)
+                .orElseThrow(() -> new RuntimeException("Brand not found: " + brandName));
+
+        // Tìm sản phẩm dựa trên Brand entity
+        return productRepository.findByBrandAndStatusTrue(brand).stream()
                 .map(this::mapProductToDTO)
                 .collect(Collectors.toList());
     }
@@ -545,10 +559,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<String> getAllBrands() {
-        return productRepository.findAll().stream()
-                .map(Product::getBrand)
-                .filter(Objects::nonNull)
-                .distinct()
+        return brandRepository.findAllActiveBrands().stream()
+                .map(Brand::getBrandName)
                 .collect(Collectors.toList());
     }
 
@@ -578,8 +590,9 @@ public class ProductServiceImpl implements ProductService {
         dto.setCategoryName(product.getCategory() != null ? product.getCategory().getCategoryName() : null);
         dto.setDiscountId(product.getDiscount() != null ? product.getDiscount().getId() : null);
         dto.setDiscountName(product.getDiscount() != null ? product.getDiscount().getDiscountName() : null);
+        dto.setBrandId(product.getBrand() != null ? product.getBrand().getId() : null);
+        dto.setBrandName(product.getBrand() != null ? product.getBrand().getBrandName() : null);
         dto.setName(product.getName());
-        dto.setBrand(product.getBrand());
         dto.setImage(product.getImage());
         dto.setPrice(product.getPrice());
         

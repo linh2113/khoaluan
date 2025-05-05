@@ -29,7 +29,9 @@ public class AdminController {
     private final DiscountService discountService;
     private final RatingService ratingService;
     private final StatisticsService statisticsService;
-
+    private final BrandService brandService;
+    private final ShippingMethodService shippingMethodService;
+    private final PaymentMethodService paymentMethodService;
     @Autowired
     public AdminController(
             UserService userService,
@@ -38,7 +40,7 @@ public class AdminController {
             OrderService orderService,
             DiscountService discountService,
             RatingService ratingService,
-            StatisticsService statisticsService) {
+            StatisticsService statisticsService, BrandService brandService, ShippingMethodService shippingMethodService, PaymentMethodService paymentMethodService) {
         this.userService = userService;
         this.productService = productService;
         this.categoryService = categoryService;
@@ -46,6 +48,9 @@ public class AdminController {
         this.discountService = discountService;
         this.ratingService = ratingService;
         this.statisticsService = statisticsService;
+        this.brandService = brandService;
+        this.shippingMethodService = shippingMethodService;
+        this.paymentMethodService = paymentMethodService;
     }
 
     // User Management
@@ -401,4 +406,161 @@ public class AdminController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
+    @GetMapping("/brands")
+    public ResponseEntity<ApiResponse<?>> getAllBrands(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        try {
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() :
+                    Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<BrandDTO> brands = brandService.getAllBrands(pageable);
+
+            return ResponseEntity.ok(ApiResponse.success(brands));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    @PostMapping("/brands")
+    public ResponseEntity<ApiResponse<?>> createBrand(@Valid @RequestBody BrandDTO brandDTO) {
+        try {
+            BrandDTO createdBrand = brandService.createBrand(brandDTO);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Brand created successfully", createdBrand));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    @PutMapping("/brands/{id}")
+    public ResponseEntity<ApiResponse<?>> updateBrand(
+            @PathVariable Integer id,
+            @Valid @RequestBody BrandDTO brandDTO) {
+        try {
+            BrandDTO updatedBrand = brandService.updateBrand(id, brandDTO);
+            return ResponseEntity.ok(ApiResponse.success("Brand updated successfully", updatedBrand));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    @GetMapping("/shipping-methods")
+    public ResponseEntity<ApiResponse<?>> getAllShippingMethods() {
+        try {
+            List<ShippingMethodDTO> shippingMethods = shippingMethodService.getAllShippingMethods();
+            return ResponseEntity.ok(ApiResponse.success(shippingMethods));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/shipping-methods/{id}")
+    public ResponseEntity<ApiResponse<?>> getShippingMethodById(@PathVariable Integer id) {
+        try {
+            ShippingMethodDTO shippingMethod = shippingMethodService.getShippingMethodById(id);
+            return ResponseEntity.ok(ApiResponse.success(shippingMethod));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/shipping-methods")
+    public ResponseEntity<ApiResponse<?>> createShippingMethod(@Valid @RequestBody ShippingMethodDTO shippingMethodDTO) {
+        try {
+            ShippingMethodDTO createdShippingMethod = shippingMethodService.createShippingMethod(shippingMethodDTO);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Shipping method created successfully", createdShippingMethod));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/shipping-methods/{id}")
+    public ResponseEntity<ApiResponse<?>> updateShippingMethod(
+            @PathVariable Integer id,
+            @Valid @RequestBody ShippingMethodDTO shippingMethodDTO) {
+        try {
+            ShippingMethodDTO updatedShippingMethod = shippingMethodService.updateShippingMethod(id, shippingMethodDTO);
+            return ResponseEntity.ok(ApiResponse.success("Shipping method updated successfully", updatedShippingMethod));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    @PutMapping("/shipping-methods/{id}/toggle-status")
+    public ResponseEntity<ApiResponse<?>> toggleShippingMethodStatus(@PathVariable Integer id) {
+        try {
+            shippingMethodService.toggleShippingMethodStatus(id);
+            return ResponseEntity.ok(ApiResponse.success("Shipping method status toggled successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    // Payment Method Management
+    @GetMapping("/payment-methods")
+    public ResponseEntity<ApiResponse<?>> getAllPaymentMethods() {
+        try {
+            List<PaymentMethodDTO> paymentMethods = paymentMethodService.getAllPaymentMethods();
+            return ResponseEntity.ok(ApiResponse.success(paymentMethods));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/payment-methods/{id}")
+    public ResponseEntity<ApiResponse<?>> getPaymentMethodById(@PathVariable Integer id) {
+        try {
+            PaymentMethodDTO paymentMethod = paymentMethodService.getPaymentMethodById(id);
+            return ResponseEntity.ok(ApiResponse.success(paymentMethod));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/payment-methods")
+    public ResponseEntity<ApiResponse<?>> createPaymentMethod(@Valid @RequestBody PaymentMethodDTO paymentMethodDTO) {
+        try {
+            PaymentMethodDTO createdPaymentMethod = paymentMethodService.createPaymentMethod(paymentMethodDTO);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Payment method created successfully", createdPaymentMethod));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/payment-methods/{id}")
+    public ResponseEntity<ApiResponse<?>> updatePaymentMethod(
+            @PathVariable Integer id,
+            @Valid @RequestBody PaymentMethodDTO paymentMethodDTO) {
+        try {
+            PaymentMethodDTO updatedPaymentMethod = paymentMethodService.updatePaymentMethod(id, paymentMethodDTO);
+            return ResponseEntity.ok(ApiResponse.success("Payment method updated successfully", updatedPaymentMethod));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    @PutMapping("/payment-methods/{id}/toggle-status")
+    public ResponseEntity<ApiResponse<?>> togglePaymentMethodStatus(@PathVariable Integer id) {
+        try {
+            paymentMethodService.togglePaymentMethodStatus(id);
+            return ResponseEntity.ok(ApiResponse.success("Payment method status toggled successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
 }

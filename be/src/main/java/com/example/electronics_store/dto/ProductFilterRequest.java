@@ -17,16 +17,11 @@ public class ProductFilterRequest {
     private Boolean isDiscount;
     private Boolean inStock;
     private FilterType filterType;
-    @Builder.Default
-    private int page = 0;
+    private int page;
+    private int size;
+    private String sortBy;
+    private String sortDir;
 
-    @Builder.Default
-    private int size = 10;
-    @Builder.Default
-    private String sortBy = "id";
-
-    @Builder.Default
-    private String sortDir = "desc";
     public enum FilterType {
         ALL,                // Tất cả sản phẩm
         TOP_SELLING,       // Sản phẩm bán chạy

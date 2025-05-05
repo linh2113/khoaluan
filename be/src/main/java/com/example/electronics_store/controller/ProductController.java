@@ -33,8 +33,36 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getAllProducts(ProductFilterRequest filter) {
+    public ResponseEntity<ApiResponse<?>> getAllProducts(
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer size,
+            @RequestParam(required = false, defaultValue = "id") String sortBy,
+            @RequestParam(required = false, defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) Integer minPrice,
+            @RequestParam(required = false) Integer maxPrice,
+            @RequestParam(required = false) Boolean isDiscount,
+            @RequestParam(required = false) Boolean inStock,
+            @RequestParam(required = false) ProductFilterRequest.FilterType filterType) {
+
         try {
+            ProductFilterRequest filter = ProductFilterRequest.builder()
+                    .page(page)
+                    .size(size)
+                    .sortBy(sortBy)
+                    .sortDir(sortDir)
+                    .keyword(keyword)
+                    .categoryId(categoryId)
+                    .brand(brand)
+                    .minPrice(minPrice)
+                    .maxPrice(maxPrice)
+                    .isDiscount(isDiscount)
+                    .inStock(inStock)
+                    .filterType(filterType)
+                    .build();
+
             Page<ProductDTO> products = productService.getAllProducts(filter);
             return ResponseEntity.ok(ApiResponse.success(products));
         } catch (Exception e) {

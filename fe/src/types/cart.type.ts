@@ -5,6 +5,8 @@ export interface Cart {
    items: CartItem[]
    totalPrice: number
    totalItems: number
+   selectedTotalPrice?: number
+   selectedTotalItems?: number
 }
 
 export interface CartItem {
@@ -16,4 +18,6 @@ export interface CartItem {
    price: number
    totalPrice: number
    createAt: string
+   stock: number
+   selected: boolean
 }

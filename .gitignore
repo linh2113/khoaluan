@@ -39,6 +39,8 @@ yarn-error.log*
 *.tsbuildinfo
 fe/next-env.d.ts
 
-
-be/logs/techstore.log
+# Ignore all log files
+be/logs/
+be/logs/*.log
+be/logs/*.gz
 be/src/main/resources/application.properties

@@ -1,4 +1,4 @@
-import { clearCart, deleteCartItem, getAllCart, updateCart } from '@/apiRequest/cart'
+import { addToCart, clearCart, deleteCartItem, getAllCart, updateCart, updateSelectedCart } from '@/apiRequest/cart'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
 
@@ -18,6 +18,37 @@ export const useUpdateCart = () => {
          queryClient.invalidateQueries({
             queryKey: ['cart']
          })
+      }
+   })
+}
+
+export const useUpdateSelectedCart = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updateSelectedCart,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['cart']
+         })
+      },
+      onError: () => {
+         toast.error('Cập nhật sản phẩm đã chọn thất bại')
+      }
+   })
+}
+
+export const useAddToCart = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: addToCart,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['cart']
+         })
+         toast.success('Thêm sản phẩm thành công')
+      },
+      onError: () => {
+         toast.error('Thêm sản phẩm thất bại')
       }
    })
 }

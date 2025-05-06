@@ -189,26 +189,28 @@ export default function Order() {
             <div className='border-b border-gray-200 pb-5 mb-5'>
                <h2 className='font-semibold text-lg mb-3'>Phương thức vận chuyển</h2>
                <div className='space-y-3'>
-                  {shippingMethods.map((method) => (
-                     <label
-                        key={method.id}
-                        className='flex items-start p-3 border rounded cursor-pointer hover:border-secondaryColor'
-                     >
-                        <input
-                           type='radio'
-                           name='shippingMethod'
-                           className='mt-1 cursor-pointer w-4 h-4 accent-secondaryColor'
-                           checked={formData.shippingMethodId === method.id}
-                           onChange={() => handleShippingMethodChange(method.id)}
-                        />
-                        <div className='ml-3'>
-                           <div className='font-medium'>{method.methodName}</div>
-                           <div className='text-sm text-gray-500'>{method.description}</div>
-                           <div className='text-sm text-gray-500'>Thời gian: {method.estimatedDays} ngày</div>
-                           <div className='text-secondaryColor'>{formatCurrency(method.baseCost)}</div>
-                        </div>
-                     </label>
-                  ))}
+                  {shippingMethods
+                     .filter((method) => method.isActive)
+                     .map((method) => (
+                        <label
+                           key={method.id}
+                           className='flex items-start p-3 border rounded cursor-pointer hover:border-secondaryColor'
+                        >
+                           <input
+                              type='radio'
+                              name='shippingMethod'
+                              className='mt-1 cursor-pointer w-4 h-4 accent-secondaryColor'
+                              checked={formData.shippingMethodId === method.id}
+                              onChange={() => handleShippingMethodChange(method.id)}
+                           />
+                           <div className='ml-3'>
+                              <div className='font-medium'>{method.methodName}</div>
+                              <div className='text-sm text-gray-500'>{method.description}</div>
+                              <div className='text-sm text-gray-500'>Thời gian: {method.estimatedDays} ngày</div>
+                              <div className='text-secondaryColor'>{formatCurrency(method.baseCost)}</div>
+                           </div>
+                        </label>
+                     ))}
                </div>
             </div>
 

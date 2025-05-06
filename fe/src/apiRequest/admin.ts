@@ -14,11 +14,11 @@ import queryString from 'query-string'
 
 // ShippingMethod
 export const getAllShippingMethod = () => http.get<ResponseData<ShippingMethodType[]>>(`/admin/shipping-methods`)
+export const createShippingMethod = (body: ShippingMethodType) => http.post(`/admin/shipping-methods`, body)
+export const updateShippingMethod = (body: ShippingMethodType) => http.put(`/admin/shipping-methods/${body.id}`, body)
 
 // PaymentMethod
 export const getAllPaymentMethod = () => http.get<ResponseData<PaymentMethodType[]>>(`/admin/payment-methods`)
-export const getPaymentMethod = (id: number) =>
-   http.get<ResponseData<PaymentMethodType>>(`/admin/payment-methods/${id}`)
 export const createPaymentMethod = (body: PaymentMethodType) => http.post(`/admin/payment-methods`, body)
 export const updatePaymentMethod = (body: PaymentMethodType) => http.put(`/admin/payment-methods/${body.id}`, body)
 

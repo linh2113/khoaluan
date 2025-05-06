@@ -2,6 +2,7 @@ import {
    createCategory,
    createPaymentMethod,
    createProduct,
+   createShippingMethod,
    deleteProductImage,
    getAllAdminProduct,
    getAllBrand,
@@ -9,11 +10,11 @@ import {
    getAllDiscount,
    getAllPaymentMethod,
    getAllShippingMethod,
-   getPaymentMethod,
    updateCategory,
    updatePaymentMethod,
    updatePrimaryImage,
    updateProduct,
+   updateShippingMethod,
    uploadProductImage
 } from '@/apiRequest/admin'
 import { GetBrandQueryParamsType } from '@/types/admin.type'
@@ -28,19 +29,42 @@ export const useGetAllShippingMethod = () => {
       queryFn: getAllShippingMethod
    })
 }
+export const useCreateShippingMethod = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: createShippingMethod,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['shippingMethod']
+         })
+         toast.success('Thêm phương thức giao hàng thành công')
+      },
+      onError: () => {
+         toast.error('Thêm phương thức giao hàng thất bại')
+      }
+   })
+}
+export const useUpdateShippingMethod = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updateShippingMethod,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['shippingMethod']
+         })
+         toast.success('Cập nhật phương thức giao hàng thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật phương thức giao hàng thất bại')
+      }
+   })
+}
 
 // Payment Method
 export const useGetAllPaymentMethod = () => {
    return useQuery({
       queryKey: ['paymentMethod'],
       queryFn: getAllPaymentMethod
-   })
-}
-export const useGetPaymentMethod = (id: number) => {
-   return useQuery({
-      queryKey: ['paymentMethod', id],
-      queryFn: () => getPaymentMethod(id),
-      enabled: !!id
    })
 }
 export const useCreatePaymentMethod = () => {

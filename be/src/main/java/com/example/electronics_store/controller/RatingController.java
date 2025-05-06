@@ -2,6 +2,7 @@ package com.example.electronics_store.controller;
 
 import com.example.electronics_store.dto.ApiResponse;
 import com.example.electronics_store.dto.RatingDTO;
+import com.example.electronics_store.dto.ReplyDTO;
 import com.example.electronics_store.service.RatingService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,18 +39,18 @@ public class RatingController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> updateRating(
-            @PathVariable Integer id,
-            @Valid @RequestBody RatingDTO ratingDTO) {
-        try {
-            RatingDTO rating = ratingService.updateRating(id, ratingDTO);
-            return ResponseEntity.ok(ApiResponse.success("Rating updated successfully", rating));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
+//    @PutMapping("/{id}")
+//    public ResponseEntity<ApiResponse<?>> updateRating(
+//            @PathVariable Integer id,
+//            @Valid @RequestBody RatingDTO ratingDTO) {
+//        try {
+//            RatingDTO rating = ratingService.updateRating(id, ratingDTO);
+//            return ResponseEntity.ok(ApiResponse.success("Rating updated successfully", rating));
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body(ApiResponse.error(e.getMessage()));
+//        }
+//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> getRatingById(@PathVariable Integer id) {
@@ -88,9 +89,9 @@ public class RatingController {
     public ResponseEntity<ApiResponse<?>> replyToRating(
             @RequestParam Integer userId,
             @RequestParam Integer parentRatingId,
-            @Valid @RequestBody RatingDTO ratingDTO) {
+            @Valid @RequestBody ReplyDTO replyDTO) {
         try {
-            RatingDTO reply = ratingService.replyToRating(userId, parentRatingId, ratingDTO);
+            RatingDTO reply = ratingService.replyToRating(userId, parentRatingId, replyDTO.getComment());
             return ResponseEntity.ok(ApiResponse.success("Reply added successfully", reply));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

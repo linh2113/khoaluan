@@ -1,4 +1,5 @@
 import {
+   createBrand,
    createCategory,
    createPaymentMethod,
    createProduct,
@@ -10,6 +11,7 @@ import {
    getAllDiscount,
    getAllPaymentMethod,
    getAllShippingMethod,
+   updateBrand,
    updateCategory,
    updatePaymentMethod,
    updatePrimaryImage,
@@ -102,6 +104,37 @@ export const useGetAllBrand = (queryParams: GetBrandQueryParamsType) => {
    return useQuery({
       queryKey: ['brand', queryParams],
       queryFn: () => getAllBrand(queryParams)
+   })
+}
+export const useCreateBrand = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: createBrand,
+
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['brand']
+         })
+         toast.success('Thêm thương hiệu thành công')
+      },
+      onError: () => {
+         toast.error('Thêm thương hiệu thất bại')
+      }
+   })
+}
+export const useUpdateBrand = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updateBrand,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['brand']
+         })
+         toast.success('Cập nhật thương hiệu thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật thương hiệu thất bại')
+      }
    })
 }
 

@@ -1,5 +1,6 @@
 import http from '@/lib/http'
 import {
+   BrandType,
    CategoryType,
    CreateProductType,
    DiscountType,
@@ -25,6 +26,8 @@ export const updatePaymentMethod = (body: PaymentMethodType) => http.put(`/admin
 // Brand
 export const getAllBrand = (queryParams: GetBrandQueryParamsType) =>
    http.get<GetAllBrandType>(`/admin/brands?` + queryString.stringify(queryParams))
+export const createBrand = (body: BrandType) => http.post(`/admin/brands`, body)
+export const updateBrand = (body: BrandType) => http.put(`/admin/brands/${body.id}`, body)
 
 // Discount
 export const getAllDiscount = () => http.get<ResponseData<DiscountType[]>>(`/admin/discounts`)

@@ -38,7 +38,6 @@ export default function Home() {
    const { data, isLoading } = useGetAllProducts(queryParams)
    const products = data?.data.data.content || []
    const totalPages = data?.data.data.totalPages || 0
-   console.log(products)
 
    // Cập nhật page trong queryParams khi currentPage thay đổi
    useEffect(() => {

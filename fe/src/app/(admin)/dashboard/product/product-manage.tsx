@@ -10,13 +10,13 @@ import {
    useUpdateProduct,
    useUploadProductImage
 } from '@/queries/useAdmin'
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import Paginate from '@/components/paginate'
 import Image from 'next/image'
 import { formatCurrency } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Edit, Eye, Plus, Trash2, X } from 'lucide-react'
+import { Edit, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -39,9 +39,6 @@ import { toast } from 'react-toastify'
 
 export default function ProductManage() {
    const [currentPage, setCurrentPage] = useState<number>(1)
-   const [sortBy, setSortBy] = useState<string>('id')
-   const [sortDir, setSortDir] = useState<string>('desc')
-   const [pageSize, setPageSize] = useState<number>(10)
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
    const [editingProduct, setEditingProduct] = useState<(CreateProductType & { id: number }) | null>(null)
@@ -52,12 +49,22 @@ export default function ProductManage() {
    const fileInputRef = useRef<HTMLInputElement>(null)
    // Thêm state để lưu ID của ảnh sẽ được đặt làm ảnh chính
    const [pendingPrimaryImageId, setPendingPrimaryImageId] = useState<number | null>(null)
-   const getAllAdminProduct = useGetAllAdminProduct({
+   const [queryParams, setQueryParams] = useState({
       page: currentPage - 1,
-      size: pageSize,
-      sortBy,
-      sortDir
+      size: 5,
+      sortBy: 'id',
+      sortDir: 'asc'
    })
+
+   const getAllAdminProduct = useGetAllAdminProduct(queryParams)
+
+   // Cập nhật page trong queryParams khi currentPage thay đổi
+   useEffect(() => {
+      setQueryParams((prev) => ({
+         ...prev,
+         page: currentPage - 1
+      }))
+   }, [currentPage])
 
    const products = getAllAdminProduct.data?.data.data.content || []
    const totalPages = getAllAdminProduct.data?.data.data.totalPages || 0
@@ -101,14 +108,25 @@ export default function ProductManage() {
 
    const handleSortChange = (value: string) => {
       const [newSortBy, newSortDir] = value.split('-')
-      setSortBy(newSortBy)
-      setSortDir(newSortDir)
+      // Reset về trang 1 khi thay đổi filter
       setCurrentPage(1)
+      setQueryParams({
+         ...queryParams,
+         page: 0,
+         sortBy: newSortBy,
+         sortDir: newSortDir
+      })
    }
 
    const handlePageSizeChange = (value: string) => {
-      setPageSize(Number(value))
+      const newSize = Number(value)
+      // Reset về trang 1 khi thay đổi số lượng hiển thị
       setCurrentPage(1)
+      setQueryParams({
+         ...queryParams,
+         page: 0,
+         size: newSize
+      })
    }
 
    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -354,7 +372,7 @@ export default function ProductManage() {
             <div className='flex items-center gap-4'>
                <div className='flex items-center gap-2'>
                   <span className='text-sm'>Hiển thị:</span>
-                  <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                  <Select value={queryParams.size.toString()} onValueChange={handlePageSizeChange}>
                      <SelectTrigger className='w-[80px]'>
                         <SelectValue placeholder='10' />
                      </SelectTrigger>
@@ -368,7 +386,7 @@ export default function ProductManage() {
                </div>
                <div className='flex items-center gap-2'>
                   <span className='text-sm'>Sắp xếp:</span>
-                  <Select value={`${sortBy}-${sortDir}`} onValueChange={handleSortChange}>
+                  <Select value={`${queryParams.sortBy}-${queryParams.sortDir}`} onValueChange={handleSortChange}>
                      <SelectTrigger className='w-[180px]'>
                         <SelectValue placeholder='Mới nhất' />
                      </SelectTrigger>
@@ -1312,7 +1330,7 @@ export default function ProductManage() {
                      <Paginate
                         totalPages={totalPages}
                         handlePageClick={handlePageClick}
-                        currentPage={currentPage - 1}
+                        currentPage={currentPage}
                         setCurrentPage={setCurrentPage}
                      />
                   </div>

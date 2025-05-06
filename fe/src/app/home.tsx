@@ -15,11 +15,15 @@ import { useGetAllCategories } from '@/queries/useCategory'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
-
-const mockBrands = ['Apple', 'Samsung', 'Xiaomi', 'Dell', 'HP', 'Asus', 'Lenovo']
+import { useGetAllBrand } from '@/queries/useAdmin'
 
 export default function Home() {
    const router = useRouter()
+   // Lấy danh sách thương hiệu sản phẩm
+   const getAllBrand = useGetAllBrand({})
+   const brands = getAllBrand.data?.data.data.content || []
+
+   // Lấy danh sách danh mục sản phẩm
    const getAllCategories = useGetAllCategories()
    const categories = getAllCategories.data?.data.data || []
    const [currentPage, setCurrentPage] = useState<number>(1)
@@ -176,7 +180,7 @@ export default function Home() {
                <ProductFilter
                   initialFilters={queryParams}
                   onFilterChange={handleFilterChange}
-                  brands={mockBrands}
+                  brands={brands}
                   categories={categories}
                   maxPriceValue={50000000}
                />

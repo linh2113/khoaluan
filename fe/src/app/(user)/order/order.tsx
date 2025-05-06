@@ -12,13 +12,7 @@ import { toast } from 'react-toastify'
 import { useGetUserInfo } from '@/queries/useUser'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-
-// Giả lập dữ liệu phương thức vận chuyển
-const SHIPPING_METHODS = [
-   { id: 1, name: 'Giao hàng tiêu chuẩn', fee: 15000, description: 'Giao hàng trong 3-5 ngày' },
-   { id: 2, name: 'Giao hàng nhanh', fee: 30000, description: 'Giao hàng trong 1-2 ngày' },
-   { id: 3, name: 'Giao hàng hỏa tốc', fee: 50000, description: 'Giao hàng trong ngày' }
-]
+import { useGetAllPaymentMethod, useGetAllShippingMethod } from '@/queries/useAdmin'
 
 // Giả lập dữ liệu phương thức thanh toán
 const PAYMENT_METHODS = [
@@ -37,6 +31,14 @@ export default function Order() {
       paymentMethodId: 1 // Mặc định là phương thức thanh toán đầu tiên
    })
 
+   // Lấy thông tin phương thức giao hàng
+   const getAllShippingMethod = useGetAllShippingMethod()
+   const shippingMethods = getAllShippingMethod.data?.data.data || []
+
+   // Lấy thông tin phương thức thanh toán
+   const getAllPaymentMethod = useGetAllPaymentMethod()
+   const paymentMethods = getAllPaymentMethod.data?.data.data || []
+
    // Lấy thông tin giỏ hàng
    const { data: cartData, isLoading: isLoadingCart } = useGetAllCart(userId!)
    const cartItems = cartData?.data.data.items.filter((item) => item.selected) || []
@@ -49,8 +51,8 @@ export default function Order() {
    const subtotal = cartItems.reduce((sum, item) => sum + item.totalPrice, 0)
 
    // Lấy phí vận chuyển dựa trên phương thức vận chuyển đã chọn
-   const selectedShippingMethod = SHIPPING_METHODS.find((method) => method.id === formData.shippingMethodId)
-   const shippingFee = selectedShippingMethod?.fee || 0
+   const selectedShippingMethod = shippingMethods.find((method) => method.id === formData.shippingMethodId)
+   const shippingFee = selectedShippingMethod?.baseCost || 0
 
    // Tính tổng thanh toán
    const total = subtotal + shippingFee
@@ -138,7 +140,7 @@ export default function Order() {
    }
 
    return (
-      <div className='flex flex-col md:flex-row items-start gap-5 my-10 container'>
+      <div className='flex flex-col md:flex-row items-start gap-5 my-5 container'>
          {/* Cột thông tin sản phẩm và địa chỉ */}
          <div className='w-full md:w-2/3 bg-secondary rounded-lg shadow-lg p-5'>
             <h1 className='text-2xl font-medium mb-5'>Xác nhận đơn hàng</h1>
@@ -187,7 +189,7 @@ export default function Order() {
             <div className='border-b border-gray-200 pb-5 mb-5'>
                <h2 className='font-semibold text-lg mb-3'>Phương thức vận chuyển</h2>
                <div className='space-y-3'>
-                  {SHIPPING_METHODS.map((method) => (
+                  {shippingMethods.map((method) => (
                      <label
                         key={method.id}
                         className='flex items-start p-3 border rounded cursor-pointer hover:border-secondaryColor'
@@ -200,9 +202,10 @@ export default function Order() {
                            onChange={() => handleShippingMethodChange(method.id)}
                         />
                         <div className='ml-3'>
-                           <div className='font-medium'>{method.name}</div>
+                           <div className='font-medium'>{method.methodName}</div>
                            <div className='text-sm text-gray-500'>{method.description}</div>
-                           <div className='text-secondaryColor'>{formatCurrency(method.fee)}</div>
+                           <div className='text-sm text-gray-500'>Thời gian: {method.estimatedDays} ngày</div>
+                           <div className='text-secondaryColor'>{formatCurrency(method.baseCost)}</div>
                         </div>
                      </label>
                   ))}
@@ -248,16 +251,22 @@ export default function Order() {
          <div className='w-full md:w-1/3 bg-secondary rounded-lg shadow-lg p-5 sticky top-0'>
             <h2 className='text-xl font-semibold mb-5'>Phương thức thanh toán</h2>
             <div className='space-y-3 mb-5'>
-               {PAYMENT_METHODS.map((method) => (
-                  <label key={method.id} className='flex items-center gap-3'>
+               {paymentMethods.map((method) => (
+                  <label
+                     key={method.id}
+                     className='flex items-start gap-3 p-3 border rounded cursor-pointer hover:border-secondaryColor'
+                  >
                      <input
                         type='radio'
                         name='paymentMethod'
-                        className='cursor-pointer w-4 h-4 accent-secondaryColor'
+                        className='mt-1 cursor-pointer w-4 h-4 accent-secondaryColor'
                         checked={formData.paymentMethodId === method.id}
                         onChange={() => handlePaymentMethodChange(method.id)}
                      />
-                     <span className='cursor-pointer'>{method.name}</span>
+                     <div>
+                        <div className='font-medium'>{method.methodName}</div>
+                        <div className='text-sm text-gray-500'>{method.description}</div>
+                     </div>
                   </label>
                ))}
             </div>

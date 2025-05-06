@@ -1,20 +1,6 @@
-import { ResponseData } from '@/types/utils.type'
+import { ResponseData, ResponseDataWithPaginate } from '@/types/utils.type'
 
-export type GetAllProductType = ResponseData<Data>
-
-export interface Data {
-   content: ProductType[]
-   pageable: Pageable
-   last: boolean
-   totalPages: number
-   totalElements: number
-   first: boolean
-   size: number
-   number: number
-   sort: Sort2
-   numberOfElements: number
-   empty: boolean
-}
+export type GetAllProductType = ResponseData<ResponseDataWithPaginate<ProductType[]>>
 
 export interface ProductType {
    id: number
@@ -54,27 +40,6 @@ export interface ProductType {
       connectivity: string
       otherFeatures: string
    }
-}
-
-export interface Pageable {
-   pageNumber: number
-   pageSize: number
-   sort: Sort
-   offset: number
-   unpaged: boolean
-   paged: boolean
-}
-
-export interface Sort {
-   empty: boolean
-   sorted: boolean
-   unsorted: boolean
-}
-
-export interface Sort2 {
-   empty: boolean
-   sorted: boolean
-   unsorted: boolean
 }
 
 //////GetProductQueryParamsType

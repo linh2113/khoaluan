@@ -7,15 +7,17 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { GetProductQueryParamsType } from '@/types/product.type'
 import { useState, useEffect } from 'react'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import { ChevronDown, ChevronUp, Filter, Search, SlidersHorizontal, Tag } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
+import { BrandType } from '@/types/admin.type'
+import { CategoryType } from '@/types/category.type'
 
 interface ProductFilterProps {
    initialFilters: GetProductQueryParamsType
    onFilterChange: (filters: GetProductQueryParamsType) => void
-   brands: string[]
-   categories: { id: number; categoryName: string; status: number }[]
+   brands: BrandType[]
+   categories: CategoryType[]
    maxPriceValue?: number
 }
 
@@ -131,8 +133,8 @@ export default function ProductFilter({
                         <SelectContent>
                            <SelectItem value='all'>Tất cả thương hiệu</SelectItem>
                            {brands.map((brand) => (
-                              <SelectItem key={brand} value={brand}>
-                                 {brand}
+                              <SelectItem key={brand.id} value={brand.brandName}>
+                                 {brand.brandName}
                               </SelectItem>
                            ))}
                         </SelectContent>

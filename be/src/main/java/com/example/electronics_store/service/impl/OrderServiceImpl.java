@@ -91,16 +91,7 @@ public class OrderServiceImpl implements OrderService {
                 .map(item -> item.getPrice() * item.getQuantity())
                 .reduce(0f, Float::sum);
 
-        // Apply discount if provided
-        if (orderCreateDTO.getDiscountCode() != null && !orderCreateDTO.getDiscountCode().isEmpty()) {
-            if (discountService.isDiscountValid(orderCreateDTO.getDiscountCode())) {
-                totalPrice = discountService.applyDiscount(orderCreateDTO.getDiscountCode(), totalPrice);
-                // Mark discount as used
-                discountService.useDiscount(orderCreateDTO.getDiscountCode());
-            } else {
-                throw new RuntimeException("Invalid or expired discount code");
-            }
-        }
+
 
         // Create order
         Order order = new Order();

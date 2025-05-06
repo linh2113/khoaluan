@@ -22,15 +22,15 @@ public interface DiscountService {
     List<DiscountDTO> getAllExpiredDiscounts();
     
     List<DiscountDTO> getAllUpcomingDiscounts();
-    
 
-    
-    boolean isDiscountValid(String code);
-    
-    Float applyDiscount(String code, Float amount);
-    
-    void useDiscount(String code);
-    
+
+
+    boolean isDiscountValid(Integer discountId);
+
+    Float applyDiscount(Integer discountId, Float amount);
+
+    void useDiscount(Integer discountId);
+
     Optional<Discount> getDiscountEntityById(Integer id);
     
     Optional<Discount> getDiscountEntityByCode(String code);

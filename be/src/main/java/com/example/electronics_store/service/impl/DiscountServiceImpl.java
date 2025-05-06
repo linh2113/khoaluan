@@ -130,8 +130,8 @@ public class DiscountServiceImpl implements DiscountService {
 
 
     @Override
-    public boolean isDiscountValid(String code) {
-        Optional<Discount> optionalDiscount = discountRepository.findByCode(code);
+    public boolean isDiscountValid(Integer discountId) {
+        Optional<Discount> optionalDiscount = discountRepository.findById(discountId);
         if (optionalDiscount.isEmpty()) {
             return false;
         }
@@ -145,8 +145,8 @@ public class DiscountServiceImpl implements DiscountService {
     }
 
     @Override
-    public Float applyDiscount(String code, Float amount) {
-        Discount discount = discountRepository.findByCode(code)
+    public Float applyDiscount(Integer discountId, Float amount) {
+        Discount discount = discountRepository.findById(discountId)
                 .orElseThrow(() -> new RuntimeException("Discount not found"));
 
         LocalDateTime now = LocalDateTime.now();
@@ -165,8 +165,8 @@ public class DiscountServiceImpl implements DiscountService {
 
     @Override
     @Transactional
-    public void useDiscount(String code) {
-        Discount discount = discountRepository.findByCode(code)
+    public void useDiscount(Integer discountId) {
+        Discount discount = discountRepository.findById(discountId)
                 .orElseThrow(() -> new RuntimeException("Discount not found"));
 
         if (discount.getQuantity() <= 0) {
@@ -176,6 +176,8 @@ public class DiscountServiceImpl implements DiscountService {
         discount.setQuantity(discount.getQuantity() - 1);
         discountRepository.save(discount);
     }
+
+
 
     @Override
     public Optional<Discount> getDiscountEntityById(Integer id) {

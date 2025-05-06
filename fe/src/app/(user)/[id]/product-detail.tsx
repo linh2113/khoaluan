@@ -2,7 +2,7 @@
 import ProductRating from '@/components/product-rating'
 import QuantityController from '@/components/quantity-controller'
 import { formatCurrency, formatNumberToK, getIdFromNameId } from '@/lib/utils'
-import { ChevronLeft, ChevronRight, Heart, ShoppingBasket } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Heart, ShoppingBasket, Star } from 'lucide-react'
 import Image from 'next/image'
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { Textarea } from '@/components/ui/textarea'
@@ -26,6 +26,19 @@ import {
    TelegramIcon,
    WhatsappIcon
 } from 'react-share'
+import {
+   useCreateRating,
+   useGetRatingsByProductId,
+   useReplyToRating,
+   useGetRepliesByParentId
+} from '@/queries/useRating'
+import { RatingDTO } from '@/types/rating.type'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { format } from 'date-fns'
+import { vi } from 'date-fns/locale'
+import { Reply } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 export default function ProductDetail({ id }: { id: string }) {
    const { userId } = useAppContext()
    const [buyCount, setBuyCount] = useState<number>(1)
@@ -39,6 +52,82 @@ export default function ProductDetail({ id }: { id: string }) {
    const [isWishlistLoading, setIsWishlistLoading] = useState(false)
    const { data, isLoading } = useGetProduct(Number(getIdFromNameId(id)))
    const product = data?.data.data
+
+   // Thêm state và hooks cho chức năng đánh giá
+   const [ratingValue, setRatingValue] = useState<number>(5)
+   const [ratingComment, setRatingComment] = useState<string>('')
+   const [replyText, setReplyText] = useState<string>('')
+   const [replyingTo, setReplyingTo] = useState<number | null>(null)
+
+   const productId = Number(getIdFromNameId(id))
+   const { data: ratingsData, isLoading: isRatingsLoading, refetch } = useGetRatingsByProductId(productId)
+   const ratings = ratingsData?.data.data || []
+
+   const createRating = useCreateRating()
+   const replyToRating = useReplyToRating()
+
+   // Hàm xử lý gửi đánh giá
+   const handleSubmitRating = () => {
+      if (!userId) {
+         toast.warning('Vui lòng đăng nhập để đánh giá sản phẩm')
+         return
+      }
+
+      if (ratingComment.trim() === '') {
+         toast.warning('Vui lòng nhập nội dung đánh giá')
+         return
+      }
+
+      const ratingData: RatingDTO = {
+         rating: ratingValue,
+         comment: ratingComment.trim()
+      }
+
+      createRating.mutate(
+         {
+            userId,
+            productId,
+            rating: ratingData
+         },
+         {
+            onSuccess: () => {
+               setRatingComment('')
+               setRatingValue(5)
+            },
+            onError: () => {
+               toast.warning('Bạn đã đánh giá sản phẩm này rồi')
+            }
+         }
+      )
+   }
+
+   // Hàm xử lý gửi phản hồi đánh giá
+   const handleSubmitReply = (parentId: number) => {
+      if (!userId) {
+         toast.warning('Vui lòng đăng nhập để phản hồi đánh giá')
+         return
+      }
+
+      if (replyText.trim() === '') {
+         toast.warning('Vui lòng nhập nội dung phản hồi')
+         return
+      }
+
+      replyToRating.mutate(
+         {
+            userId,
+            parentRatingId: parentId,
+            reply: { comment: replyText.trim() }
+         },
+         {
+            onSuccess: () => {
+               setReplyText('')
+               refetch()
+               setReplyingTo(null)
+            }
+         }
+      )
+   }
 
    // Lấy URL hiện tại cho việc chia sẻ
    const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
@@ -462,24 +551,111 @@ export default function ProductDetail({ id }: { id: string }) {
          {/* Đánh giá sản phẩm */}
          <div className='bg-secondary rounded-lg p-5 mt-5'>
             <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>Đánh giá sản phẩm</h2>
-            <div className='space-y-4'>
-               {product.reviewCount > 0 ? (
-                  // Hiển thị đánh giá thực tế (giả lập)
-                  Array(2)
-                     .fill(0)
-                     .map((_, index) => (
-                        <div key={index} className='p-3 border rounded-lg'>
-                           <div className='flex items-center gap-2 mb-2'>
-                              <ProductRating
-                                 rating={4.5}
-                                 classNameStar1='w-5 h-5 fill-yellow-300 text-yellow-300'
-                                 classNameStar2='w-5 h-5 fill-current text-gray-300'
-                              />
-                              <span className='text-sm text-gray-500'>1 ngày trước</span>
+
+            {/* Hiển thị danh sách đánh giá */}
+            <div className='space-y-4 mb-6'>
+               {isRatingsLoading ? (
+                  <div className='flex justify-center py-4'>
+                     <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primaryColor'></div>
+                  </div>
+               ) : ratings.length > 0 ? (
+                  ratings.map((rating) => (
+                     <div key={rating.id} className='p-4 border rounded-lg bg-background'>
+                        <div className='flex items-start gap-3'>
+                           <Avatar className='h-10 w-10'>
+                              <AvatarImage src={rating.userPicture} alt={rating.userName} />
+                              <AvatarFallback>{rating.userName?.charAt(0) || 'U'}</AvatarFallback>
+                           </Avatar>
+                           <div className='flex-1'>
+                              <div className='flex items-center gap-2'>
+                                 <span className='font-medium'>{rating.userName}</span>
+                                 <span className='text-xs text-gray-500'>
+                                    {rating.createAt &&
+                                       format(new Date(rating.createAt), 'dd/MM/yyyy HH:mm', { locale: vi })}
+                                 </span>
+                              </div>
+                              <div className='flex items-center gap-2 my-1'>
+                                 <ProductRating
+                                    rating={rating.rating}
+                                    classNameStar1='w-4 h-4 fill-yellow-300 text-yellow-300'
+                                    classNameStar2='w-4 h-4 fill-current text-gray-300'
+                                 />
+                              </div>
+                              <p className='mt-1'>{rating.comment}</p>
+
+                              {/* Nút trả lời */}
+                              {userId && (
+                                 <button
+                                    onClick={() => setReplyingTo(replyingTo === rating.id ? null : rating.id!)}
+                                    className='mt-2 text-sm flex items-center gap-1 text-gray-500 hover:text-primaryColor'
+                                 >
+                                    <Reply className='h-4 w-4' />
+                                    Trả lời
+                                 </button>
+                              )}
+
+                              {/* Form trả lời */}
+                              {replyingTo === rating.id && (
+                                 <div className='mt-3 space-y-2'>
+                                    <Textarea
+                                       placeholder='Nhập phản hồi của bạn'
+                                       value={replyText}
+                                       onChange={(e) => setReplyText(e.target.value)}
+                                       className='min-h-[80px]'
+                                    />
+                                    <div className='flex justify-end gap-2'>
+                                       <Button
+                                          variant='outline'
+                                          size='sm'
+                                          onClick={() => {
+                                             setReplyingTo(null)
+                                             setReplyText('')
+                                          }}
+                                       >
+                                          Hủy
+                                       </Button>
+                                       <Button
+                                          size='sm'
+                                          onClick={() => handleSubmitReply(rating.id!)}
+                                          disabled={replyToRating.isPending}
+                                       >
+                                          {replyToRating.isPending ? 'Đang gửi...' : 'Gửi phản hồi'}
+                                       </Button>
+                                    </div>
+                                 </div>
+                              )}
+
+                              {/* Hiển thị các phản hồi */}
+                              {rating.replies && rating.replies.length > 0 && (
+                                 <div className='mt-3 space-y-3 pl-4 border-l-2 border-gray-200'>
+                                    {rating.replies.map((reply) => (
+                                       <div key={reply.id} className='pt-3'>
+                                          <div className='flex items-start gap-3'>
+                                             <Avatar className='h-8 w-8'>
+                                                <AvatarImage src={reply.userPicture} alt={reply.userName} />
+                                                <AvatarFallback>{reply.userName?.charAt(0) || 'U'}</AvatarFallback>
+                                             </Avatar>
+                                             <div>
+                                                <div className='flex items-center gap-2'>
+                                                   <span className='font-medium'>{reply.userName}</span>
+                                                   <span className='text-xs text-gray-500'>
+                                                      {reply.createAt &&
+                                                         format(new Date(reply.createAt), 'dd/MM/yyyy HH:mm', {
+                                                            locale: vi
+                                                         })}
+                                                   </span>
+                                                </div>
+                                                <p className='mt-1'>{reply.comment}</p>
+                                             </div>
+                                          </div>
+                                       </div>
+                                    ))}
+                                 </div>
+                              )}
                            </div>
-                           <p>Chất lượng sản phẩm tốt, màu sắc đẹp, giao hàng nhanh.</p>
                         </div>
-                     ))
+                     </div>
+                  ))
                ) : (
                   <div className='text-center py-8'>
                      <p className='text-muted-foreground'>Chưa có đánh giá nào cho sản phẩm này.</p>
@@ -491,18 +667,51 @@ export default function ProductDetail({ id }: { id: string }) {
 
             {/* Form đánh giá */}
             <div className='flex flex-col gap-4 mt-6'>
-               <div className='flex items-center gap-2'>
-                  <label>Đánh giá:</label>
-                  <ProductRating
-                     rating={0} // Giá trị tĩnh
-                     classNameStar1='w-5 h-5 fill-yellow-300 text-yellow-300'
-                     classNameStar2='w-5 h-5 fill-current text-gray-300'
-                  />
-               </div>
-               <Textarea placeholder='Nhập đánh giá của bạn' className='border-primary' />
-               <button className='px-4 py-2 bg-secondaryColor text-white rounded hover:bg-secondaryColor/90 self-start'>
-                  Gửi đánh giá
-               </button>
+               <h3 className='font-medium'>Viết đánh giá của bạn</h3>
+
+               {!userId ? (
+                  <div className='bg-blue-50 text-blue-700 p-4 rounded-md'>
+                     Vui lòng{' '}
+                     <Link href='/login' className='font-medium underline'>
+                        đăng nhập
+                     </Link>{' '}
+                     để đánh giá sản phẩm
+                  </div>
+               ) : (
+                  <>
+                     <div className='flex items-center gap-2'>
+                        <label>Đánh giá:</label>
+                        <div className='flex items-center'>
+                           {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                 key={star}
+                                 type='button'
+                                 onClick={() => setRatingValue(star)}
+                                 className='focus:outline-none'
+                              >
+                                 <Star
+                                    className={`w-6 h-6 ${
+                                       star <= ratingValue
+                                          ? 'fill-yellow-300 text-yellow-300'
+                                          : 'fill-current text-gray-300'
+                                    }`}
+                                 />
+                              </button>
+                           ))}
+                        </div>
+                        <span className='text-sm text-gray-500 ml-2'>({ratingValue}/5)</span>
+                     </div>
+                     <Textarea
+                        placeholder='Nhập đánh giá của bạn về sản phẩm này'
+                        value={ratingComment}
+                        onChange={(e) => setRatingComment(e.target.value)}
+                        className='min-h-[120px] border-primary'
+                     />
+                     <Button onClick={handleSubmitRating} disabled={createRating.isPending} className='self-start'>
+                        {createRating.isPending ? 'Đang gửi...' : 'Gửi đánh giá'}
+                     </Button>
+                  </>
+               )}
             </div>
          </div>
 

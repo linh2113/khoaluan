@@ -1,4 +1,6 @@
 import {
+   createCategory,
+   createPaymentMethod,
    createProduct,
    deleteProductImage,
    getAllAdminProduct,
@@ -7,6 +9,9 @@ import {
    getAllDiscount,
    getAllPaymentMethod,
    getAllShippingMethod,
+   getPaymentMethod,
+   updateCategory,
+   updatePaymentMethod,
    updatePrimaryImage,
    updateProduct,
    uploadProductImage
@@ -31,7 +36,43 @@ export const useGetAllPaymentMethod = () => {
       queryFn: getAllPaymentMethod
    })
 }
-
+export const useGetPaymentMethod = (id: number) => {
+   return useQuery({
+      queryKey: ['paymentMethod', id],
+      queryFn: () => getPaymentMethod(id),
+      enabled: !!id
+   })
+}
+export const useCreatePaymentMethod = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: createPaymentMethod,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['paymentMethod']
+         })
+         toast.success('Thêm phương thức thanh toán thành công')
+      },
+      onError: () => {
+         toast.error('Thêm phương thức thanh toán thất bại')
+      }
+   })
+}
+export const useUpdatePaymentMethod = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updatePaymentMethod,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['paymentMethod']
+         })
+         toast.success('Cập nhật phương thức thanh toán thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật phương thức thanh toán thất bại')
+      }
+   })
+}
 // Brand
 export const useGetAllBrand = (queryParams: GetBrandQueryParamsType) => {
    return useQuery({
@@ -53,6 +94,37 @@ export const useGetAllCategories = () => {
    return useQuery({
       queryKey: ['categories'],
       queryFn: getAllCategories
+   })
+}
+
+export const useCreateCategory = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: createCategory,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['categories']
+         })
+         toast.success('Thêm danh mục thành công')
+      },
+      onError: () => {
+         toast.error('Thêm danh mục thất bại')
+      }
+   })
+}
+export const useUpdateCategory = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updateCategory,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['categories']
+         })
+         toast.success('Cập nhật danh mục thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật danh mục thất bại')
+      }
    })
 }
 

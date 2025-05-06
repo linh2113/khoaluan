@@ -628,7 +628,12 @@ export default function ProductManage() {
                               control={control}
                               name='status'
                               render={({ field }) => (
-                                 <Switch checked={field.value} onCheckedChange={field.onChange} id='status' />
+                                 <Switch
+                                    className='data-[state=checked]:bg-secondaryColor'
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    id='status'
+                                 />
                               )}
                            />
                            <Label htmlFor='status'>Hiển thị sản phẩm</Label>
@@ -636,26 +641,71 @@ export default function ProductManage() {
 
                         <div className='space-y-2'>
                            <Label htmlFor='productImage'>Hình ảnh sản phẩm</Label>
-                           <div className='flex items-center gap-4'>
-                              <Input
-                                 id='productImage'
+                           <div
+                              className='mt-2 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 transition-colors hover:border-primaryColor'
+                              onDragOver={(e) => {
+                                 e.preventDefault()
+                                 e.stopPropagation()
+                              }}
+                              onDrop={(e) => {
+                                 e.preventDefault()
+                                 e.stopPropagation()
+                                 if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                    const newFiles = Array.from(e.dataTransfer.files)
+                                    const imageFiles = newFiles.filter((file) => file.type.startsWith('image/'))
+
+                                    if (imageFiles.length > 0) {
+                                       // Tạo preview URLs cho các file mới
+                                       const newPreviewUrls = imageFiles.map((file) => URL.createObjectURL(file))
+
+                                       setSelectedFiles((prev) => [...prev, ...imageFiles])
+                                       setPreviewUrls((prev) => [...prev, ...newPreviewUrls])
+                                    }
+                                 }
+                              }}
+                           >
+                              <input
+                                 id='editProductImage'
                                  type='file'
                                  ref={fileInputRef}
                                  accept='image/*'
                                  multiple
                                  onChange={handleFileChange}
+                                 className='hidden'
                               />
-                              <Button type='button' variant='outline' onClick={() => fileInputRef.current?.click()}>
+                              <div className='flex flex-col items-center text-center'>
+                                 <svg
+                                    className='w-12 h-12 text-gray-400 mb-3'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                    xmlns='http://www.w3.org/2000/svg'
+                                 >
+                                    <path
+                                       strokeLinecap='round'
+                                       strokeLinejoin='round'
+                                       strokeWidth='2'
+                                       d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'
+                                    ></path>
+                                 </svg>
+                                 <p className='mb-2 text-sm text-gray-500'>
+                                    <span className='font-semibold'>Nhấp để tải lên</span> hoặc kéo và thả
+                                 </p>
+                                 <p className='text-xs text-gray-500'>PNG, JPG, GIF (Tối đa 10MB)</p>
+                              </div>
+                              <Button
+                                 type='button'
+                                 variant='outline'
+                                 onClick={() => fileInputRef.current?.click()}
+                                 className='mt-4'
+                              >
                                  Chọn ảnh
                               </Button>
                            </div>
-
                            {/* Hiển thị preview ảnh */}
                            {previewUrls.length > 0 && (
                               <div className='mt-4'>
-                                 <p className='text-sm font-medium mb-2'>
-                                    Đã chọn {selectedFiles.length} ảnh (click vào ảnh để đặt làm ảnh chính)
-                                 </p>
+                                 <p className='text-sm font-medium mb-2'>Đã chọn {selectedFiles.length} ảnh</p>
                                  <div className='grid grid-cols-5 gap-4'>
                                     {previewUrls.map((url, index) => (
                                        <div
@@ -663,7 +713,7 @@ export default function ProductManage() {
                                           className={`relative aspect-square border rounded-md overflow-hidden cursor-pointer ${
                                              index === primaryImageIndex ? 'ring-2 ring-primaryColor' : ''
                                           }`}
-                                          onClick={() => handleSetPrimary(index)}
+                                          // onClick={() => handleSetPrimary(index)}
                                        >
                                           <Image src={url} alt={`Preview ${index + 1}`} fill className='object-cover' />
                                           {index === primaryImageIndex && (
@@ -862,13 +912,95 @@ export default function ProductManage() {
                   </div>
 
                   {/* Các trường kỹ thuật khác giữ nguyên */}
+                  <div className='grid grid-cols-2 gap-4'>
+                     <div className='space-y-2'>
+                        <Label htmlFor='warranty'>Bảo hành</Label>
+                        <Input id='warranty' {...register('warranty')} placeholder='Ví dụ: 12 tháng' />
+                     </div>
+                     <div className='space-y-2'>
+                        <Label htmlFor='weight'>Trọng lượng (gram)</Label>
+                        <Input
+                           id='weight'
+                           type='number'
+                           {...register('weight', { min: 0 })}
+                           placeholder='Nhập trọng lượng'
+                        />
+                     </div>
+                     <div className='space-y-2'>
+                        <Label htmlFor='dimensions'>Kích thước</Label>
+                        <Input id='dimensions' {...register('dimensions')} placeholder='Ví dụ: 150 x 75 x 8 mm' />
+                     </div>
+                  </div>
+
+                  <div className='border p-4 rounded-md space-y-4'>
+                     <h3 className='font-medium'>Thông số kỹ thuật</h3>
+                     <div className='grid grid-cols-2 gap-4'>
+                        <div className='space-y-2'>
+                           <Label htmlFor='processor'>Vi xử lý</Label>
+                           <Input id='processor' {...register('processor')} placeholder='Ví dụ: Apple A15 Bionic' />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='ram'>RAM</Label>
+                           <Input id='ram' {...register('ram')} placeholder='Ví dụ: 8GB LPDDR5' />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='storage'>Bộ nhớ trong</Label>
+                           <Input id='storage' {...register('storage')} placeholder='Ví dụ: 256GB' />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='display'>Màn hình</Label>
+                           <Input
+                              id='display'
+                              {...register('display')}
+                              placeholder='Ví dụ: 6.1 inch Super Retina XDR'
+                           />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='graphics'>Card đồ họa</Label>
+                           <Input id='graphics' {...register('graphics')} placeholder='Ví dụ: Apple GPU' />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='battery'>Pin</Label>
+                           <Input id='battery' {...register('battery')} placeholder='Ví dụ: 3240 mAh' />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='camera'>Camera</Label>
+                           <Input id='camera' {...register('camera')} placeholder='Ví dụ: 12MP + 12MP' />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='operatingSystem'>Hệ điều hành</Label>
+                           <Input id='operatingSystem' {...register('operatingSystem')} placeholder='Ví dụ: iOS 16' />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='connectivity'>Kết nối</Label>
+                           <Input
+                              id='connectivity'
+                              {...register('connectivity')}
+                              placeholder='Ví dụ: 5G, Wi-Fi 6, Bluetooth 5.0'
+                           />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='otherFeatures'>Tính năng khác</Label>
+                           <Input
+                              id='otherFeatures'
+                              {...register('otherFeatures')}
+                              placeholder='Ví dụ: Face ID, chống nước IP68'
+                           />
+                        </div>
+                     </div>
+                  </div>
 
                   <div className='flex items-center space-x-2'>
                      <Controller
                         control={control}
                         name='status'
                         render={({ field }) => (
-                           <Switch checked={field.value} onCheckedChange={field.onChange} id='status' />
+                           <Switch
+                              className='data-[state=checked]:bg-secondaryColor'
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              id='status'
+                           />
                         )}
                      />
                      <Label htmlFor='status'>Hiển thị sản phẩm</Label>
@@ -917,16 +1049,64 @@ export default function ProductManage() {
 
                   <div className='mt-4'>
                      <Label htmlFor='editProductImage'>Thêm hình ảnh mới</Label>
-                     <div className='flex items-center gap-4'>
-                        <Input
+                     <div
+                        className='mt-2 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 transition-colors hover:border-primaryColor'
+                        onDragOver={(e) => {
+                           e.preventDefault()
+                           e.stopPropagation()
+                        }}
+                        onDrop={(e) => {
+                           e.preventDefault()
+                           e.stopPropagation()
+                           if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                              const newFiles = Array.from(e.dataTransfer.files)
+                              const imageFiles = newFiles.filter((file) => file.type.startsWith('image/'))
+
+                              if (imageFiles.length > 0) {
+                                 // Tạo preview URLs cho các file mới
+                                 const newPreviewUrls = imageFiles.map((file) => URL.createObjectURL(file))
+
+                                 setSelectedFiles((prev) => [...prev, ...imageFiles])
+                                 setPreviewUrls((prev) => [...prev, ...newPreviewUrls])
+                              }
+                           }
+                        }}
+                     >
+                        <input
                            id='editProductImage'
                            type='file'
                            ref={fileInputRef}
                            accept='image/*'
                            multiple
                            onChange={handleFileChange}
+                           className='hidden'
                         />
-                        <Button type='button' variant='outline' onClick={() => fileInputRef.current?.click()}>
+                        <div className='flex flex-col items-center text-center'>
+                           <svg
+                              className='w-12 h-12 text-gray-400 mb-3'
+                              fill='none'
+                              stroke='currentColor'
+                              viewBox='0 0 24 24'
+                              xmlns='http://www.w3.org/2000/svg'
+                           >
+                              <path
+                                 strokeLinecap='round'
+                                 strokeLinejoin='round'
+                                 strokeWidth='2'
+                                 d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'
+                              ></path>
+                           </svg>
+                           <p className='mb-2 text-sm text-gray-500'>
+                              <span className='font-semibold'>Nhấp để tải lên</span> hoặc kéo và thả
+                           </p>
+                           <p className='text-xs text-gray-500'>PNG, JPG, GIF (Tối đa 10MB)</p>
+                        </div>
+                        <Button
+                           type='button'
+                           variant='outline'
+                           onClick={() => fileInputRef.current?.click()}
+                           className='mt-4'
+                        >
                            Chọn ảnh
                         </Button>
                      </div>
@@ -935,24 +1115,11 @@ export default function ProductManage() {
                   {/* Hiển thị preview ảnh mới */}
                   {previewUrls.length > 0 && (
                      <div className='mt-4'>
-                        <p className='text-sm font-medium mb-2'>
-                           Đã chọn {selectedFiles.length} ảnh mới (click vào ảnh để đặt làm ảnh chính)
-                        </p>
+                        <p className='text-sm font-medium mb-2'>Đã chọn {selectedFiles.length} ảnh mới</p>
                         <div className='grid grid-cols-5 gap-4'>
                            {previewUrls.map((url, index) => (
-                              <div
-                                 key={index}
-                                 className={`relative aspect-square border rounded-md overflow-hidden cursor-pointer ${
-                                    index === primaryImageIndex ? 'ring-2 ring-primaryColor' : ''
-                                 }`}
-                                 onClick={() => handleSetPrimary(index)}
-                              >
+                              <div key={index} className={`relative aspect-square border rounded-md overflow-hidden`}>
                                  <Image src={url} alt={`Preview ${index + 1}`} fill className='object-cover' />
-                                 {index === primaryImageIndex && (
-                                    <div className='absolute top-1 left-1 bg-primaryColor text-white text-xs px-1 rounded'>
-                                       Chính
-                                    </div>
-                                 )}
                                  <button
                                     type='button'
                                     className='absolute top-1 right-1 bg-red-500 text-white rounded-full p-1'
@@ -1118,22 +1285,14 @@ export default function ProductManage() {
                                     </Badge>
                                  </TableCell>
                                  <TableCell className='text-right'>
-                                    <div className='flex justify-end gap-2'>
-                                       <Button variant='outline' size='icon' title='Xem chi tiết'>
-                                          <Eye className='h-4 w-4' />
-                                       </Button>
-                                       <Button
-                                          variant='outline'
-                                          size='icon'
-                                          title='Chỉnh sửa'
-                                          onClick={() => handleEditProduct(product)}
-                                       >
-                                          <Edit className='h-4 w-4' />
-                                       </Button>
-                                       <Button variant='destructive' size='icon' title='Xóa'>
-                                          <Trash2 className='h-4 w-4' />
-                                       </Button>
-                                    </div>
+                                    <Button
+                                       variant='outline'
+                                       size='icon'
+                                       title='Chỉnh sửa'
+                                       onClick={() => handleEditProduct(product)}
+                                    >
+                                       <Edit className='h-4 w-4' />
+                                    </Button>
                                  </TableCell>
                               </TableRow>
                            ))

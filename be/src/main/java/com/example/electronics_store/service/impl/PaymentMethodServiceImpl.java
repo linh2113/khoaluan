@@ -61,6 +61,11 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
         if (paymentMethodDTO.getDescription() != null) {
             paymentMethod.setDescription(paymentMethodDTO.getDescription());
         }
+        
+        // Cập nhật trạng thái active nếu có giá trị
+        if (paymentMethodDTO.getIsActive() != null) {
+            paymentMethod.setIsActive(paymentMethodDTO.getIsActive());
+        }
 
         PaymentMethod updatedPaymentMethod = paymentMethodRepository.save(paymentMethod);
         return mapPaymentMethodToDTO(updatedPaymentMethod);

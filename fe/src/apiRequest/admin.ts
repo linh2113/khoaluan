@@ -17,6 +17,10 @@ export const getAllShippingMethod = () => http.get<ResponseData<ShippingMethodTy
 
 // PaymentMethod
 export const getAllPaymentMethod = () => http.get<ResponseData<PaymentMethodType[]>>(`/admin/payment-methods`)
+export const getPaymentMethod = (id: number) =>
+   http.get<ResponseData<PaymentMethodType>>(`/admin/payment-methods/${id}`)
+export const createPaymentMethod = (body: PaymentMethodType) => http.post(`/admin/payment-methods`, body)
+export const updatePaymentMethod = (body: PaymentMethodType) => http.put(`/admin/payment-methods/${body.id}`, body)
 
 // Brand
 export const getAllBrand = (queryParams: GetBrandQueryParamsType) =>
@@ -27,6 +31,8 @@ export const getAllDiscount = () => http.get<ResponseData<DiscountType[]>>(`/adm
 
 // Category
 export const getAllCategories = () => http.get<ResponseData<CategoryType[]>>('/admin/categories')
+export const createCategory = (body: CategoryType) => http.post('/admin/categories', body)
+export const updateCategory = (body: CategoryType) => http.put(`/admin/categories/${body.id}`, body)
 
 // Product
 export const getAllAdminProduct = (

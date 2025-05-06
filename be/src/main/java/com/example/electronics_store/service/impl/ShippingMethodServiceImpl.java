@@ -71,6 +71,11 @@ public class ShippingMethodServiceImpl implements ShippingMethodService {
         if (shippingMethodDTO.getEstimatedDays() != null) {
             shippingMethod.setEstimatedDays(shippingMethodDTO.getEstimatedDays());
         }
+        
+        // Cập nhật trạng thái active nếu có giá trị
+        if (shippingMethodDTO.getIsActive() != null) {
+            shippingMethod.setIsActive(shippingMethodDTO.getIsActive());
+        }
 
         ShippingMethod updatedShippingMethod = shippingMethodRepository.save(shippingMethod);
         return mapShippingMethodToDTO(updatedShippingMethod);

@@ -1,5 +1,8 @@
 import {
+   createCategory,
+   createPaymentMethod,
    createProduct,
+   createShippingMethod,
    deleteProductImage,
    getAllAdminProduct,
    getAllBrand,
@@ -7,8 +10,11 @@ import {
    getAllDiscount,
    getAllPaymentMethod,
    getAllShippingMethod,
+   updateCategory,
+   updatePaymentMethod,
    updatePrimaryImage,
    updateProduct,
+   updateShippingMethod,
    uploadProductImage
 } from '@/apiRequest/admin'
 import { GetBrandQueryParamsType } from '@/types/admin.type'
@@ -23,6 +29,36 @@ export const useGetAllShippingMethod = () => {
       queryFn: getAllShippingMethod
    })
 }
+export const useCreateShippingMethod = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: createShippingMethod,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['shippingMethod']
+         })
+         toast.success('Thêm phương thức giao hàng thành công')
+      },
+      onError: () => {
+         toast.error('Thêm phương thức giao hàng thất bại')
+      }
+   })
+}
+export const useUpdateShippingMethod = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updateShippingMethod,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['shippingMethod']
+         })
+         toast.success('Cập nhật phương thức giao hàng thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật phương thức giao hàng thất bại')
+      }
+   })
+}
 
 // Payment Method
 export const useGetAllPaymentMethod = () => {
@@ -31,7 +67,36 @@ export const useGetAllPaymentMethod = () => {
       queryFn: getAllPaymentMethod
    })
 }
-
+export const useCreatePaymentMethod = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: createPaymentMethod,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['paymentMethod']
+         })
+         toast.success('Thêm phương thức thanh toán thành công')
+      },
+      onError: () => {
+         toast.error('Thêm phương thức thanh toán thất bại')
+      }
+   })
+}
+export const useUpdatePaymentMethod = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updatePaymentMethod,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['paymentMethod']
+         })
+         toast.success('Cập nhật phương thức thanh toán thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật phương thức thanh toán thất bại')
+      }
+   })
+}
 // Brand
 export const useGetAllBrand = (queryParams: GetBrandQueryParamsType) => {
    return useQuery({
@@ -53,6 +118,37 @@ export const useGetAllCategories = () => {
    return useQuery({
       queryKey: ['categories'],
       queryFn: getAllCategories
+   })
+}
+
+export const useCreateCategory = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: createCategory,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['categories']
+         })
+         toast.success('Thêm danh mục thành công')
+      },
+      onError: () => {
+         toast.error('Thêm danh mục thất bại')
+      }
+   })
+}
+export const useUpdateCategory = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updateCategory,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['categories']
+         })
+         toast.success('Cập nhật danh mục thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật danh mục thất bại')
+      }
    })
 }
 

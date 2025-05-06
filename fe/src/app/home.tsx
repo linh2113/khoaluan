@@ -18,7 +18,6 @@ import { useGetAllBrand, useGetAllCategories } from '@/queries/useAdmin'
 
 export default function Home() {
    const router = useRouter()
-   const autoplayRef = useRef(null)
 
    // Lấy danh sách thương hiệu sản phẩm
    const getAllBrand = useGetAllBrand({})
@@ -183,7 +182,7 @@ export default function Home() {
                   initialFilters={queryParams}
                   onFilterChange={handleFilterChange}
                   brands={brands}
-                  categories={categories}
+                  categories={categories.filter((item) => item.status === 1)}
                   maxPriceValue={50000000}
                />
             </div>

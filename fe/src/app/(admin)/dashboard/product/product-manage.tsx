@@ -1,0 +1,1085 @@
+'use client'
+import {
+   useCreateProduct,
+   useGetAllAdminProduct,
+   useGetAllBrand,
+   useGetAllCategories,
+   useGetAllDiscount,
+   useUpdateProduct,
+   useUploadProductImage
+} from '@/queries/useAdmin'
+import React, { useState, useRef } from 'react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import Paginate from '@/components/paginate'
+import Image from 'next/image'
+import { formatCurrency } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Edit, Eye, Plus, Trash2, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+   Dialog,
+   DialogContent,
+   DialogDescription,
+   DialogHeader,
+   DialogTitle,
+   DialogTrigger
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { CreateProductType } from '@/types/admin.type'
+import { useForm, Controller } from 'react-hook-form'
+import { ProductType } from '@/types/product.type'
+import { toast } from 'react-toastify'
+
+export default function ProductManage() {
+   const [currentPage, setCurrentPage] = useState<number>(1)
+   const [sortBy, setSortBy] = useState<string>('id')
+   const [sortDir, setSortDir] = useState<string>('desc')
+   const [pageSize, setPageSize] = useState<number>(10)
+   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+   const [editingProduct, setEditingProduct] = useState<(CreateProductType & { id: number }) | null>(null)
+   const [createdProductId, setCreatedProductId] = useState<number | null>(null)
+   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+   const [previewUrls, setPreviewUrls] = useState<string[]>([])
+   const [primaryImageIndex, setPrimaryImageIndex] = useState<number>(0)
+   const [existingImages, setExistingImages] = useState<string[]>([])
+   const fileInputRef = useRef<HTMLInputElement>(null)
+
+   const getAllAdminProduct = useGetAllAdminProduct({
+      page: currentPage - 1,
+      size: pageSize,
+      sortBy,
+      sortDir
+   })
+
+   const products = getAllAdminProduct.data?.data.data.content || []
+   const totalPages = getAllAdminProduct.data?.data.data.totalPages || 0
+   const isLoading = getAllAdminProduct.isLoading
+
+   const getAllCategories = useGetAllCategories()
+   const categories = getAllCategories.data?.data.data || []
+
+   const getAllDiscount = useGetAllDiscount()
+   const discounts = getAllDiscount.data?.data.data || []
+
+   const getAllBrand = useGetAllBrand({})
+   const brands = getAllBrand.data?.data.data.content || []
+
+   const createProduct = useCreateProduct()
+   const uploadProductImage = useUploadProductImage()
+   const updateProduct = useUpdateProduct()
+
+   const {
+      register,
+      handleSubmit,
+      control,
+      reset,
+      setValue,
+      formState: { errors }
+   } = useForm<CreateProductType>({
+      defaultValues: {
+         status: true,
+         stock: 0,
+         price: 0,
+         weight: 0
+      }
+   })
+
+   const handlePageClick = (e: { selected: number }) => {
+      setCurrentPage(e.selected + 1)
+   }
+
+   const handleSortChange = (value: string) => {
+      const [newSortBy, newSortDir] = value.split('-')
+      setSortBy(newSortBy)
+      setSortDir(newSortDir)
+      setCurrentPage(1)
+   }
+
+   const handlePageSizeChange = (value: string) => {
+      setPageSize(Number(value))
+      setCurrentPage(1)
+   }
+
+   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files.length > 0) {
+         const newFiles = Array.from(e.target.files)
+
+         // Tạo preview URLs cho các file mới
+         const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file))
+
+         setSelectedFiles((prev) => [...prev, ...newFiles])
+         setPreviewUrls((prev) => [...prev, ...newPreviewUrls])
+
+         // Reset input để có thể chọn cùng file nhiều lần
+         e.target.value = ''
+      }
+   }
+
+   const handleRemoveFile = (index: number) => {
+      // Xóa file khỏi danh sách
+      setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+
+      // Xóa preview URL và giải phóng bộ nhớ
+      URL.revokeObjectURL(previewUrls[index])
+      setPreviewUrls((prev) => prev.filter((_, i) => i !== index))
+
+      // Cập nhật lại primary image index nếu cần
+      if (primaryImageIndex === index) {
+         setPrimaryImageIndex(0)
+      } else if (primaryImageIndex > index) {
+         setPrimaryImageIndex((prev) => prev - 1)
+      }
+   }
+
+   const handleSetPrimary = (index: number) => {
+      setPrimaryImageIndex(index)
+   }
+
+   const onSubmit = (data: CreateProductType) => {
+      createProduct.mutate(data, {
+         onSuccess: async (response) => {
+            // Lấy ID sản phẩm vừa tạo từ response
+            const productId = response.data.data.id
+
+            // Nếu có file ảnh được chọn, upload từng ảnh
+            if (selectedFiles.length > 0) {
+               try {
+                  // Upload ảnh chính trước
+                  if (selectedFiles[primaryImageIndex]) {
+                     await uploadProductImage.mutateAsync({
+                        id: productId,
+                        file: selectedFiles[primaryImageIndex],
+                        isPrimary: true
+                     })
+                  }
+
+                  // Upload các ảnh còn lại
+                  for (let i = 0; i < selectedFiles.length; i++) {
+                     if (i !== primaryImageIndex) {
+                        await uploadProductImage.mutateAsync({
+                           id: productId,
+                           file: selectedFiles[i],
+                           isPrimary: false
+                        })
+                     }
+                  }
+
+                  // Reset form và đóng dialog sau khi hoàn tất
+                  reset()
+                  setSelectedFiles([])
+                  setPreviewUrls([])
+                  setPrimaryImageIndex(0)
+                  setIsAddDialogOpen(false)
+                  toast.success('Thêm sản phẩm thành công')
+               } catch (error) {
+                  // Lỗi đã được xử lý trong hook useUploadProductImage
+               }
+            } else {
+               // Nếu không có ảnh, chỉ đóng dialog
+               reset()
+               setIsAddDialogOpen(false)
+            }
+         }
+      })
+   }
+
+   const handleEditProduct = (product: ProductType) => {
+      const detail = product.productDetail || {}
+
+      const formData: CreateProductType & { id: number } = {
+         id: product.id,
+         categoryId: product.categoryId,
+         discountId: product.discountId,
+         brandId: product.brandId,
+         name: product.name,
+         price: product.price,
+         description: product.description || '',
+         warranty: product.warranty || '',
+         weight: product.weight || 0,
+         dimensions: product.dimensions || '',
+         status: product.status,
+         stock: product.stock || 0,
+         processor: detail.processor || '',
+         ram: detail.ram || '',
+         storage: detail.storage || '',
+         display: detail.display || '',
+         graphics: detail.graphics || '',
+         battery: detail.battery || '',
+         camera: detail.camera || '',
+         operatingSystem: detail.operatingSystem || '',
+         connectivity: detail.connectivity || '',
+         otherFeatures: detail.otherFeatures || ''
+      }
+
+      setEditingProduct(formData)
+
+      // Lưu danh sách ảnh hiện tại
+      setExistingImages(product.imageUrls || [])
+
+      // Reset các state liên quan đến ảnh mới
+      setSelectedFiles([])
+      setPreviewUrls([])
+      setPrimaryImageIndex(0)
+
+      Object.entries(formData).forEach(([key, value]) => {
+         if (key !== 'id') {
+            setValue(key as keyof CreateProductType, value)
+         }
+      })
+
+      setIsEditDialogOpen(true)
+   }
+
+   const onSubmitEdit = (data: CreateProductType) => {
+      if (!editingProduct) return
+
+      const updatedProduct = {
+         ...data,
+         id: editingProduct.id
+      }
+
+      updateProduct.mutate(
+         { ...updatedProduct, discountId: data.discountId === 0 ? null : data.discountId },
+         {
+            onSuccess: async () => {
+               // Nếu có file ảnh mới được chọn, upload từng ảnh
+               if (selectedFiles.length > 0) {
+                  try {
+                     // Upload ảnh chính trước
+                     if (selectedFiles[primaryImageIndex]) {
+                        await uploadProductImage.mutateAsync({
+                           id: editingProduct.id,
+                           file: selectedFiles[primaryImageIndex],
+                           isPrimary: true
+                        })
+                     }
+
+                     // Upload các ảnh còn lại
+                     for (let i = 0; i < selectedFiles.length; i++) {
+                        if (i !== primaryImageIndex) {
+                           await uploadProductImage.mutateAsync({
+                              id: editingProduct.id,
+                              file: selectedFiles[i],
+                              isPrimary: false
+                           })
+                        }
+                     }
+                  } catch (error) {
+                     // Lỗi đã được xử lý trong hook useUploadProductImage
+                  }
+               }
+
+               // Đóng dialog và reset form
+               setIsEditDialogOpen(false)
+               setEditingProduct(null)
+               setExistingImages([])
+               setSelectedFiles([])
+               setPreviewUrls([])
+               reset()
+            }
+         }
+      )
+   }
+
+   // Cleanup preview URLs khi component unmount
+   React.useEffect(() => {
+      return () => {
+         previewUrls.forEach((url) => URL.revokeObjectURL(url))
+      }
+   }, [])
+
+   return (
+      <div className='container p-6'>
+         <div className='flex justify-between items-center mb-6'>
+            <h1 className='text-2xl font-bold'>Quản lý sản phẩm</h1>
+            <div className='flex items-center gap-4'>
+               <div className='flex items-center gap-2'>
+                  <span className='text-sm'>Hiển thị:</span>
+                  <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                     <SelectTrigger className='w-[80px]'>
+                        <SelectValue placeholder='10' />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value='5'>5</SelectItem>
+                        <SelectItem value='10'>10</SelectItem>
+                        <SelectItem value='20'>20</SelectItem>
+                        <SelectItem value='50'>50</SelectItem>
+                     </SelectContent>
+                  </Select>
+               </div>
+               <div className='flex items-center gap-2'>
+                  <span className='text-sm'>Sắp xếp:</span>
+                  <Select value={`${sortBy}-${sortDir}`} onValueChange={handleSortChange}>
+                     <SelectTrigger className='w-[180px]'>
+                        <SelectValue placeholder='Mới nhất' />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value='id-desc'>Mới nhất</SelectItem>
+                        <SelectItem value='id-asc'>Cũ nhất</SelectItem>
+                        <SelectItem value='price-asc'>Giá tăng dần</SelectItem>
+                        <SelectItem value='price-desc'>Giá giảm dần</SelectItem>
+                        <SelectItem value='name-asc'>Tên A-Z</SelectItem>
+                        <SelectItem value='name-desc'>Tên Z-A</SelectItem>
+                     </SelectContent>
+                  </Select>
+               </div>
+               <Dialog
+                  open={isAddDialogOpen}
+                  onOpenChange={(open) => {
+                     setIsAddDialogOpen(open)
+                     if (!open) {
+                        // Cleanup khi đóng dialog
+                        setSelectedFiles([])
+                        previewUrls.forEach((url) => URL.revokeObjectURL(url))
+                        setPreviewUrls([])
+                        setPrimaryImageIndex(0)
+                     }
+                  }}
+               >
+                  <DialogTrigger asChild>
+                     <Button>
+                        <Plus className='h-4 w-4 mr-2' />
+                        Thêm sản phẩm
+                     </Button>
+                  </DialogTrigger>
+                  <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
+                     <DialogHeader>
+                        <DialogTitle>Thêm sản phẩm mới</DialogTitle>
+                        <DialogDescription>Điền đầy đủ thông tin sản phẩm bên dưới</DialogDescription>
+                     </DialogHeader>
+                     <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
+                        <div className='grid grid-cols-2 gap-4'>
+                           <div className='space-y-2'>
+                              <Label htmlFor='name'>
+                                 Tên sản phẩm <span className='text-red-500'>*</span>
+                              </Label>
+                              <Input
+                                 id='name'
+                                 {...register('name', { required: 'Tên sản phẩm là bắt buộc' })}
+                                 placeholder='Nhập tên sản phẩm'
+                              />
+                              {errors.name && <p className='text-red-500 text-xs'>{errors.name.message}</p>}
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='price'>
+                                 Giá <span className='text-red-500'>*</span>
+                              </Label>
+                              <Input
+                                 id='price'
+                                 type='number'
+                                 {...register('price', {
+                                    required: 'Giá là bắt buộc',
+                                    min: { value: 0, message: 'Giá không được âm' }
+                                 })}
+                                 placeholder='Nhập giá sản phẩm'
+                              />
+                              {errors.price && <p className='text-red-500 text-xs'>{errors.price.message}</p>}
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='categoryId'>
+                                 Danh mục <span className='text-red-500'>*</span>
+                              </Label>
+                              <Controller
+                                 control={control}
+                                 name='categoryId'
+                                 rules={{ required: 'Danh mục là bắt buộc' }}
+                                 render={({ field }) => (
+                                    <Select
+                                       value={field.value?.toString()}
+                                       onValueChange={(value) => field.onChange(Number(value))}
+                                    >
+                                       <SelectTrigger>
+                                          <SelectValue placeholder='Chọn danh mục' />
+                                       </SelectTrigger>
+                                       <SelectContent>
+                                          {categories.map((category) => (
+                                             <SelectItem key={category.id} value={category.id.toString()}>
+                                                {category.categoryName}
+                                             </SelectItem>
+                                          ))}
+                                       </SelectContent>
+                                    </Select>
+                                 )}
+                              />
+                              {errors.categoryId && <p className='text-red-500 text-xs'>{errors.categoryId.message}</p>}
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='brandId'>Thương hiệu</Label>
+                              <Controller
+                                 control={control}
+                                 name='brandId'
+                                 render={({ field }) => (
+                                    <Select
+                                       value={field.value?.toString()}
+                                       onValueChange={(value) => field.onChange(Number(value))}
+                                    >
+                                       <SelectTrigger>
+                                          <SelectValue placeholder='Chọn thương hiệu' />
+                                       </SelectTrigger>
+                                       <SelectContent>
+                                          {brands.map((brand) => (
+                                             <SelectItem key={brand.id} value={brand.id.toString()}>
+                                                {brand.brandName}
+                                             </SelectItem>
+                                          ))}
+                                       </SelectContent>
+                                    </Select>
+                                 )}
+                              />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='discountId'>Khuyến mãi</Label>
+                              <Controller
+                                 control={control}
+                                 name='discountId'
+                                 render={({ field }) => (
+                                    <Select
+                                       value={field.value?.toString()}
+                                       onValueChange={(value) => field.onChange(Number(value))}
+                                    >
+                                       <SelectTrigger>
+                                          <SelectValue placeholder='Chọn khuyến mãi' />
+                                       </SelectTrigger>
+                                       <SelectContent>
+                                          {discounts.map((discount) => (
+                                             <SelectItem key={discount.id} value={discount.id.toString()}>
+                                                {discount.discountName} ({discount.value}%)
+                                             </SelectItem>
+                                          ))}
+                                       </SelectContent>
+                                    </Select>
+                                 )}
+                              />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='stock'>
+                                 Số lượng tồn kho <span className='text-red-500'>*</span>
+                              </Label>
+                              <Input
+                                 id='stock'
+                                 type='number'
+                                 {...register('stock', {
+                                    required: 'Số lượng tồn kho là bắt buộc',
+                                    min: { value: 0, message: 'Số lượng không được âm' }
+                                 })}
+                                 placeholder='Nhập số lượng tồn kho'
+                              />
+                              {errors.stock && <p className='text-red-500 text-xs'>{errors.stock.message}</p>}
+                           </div>
+                        </div>
+
+                        <div className='space-y-2'>
+                           <Label htmlFor='description'>Mô tả sản phẩm</Label>
+                           <Textarea
+                              id='description'
+                              {...register('description')}
+                              placeholder='Nhập mô tả sản phẩm'
+                              className='min-h-[100px]'
+                           />
+                        </div>
+
+                        <div className='grid grid-cols-2 gap-4'>
+                           <div className='space-y-2'>
+                              <Label htmlFor='warranty'>Bảo hành</Label>
+                              <Input id='warranty' {...register('warranty')} placeholder='Ví dụ: 12 tháng' />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='weight'>Trọng lượng (gram)</Label>
+                              <Input
+                                 id='weight'
+                                 type='number'
+                                 {...register('weight', { min: 0 })}
+                                 placeholder='Nhập trọng lượng'
+                              />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='dimensions'>Kích thước</Label>
+                              <Input id='dimensions' {...register('dimensions')} placeholder='Ví dụ: 150 x 75 x 8 mm' />
+                           </div>
+                        </div>
+
+                        <div className='border p-4 rounded-md space-y-4'>
+                           <h3 className='font-medium'>Thông số kỹ thuật</h3>
+                           <div className='grid grid-cols-2 gap-4'>
+                              <div className='space-y-2'>
+                                 <Label htmlFor='processor'>Vi xử lý</Label>
+                                 <Input
+                                    id='processor'
+                                    {...register('processor')}
+                                    placeholder='Ví dụ: Apple A15 Bionic'
+                                 />
+                              </div>
+                              <div className='space-y-2'>
+                                 <Label htmlFor='ram'>RAM</Label>
+                                 <Input id='ram' {...register('ram')} placeholder='Ví dụ: 8GB LPDDR5' />
+                              </div>
+                              <div className='space-y-2'>
+                                 <Label htmlFor='storage'>Bộ nhớ trong</Label>
+                                 <Input id='storage' {...register('storage')} placeholder='Ví dụ: 256GB' />
+                              </div>
+                              <div className='space-y-2'>
+                                 <Label htmlFor='display'>Màn hình</Label>
+                                 <Input
+                                    id='display'
+                                    {...register('display')}
+                                    placeholder='Ví dụ: 6.1 inch Super Retina XDR'
+                                 />
+                              </div>
+                              <div className='space-y-2'>
+                                 <Label htmlFor='graphics'>Card đồ họa</Label>
+                                 <Input id='graphics' {...register('graphics')} placeholder='Ví dụ: Apple GPU' />
+                              </div>
+                              <div className='space-y-2'>
+                                 <Label htmlFor='battery'>Pin</Label>
+                                 <Input id='battery' {...register('battery')} placeholder='Ví dụ: 3240 mAh' />
+                              </div>
+                              <div className='space-y-2'>
+                                 <Label htmlFor='camera'>Camera</Label>
+                                 <Input id='camera' {...register('camera')} placeholder='Ví dụ: 12MP + 12MP' />
+                              </div>
+                              <div className='space-y-2'>
+                                 <Label htmlFor='operatingSystem'>Hệ điều hành</Label>
+                                 <Input
+                                    id='operatingSystem'
+                                    {...register('operatingSystem')}
+                                    placeholder='Ví dụ: iOS 16'
+                                 />
+                              </div>
+                              <div className='space-y-2'>
+                                 <Label htmlFor='connectivity'>Kết nối</Label>
+                                 <Input
+                                    id='connectivity'
+                                    {...register('connectivity')}
+                                    placeholder='Ví dụ: 5G, Wi-Fi 6, Bluetooth 5.0'
+                                 />
+                              </div>
+                              <div className='space-y-2'>
+                                 <Label htmlFor='otherFeatures'>Tính năng khác</Label>
+                                 <Input
+                                    id='otherFeatures'
+                                    {...register('otherFeatures')}
+                                    placeholder='Ví dụ: Face ID, chống nước IP68'
+                                 />
+                              </div>
+                           </div>
+                        </div>
+
+                        <div className='flex items-center space-x-2'>
+                           <Controller
+                              control={control}
+                              name='status'
+                              render={({ field }) => (
+                                 <Switch checked={field.value} onCheckedChange={field.onChange} id='status' />
+                              )}
+                           />
+                           <Label htmlFor='status'>Hiển thị sản phẩm</Label>
+                        </div>
+
+                        <div className='space-y-2'>
+                           <Label htmlFor='productImage'>Hình ảnh sản phẩm</Label>
+                           <div className='flex items-center gap-4'>
+                              <Input
+                                 id='productImage'
+                                 type='file'
+                                 ref={fileInputRef}
+                                 accept='image/*'
+                                 multiple
+                                 onChange={handleFileChange}
+                              />
+                              <Button type='button' variant='outline' onClick={() => fileInputRef.current?.click()}>
+                                 Chọn ảnh
+                              </Button>
+                           </div>
+
+                           {/* Hiển thị preview ảnh */}
+                           {previewUrls.length > 0 && (
+                              <div className='mt-4'>
+                                 <p className='text-sm font-medium mb-2'>
+                                    Đã chọn {selectedFiles.length} ảnh (click vào ảnh để đặt làm ảnh chính)
+                                 </p>
+                                 <div className='grid grid-cols-5 gap-4'>
+                                    {previewUrls.map((url, index) => (
+                                       <div
+                                          key={index}
+                                          className={`relative aspect-square border rounded-md overflow-hidden cursor-pointer ${
+                                             index === primaryImageIndex ? 'ring-2 ring-primaryColor' : ''
+                                          }`}
+                                          onClick={() => handleSetPrimary(index)}
+                                       >
+                                          <Image src={url} alt={`Preview ${index + 1}`} fill className='object-cover' />
+                                          {index === primaryImageIndex && (
+                                             <div className='absolute top-1 left-1 bg-primaryColor text-white text-xs px-1 rounded'>
+                                                Chính
+                                             </div>
+                                          )}
+                                          <button
+                                             type='button'
+                                             className='absolute top-1 right-1 bg-red-500 text-white rounded-full p-1'
+                                             onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleRemoveFile(index)
+                                             }}
+                                          >
+                                             <X className='h-3 w-3' />
+                                          </button>
+                                       </div>
+                                    ))}
+                                 </div>
+                              </div>
+                           )}
+
+                           <p className='text-xs text-gray-500'>
+                              Hình ảnh sẽ được tự động upload sau khi tạo sản phẩm thành công. Ảnh đầu tiên sẽ được đặt
+                              làm ảnh chính.
+                           </p>
+                        </div>
+
+                        <div className='flex justify-end gap-2'>
+                           <Button
+                              type='button'
+                              variant='outline'
+                              onClick={() => {
+                                 setIsAddDialogOpen(false)
+                                 setSelectedFiles([])
+                                 previewUrls.forEach((url) => URL.revokeObjectURL(url))
+                                 setPreviewUrls([])
+                              }}
+                           >
+                              Hủy
+                           </Button>
+                           <Button type='submit' disabled={createProduct.isPending || uploadProductImage.isPending}>
+                              {createProduct.isPending || uploadProductImage.isPending
+                                 ? 'Đang xử lý...'
+                                 : 'Thêm sản phẩm'}
+                           </Button>
+                        </div>
+                     </form>
+                  </DialogContent>
+               </Dialog>
+            </div>
+         </div>
+
+         {/* Thêm Dialog chỉnh sửa sản phẩm */}
+         <Dialog
+            open={isEditDialogOpen}
+            onOpenChange={(open) => {
+               setIsEditDialogOpen(open)
+               if (!open) {
+                  setEditingProduct(null)
+                  setExistingImages([])
+                  setSelectedFiles([])
+                  previewUrls.forEach((url) => URL.revokeObjectURL(url))
+                  setPreviewUrls([])
+                  reset()
+               }
+            }}
+         >
+            <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
+               <DialogHeader>
+                  <DialogTitle>Chỉnh sửa sản phẩm</DialogTitle>
+                  <DialogDescription>Cập nhật thông tin sản phẩm bên dưới</DialogDescription>
+               </DialogHeader>
+               <form onSubmit={handleSubmit(onSubmitEdit)} className='space-y-6'>
+                  <div className='grid grid-cols-2 gap-4'>
+                     <div className='space-y-2'>
+                        <Label htmlFor='name'>
+                           Tên sản phẩm <span className='text-red-500'>*</span>
+                        </Label>
+                        <Input
+                           id='name'
+                           {...register('name', { required: 'Tên sản phẩm là bắt buộc' })}
+                           placeholder='Nhập tên sản phẩm'
+                        />
+                        {errors.name && <p className='text-red-500 text-xs'>{errors.name.message}</p>}
+                     </div>
+                     <div className='space-y-2'>
+                        <Label htmlFor='price'>
+                           Giá <span className='text-red-500'>*</span>
+                        </Label>
+                        <Input
+                           id='price'
+                           type='number'
+                           {...register('price', { required: 'Giá là bắt buộc', min: 0 })}
+                           placeholder='Nhập giá sản phẩm'
+                        />
+                        {errors.price && <p className='text-red-500 text-xs'>{errors.price.message}</p>}
+                     </div>
+                     <div className='space-y-2'>
+                        <Label htmlFor='categoryId'>
+                           Danh mục <span className='text-red-500'>*</span>
+                        </Label>
+                        <Controller
+                           control={control}
+                           name='categoryId'
+                           rules={{ required: 'Danh mục là bắt buộc' }}
+                           render={({ field }) => (
+                              <Select
+                                 value={field.value?.toString()}
+                                 onValueChange={(value) => field.onChange(Number(value))}
+                              >
+                                 <SelectTrigger>
+                                    <SelectValue placeholder='Chọn danh mục' />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                    {categories.map((category) => (
+                                       <SelectItem key={category.id} value={category.id.toString()}>
+                                          {category.categoryName}
+                                       </SelectItem>
+                                    ))}
+                                 </SelectContent>
+                              </Select>
+                           )}
+                        />
+                        {errors.categoryId && <p className='text-red-500 text-xs'>{errors.categoryId.message}</p>}
+                     </div>
+                     <div className='space-y-2'>
+                        <Label htmlFor='brandId'>Thương hiệu</Label>
+                        <Controller
+                           control={control}
+                           name='brandId'
+                           render={({ field }) => (
+                              <Select
+                                 value={field.value?.toString()}
+                                 onValueChange={(value) => field.onChange(Number(value))}
+                              >
+                                 <SelectTrigger>
+                                    <SelectValue placeholder='Chọn thương hiệu' />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                    {brands.map((brand) => (
+                                       <SelectItem key={brand.id} value={brand.id.toString()}>
+                                          {brand.brandName}
+                                       </SelectItem>
+                                    ))}
+                                 </SelectContent>
+                              </Select>
+                           )}
+                        />
+                     </div>
+                     <div className='space-y-2'>
+                        <Label htmlFor='discountId'>Giảm giá</Label>
+                        <Controller
+                           control={control}
+                           name='discountId'
+                           render={({ field }) => (
+                              <Select
+                                 value={field.value?.toString()}
+                                 onValueChange={(value) => field.onChange(Number(value))}
+                              >
+                                 <SelectTrigger>
+                                    <SelectValue placeholder='Chọn giảm giá' />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                    <SelectItem value='0'>Không áp dụng</SelectItem>
+                                    {discounts.map((discount) => (
+                                       <SelectItem key={discount.id} value={discount.id.toString()}>
+                                          {discount.discountName} ({formatCurrency(discount.value)})
+                                       </SelectItem>
+                                    ))}
+                                 </SelectContent>
+                              </Select>
+                           )}
+                        />
+                     </div>
+                     <div className='space-y-2'>
+                        <Label htmlFor='stock'>Số lượng tồn kho</Label>
+                        <Input
+                           id='stock'
+                           type='number'
+                           {...register('stock', { min: 0 })}
+                           placeholder='Nhập số lượng tồn kho'
+                        />
+                     </div>
+                  </div>
+
+                  <div className='space-y-2'>
+                     <Label htmlFor='description'>Mô tả sản phẩm</Label>
+                     <Textarea
+                        id='description'
+                        {...register('description')}
+                        placeholder='Nhập mô tả sản phẩm'
+                        className='min-h-[100px]'
+                     />
+                  </div>
+
+                  {/* Các trường kỹ thuật khác giữ nguyên */}
+
+                  <div className='flex items-center space-x-2'>
+                     <Controller
+                        control={control}
+                        name='status'
+                        render={({ field }) => (
+                           <Switch checked={field.value} onCheckedChange={field.onChange} id='status' />
+                        )}
+                     />
+                     <Label htmlFor='status'>Hiển thị sản phẩm</Label>
+                  </div>
+
+                  <div className='space-y-2'>
+                     <Label>Hình ảnh hiện tại</Label>
+                     {existingImages.length > 0 ? (
+                        <div className='grid grid-cols-5 gap-4'>
+                           {existingImages.map((url, index) => (
+                              <div key={index} className='relative aspect-square border rounded-md overflow-hidden'>
+                                 <Image src={url} alt={`Ảnh ${index + 1}`} fill className='object-cover' />
+                              </div>
+                           ))}
+                        </div>
+                     ) : (
+                        <p className='text-sm text-muted-foreground'>Sản phẩm chưa có hình ảnh</p>
+                     )}
+
+                     <div className='mt-4'>
+                        <Label htmlFor='editProductImage'>Thêm hình ảnh mới</Label>
+                        <div className='flex items-center gap-4'>
+                           <Input
+                              id='editProductImage'
+                              type='file'
+                              ref={fileInputRef}
+                              accept='image/*'
+                              multiple
+                              onChange={handleFileChange}
+                           />
+                           <Button type='button' variant='outline' onClick={() => fileInputRef.current?.click()}>
+                              Chọn ảnh
+                           </Button>
+                        </div>
+                     </div>
+
+                     {/* Hiển thị preview ảnh mới */}
+                     {previewUrls.length > 0 && (
+                        <div className='mt-4'>
+                           <p className='text-sm font-medium mb-2'>
+                              Đã chọn {selectedFiles.length} ảnh mới (click vào ảnh để đặt làm ảnh chính)
+                           </p>
+                           <div className='grid grid-cols-5 gap-4'>
+                              {previewUrls.map((url, index) => (
+                                 <div
+                                    key={index}
+                                    className={`relative aspect-square border rounded-md overflow-hidden cursor-pointer ${
+                                       index === primaryImageIndex ? 'ring-2 ring-primaryColor' : ''
+                                    }`}
+                                    onClick={() => handleSetPrimary(index)}
+                                 >
+                                    <Image src={url} alt={`Preview ${index + 1}`} fill className='object-cover' />
+                                    {index === primaryImageIndex && (
+                                       <div className='absolute top-1 left-1 bg-primaryColor text-white text-xs px-1 rounded'>
+                                          Chính
+                                       </div>
+                                    )}
+                                    <button
+                                       type='button'
+                                       className='absolute top-1 right-1 bg-red-500 text-white rounded-full p-1'
+                                       onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleRemoveFile(index)
+                                       }}
+                                    >
+                                       <X className='h-3 w-3' />
+                                    </button>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+                     )}
+
+                     <p className='text-xs text-gray-500'>
+                        Hình ảnh mới sẽ được tự động upload sau khi cập nhật sản phẩm thành công.
+                        {previewUrls.length > 0 && ' Ảnh được đánh dấu là ảnh chính sẽ thay thế ảnh chính hiện tại.'}
+                     </p>
+                  </div>
+
+                  <div className='flex justify-end gap-2'>
+                     <Button
+                        type='button'
+                        variant='outline'
+                        onClick={() => {
+                           setIsEditDialogOpen(false)
+                           setEditingProduct(null)
+                           setExistingImages([])
+                           setSelectedFiles([])
+                           previewUrls.forEach((url) => URL.revokeObjectURL(url))
+                           setPreviewUrls([])
+                           reset()
+                        }}
+                     >
+                        Hủy
+                     </Button>
+                     <Button type='submit' disabled={updateProduct.isPending || uploadProductImage.isPending}>
+                        {updateProduct.isPending || uploadProductImage.isPending
+                           ? 'Đang xử lý...'
+                           : 'Cập nhật sản phẩm'}
+                     </Button>
+                  </div>
+               </form>
+            </DialogContent>
+         </Dialog>
+
+         {/* Phần hiển thị bảng sản phẩm */}
+         {isLoading ? (
+            <div className='space-y-4'>
+               {/* Skeleton loading */}
+               <div className='rounded-md border'>
+                  <Table>
+                     <TableHeader>
+                        <TableRow>
+                           <TableHead className='w-[80px]'>Hình ảnh</TableHead>
+                           <TableHead>Tên sản phẩm</TableHead>
+                           <TableHead>Danh mục</TableHead>
+                           <TableHead>Thương hiệu</TableHead>
+                           <TableHead className='text-right'>Giá</TableHead>
+                           <TableHead className='text-center'>Tồn kho</TableHead>
+                           <TableHead className='text-center'>Trạng thái</TableHead>
+                           <TableHead className='text-right'>Thao tác</TableHead>
+                        </TableRow>
+                     </TableHeader>
+                     <TableBody>
+                        {Array(5)
+                           .fill(0)
+                           .map((_, index) => (
+                              <TableRow key={index}>
+                                 <TableCell>
+                                    <Skeleton className='h-16 w-16 rounded-md' />
+                                 </TableCell>
+                                 <TableCell>
+                                    <Skeleton className='h-4 w-full' />
+                                 </TableCell>
+                                 <TableCell>
+                                    <Skeleton className='h-4 w-20' />
+                                 </TableCell>
+                                 <TableCell>
+                                    <Skeleton className='h-4 w-20' />
+                                 </TableCell>
+                                 <TableCell>
+                                    <Skeleton className='h-4 w-16 ml-auto' />
+                                 </TableCell>
+                                 <TableCell>
+                                    <Skeleton className='h-4 w-8 mx-auto' />
+                                 </TableCell>
+                                 <TableCell>
+                                    <Skeleton className='h-6 w-16 mx-auto rounded-full' />
+                                 </TableCell>
+                                 <TableCell>
+                                    <Skeleton className='h-8 w-24 ml-auto' />
+                                 </TableCell>
+                              </TableRow>
+                           ))}
+                     </TableBody>
+                  </Table>
+               </div>
+            </div>
+         ) : (
+            <>
+               <div className='rounded-md border'>
+                  <Table>
+                     <TableHeader>
+                        <TableRow>
+                           <TableHead className='w-[80px]'>Hình ảnh</TableHead>
+                           <TableHead>Tên sản phẩm</TableHead>
+                           <TableHead>Danh mục</TableHead>
+                           <TableHead>Thương hiệu</TableHead>
+                           <TableHead className='text-right'>Giá</TableHead>
+                           <TableHead className='text-center'>Tồn kho</TableHead>
+                           <TableHead className='text-center'>Trạng thái</TableHead>
+                           <TableHead className='text-right'>Thao tác</TableHead>
+                        </TableRow>
+                     </TableHeader>
+                     <TableBody>
+                        {products.length > 0 ? (
+                           products.map((product) => (
+                              <TableRow key={product.id}>
+                                 <TableCell>
+                                    <div className='h-16 w-16 relative'>
+                                       <Image
+                                          src={product.imageUrls[0] || '/placeholder.svg'}
+                                          alt={product.name}
+                                          fill
+                                          className='object-cover rounded-md'
+                                       />
+                                    </div>
+                                 </TableCell>
+                                 <TableCell className='font-medium'>{product.name}</TableCell>
+                                 <TableCell>{product.categoryName}</TableCell>
+                                 <TableCell>{product.brandName || 'N/A'}</TableCell>
+                                 <TableCell className='text-right'>
+                                    {product.discountedPrice && product.discountedPrice < product.price ? (
+                                       <div>
+                                          <span className='line-through text-gray-500 text-sm'>
+                                             {formatCurrency(product.price)}
+                                          </span>
+                                          <div className='text-red-500 font-medium'>
+                                             {formatCurrency(product.discountedPrice)}
+                                          </div>
+                                       </div>
+                                    ) : (
+                                       formatCurrency(product.price)
+                                    )}
+                                 </TableCell>
+                                 <TableCell className='text-center'>
+                                    {product.stock > 0 ? (
+                                       product.stock <= 5 ? (
+                                          <span className='text-amber-500'>{product.stock}</span>
+                                       ) : (
+                                          <span>{product.stock}</span>
+                                       )
+                                    ) : (
+                                       <span className='text-red-500'>0</span>
+                                    )}
+                                 </TableCell>
+                                 <TableCell className='text-center'>
+                                    <Badge variant={product.status ? 'default' : 'destructive'}>
+                                       {product.status ? 'Hoạt động' : 'Ẩn'}
+                                    </Badge>
+                                 </TableCell>
+                                 <TableCell className='text-right'>
+                                    <div className='flex justify-end gap-2'>
+                                       <Button variant='outline' size='icon' title='Xem chi tiết'>
+                                          <Eye className='h-4 w-4' />
+                                       </Button>
+                                       <Button
+                                          variant='outline'
+                                          size='icon'
+                                          title='Chỉnh sửa'
+                                          onClick={() => handleEditProduct(product)}
+                                       >
+                                          <Edit className='h-4 w-4' />
+                                       </Button>
+                                       <Button variant='destructive' size='icon' title='Xóa'>
+                                          <Trash2 className='h-4 w-4' />
+                                       </Button>
+                                    </div>
+                                 </TableCell>
+                              </TableRow>
+                           ))
+                        ) : (
+                           <TableRow>
+                              <TableCell colSpan={8} className='text-center py-10 text-muted-foreground'>
+                                 Không có sản phẩm nào
+                              </TableCell>
+                           </TableRow>
+                        )}
+                     </TableBody>
+                  </Table>
+               </div>
+
+               {totalPages > 1 && (
+                  <div className='mt-4 flex justify-center'>
+                     <Paginate
+                        totalPages={totalPages}
+                        handlePageClick={handlePageClick}
+                        currentPage={currentPage - 1}
+                        setCurrentPage={setCurrentPage}
+                     />
+                  </div>
+               )}
+            </>
+         )}
+      </div>
+   )
+}

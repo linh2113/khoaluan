@@ -8,8 +8,9 @@ export interface ProductType {
    categoryName: string
    discountId: any
    discountName: any
+   brandId: any
+   brandName: any
    name: string
-   brand: string
    image: string
    price: number
    discountedPrice: number

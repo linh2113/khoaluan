@@ -70,7 +70,7 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
                   <Badge className='absolute top-2 right-2 z-10 bg-gray-500 hover:bg-gray-500'>Hết hàng</Badge>
                )}
                <Image
-                  src={'https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'}
+                  src={product.image}
                   alt={product.name || 'Product image'}
                   width={300}
                   height={300}
@@ -94,7 +94,7 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
                   {product.categoryName || 'Danh mục'}
                </Badge>
                <Badge variant='outline' className='text-xs font-normal px-1.5 py-0 h-5 bg-primary-foreground'>
-                  {product.brand || 'Thương hiệu'}
+                  {product.brandName || 'Thương hiệu'}
                </Badge>
             </div>
             <Link href={productUrl}>
@@ -103,7 +103,7 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
                </h3>
             </Link>
             <div className='mt-2 flex items-center justify-between'>
-               <div>
+               <div className='flex items-center gap-2'>
                   <div className='text-secondaryColor font-bold'>
                      {formatCurrency(product.discountedPrice || product.price || 0)}
                   </div>

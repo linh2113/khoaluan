@@ -2,11 +2,9 @@
 import ProductRating from '@/components/product-rating'
 import QuantityController from '@/components/quantity-controller'
 import { formatCurrency, formatNumberToK, getIdFromNameId } from '@/lib/utils'
-import { ShoppingBasket } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Heart, ShoppingBasket } from 'lucide-react'
 import Image from 'next/image'
-import React, { useState } from 'react'
-import Autoplay from 'embla-carousel-autoplay'
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { useGetProduct } from '@/queries/useProduct'
 import { Badge } from '@/components/ui/badge'
@@ -15,7 +13,6 @@ import { Separator } from '@/components/ui/separator'
 import { useAddToCart } from '@/queries/useCart'
 import { useAppContext } from '@/context/app.context'
 import { useAddToWishlist, useCheckProductInWishlist, useRemoveFromWishlist } from '@/queries/useWishlist'
-import { Heart } from 'lucide-react'
 import { toast } from 'react-toastify'
 
 export default function ProductDetail({ id }: { id: string }) {
@@ -31,6 +28,61 @@ export default function ProductDetail({ id }: { id: string }) {
    const [isWishlistLoading, setIsWishlistLoading] = useState(false)
    const { data, isLoading } = useGetProduct(Number(getIdFromNameId(id)))
    const product = data?.data.data
+
+   // State cho hình ảnh chính đang được hiển thị
+   const [activeImageIndex, setActiveImageIndex] = useState(0)
+   const [currentIndexImg, setCurrentIndexImg] = useState([0, 5])
+   const imageRef = useRef<HTMLImageElement>(null)
+
+   // Lấy danh sách ảnh hiện tại để hiển thị trong carousel
+   const currentImages = useMemo(
+      () => (product?.imageUrls ? product.imageUrls.slice(currentIndexImg[0], currentIndexImg[1]) : []),
+      [product, currentIndexImg]
+   )
+
+   // Cập nhật activeImageIndex khi product thay đổi
+   useEffect(() => {
+      if (product?.imageUrls && product.imageUrls.length > 0) {
+         setActiveImageIndex(0)
+      }
+   }, [product])
+
+   // Hàm xử lý khi click vào hình ảnh nhỏ
+   const handleThumbnailClick = (index: number) => {
+      // Cập nhật index của hình ảnh chính
+      setActiveImageIndex(currentIndexImg[0] + index)
+   }
+
+   // Hàm điều hướng carousel
+   const next = () => {
+      if (product?.imageUrls && currentIndexImg[1] < product.imageUrls.length) {
+         setCurrentIndexImg((prev) => [prev[0] + 5, prev[1] + 5])
+      }
+   }
+
+   const prev = () => {
+      if (currentIndexImg[0] > 0) {
+         setCurrentIndexImg((prev) => [Math.max(0, prev[0] - 5), Math.max(5, prev[1] - 5)])
+      }
+   }
+
+   // Xử lý zoom hình ảnh khi hover
+   const handleImageZoom = (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!imageRef.current) return
+
+      const { left, top, width, height } = event.currentTarget.getBoundingClientRect()
+      const x = (event.clientX - left) / width
+      const y = (event.clientY - top) / height
+
+      imageRef.current.style.transformOrigin = `${x * 100}% ${y * 100}%`
+      imageRef.current.style.transform = 'scale(1.5)'
+      imageRef.current.style.cursor = 'zoom-in'
+   }
+
+   const handleImageZoomLeave = () => {
+      if (!imageRef.current) return
+      imageRef.current.style.transform = 'scale(1)'
+   }
 
    // Xử lý thêm/xóa sản phẩm khỏi danh sách yêu thích
    const handleWishlistToggle = () => {
@@ -100,41 +152,90 @@ export default function ProductDetail({ id }: { id: string }) {
    return (
       <div className='my-5 container'>
          <div className='bg-secondary rounded-lg p-5 flex flex-col md:flex-row gap-10'>
-            <div className='w-full md:w-[40%] flex flex-col gap-4'>
+            <div className='w-full md:w-[40%] flex flex-col gap-2'>
                {/* Hình ảnh chính */}
-               <div className='relative'>
+               <div
+                  onMouseMove={handleImageZoom}
+                  onMouseLeave={handleImageZoomLeave}
+                  className='relative aspect-square w-full overflow-hidden rounded-md bg-white'
+               >
                   {discountPercentage > 0 && (
                      <Badge className='absolute top-2 left-2 z-10 bg-secondaryColor hover:bg-secondaryColor'>
                         -{discountPercentage}%
                      </Badge>
                   )}
-                  <Image
-                     src={'https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'}
-                     alt={product.name}
-                     width={500}
-                     height={500}
-                     className='aspect-square w-full object-contain bg-white rounded-md'
-                  />
+                  {product.imageUrls && product.imageUrls.length > 0 ? (
+                     <Image
+                        ref={imageRef}
+                        src={product.imageUrls[activeImageIndex]}
+                        alt={product.name}
+                        width={500}
+                        height={500}
+                        className='h-full w-full object-contain transition-transform duration-300'
+                     />
+                  ) : (
+                     <Image
+                        src={product.image || '/placeholder.svg'}
+                        alt={product.name}
+                        width={500}
+                        height={500}
+                        className='h-full w-full object-contain'
+                     />
+                  )}
                </div>
 
                {/* Hình ảnh nhỏ */}
-               <div className='grid grid-cols-5 gap-3'>
-                  {(product.imageUrls && product.imageUrls.length > 0
-                     ? product.imageUrls
-                     : Array(5).fill(
-                          'https://cdn.tgdd.vn/Products/Images/7923/310401/TimerThumb/balo-laptop-16-inch-togo-tgb2-(1).jpg'
-                       )
-                  ).map((imageUrl, index) => (
-                     <Image
-                        key={index}
-                        src={imageUrl}
-                        alt={`${product.name} - ảnh ${index + 1}`}
-                        width={50}
-                        height={50}
-                        className='aspect-square w-full object-contain bg-white rounded-md cursor-pointer hover:border-2 hover:border-primaryColor'
-                     />
-                  ))}
-               </div>
+               {product.imageUrls && product.imageUrls.length > 0 && (
+                  <div className='relative'>
+                     <div className='grid grid-cols-5 gap-2'>
+                        {currentImages.map((imageUrl, index) => (
+                           <div
+                              key={index}
+                              className={`relative aspect-square cursor-pointer overflow-hidden rounded-md border-2 ${
+                                 currentIndexImg[0] + index === activeImageIndex
+                                    ? 'border-primaryColor'
+                                    : 'border-transparent hover:border-gray-300'
+                              }`}
+                              onClick={() => handleThumbnailClick(index)}
+                           >
+                              <Image
+                                 src={imageUrl}
+                                 alt={`${product.name} - ảnh ${index + 1}`}
+                                 width={100}
+                                 height={100}
+                                 className='h-full w-full object-cover'
+                              />
+                           </div>
+                        ))}
+                     </div>
+
+                     {/* Nút điều hướng */}
+                     {product.imageUrls.length > 5 && (
+                        <>
+                           <button
+                              onClick={prev}
+                              disabled={currentIndexImg[0] <= 0}
+                              className={`absolute -left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md ${
+                                 currentIndexImg[0] <= 0 ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-100'
+                              }`}
+                           >
+                              <ChevronLeft className='h-5 w-5' />
+                           </button>
+                           <button
+                              onClick={next}
+                              disabled={currentIndexImg[1] >= product.imageUrls.length}
+                              className={`absolute -right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md ${
+                                 currentIndexImg[1] >= product.imageUrls.length
+                                    ? 'cursor-not-allowed opacity-50'
+                                    : 'hover:bg-gray-100'
+                              }`}
+                           >
+                              <ChevronRight className='h-5 w-5' />
+                           </button>
+                        </>
+                     )}
+                  </div>
+               )}
             </div>
 
             <div className='w-full md:w-[60%] flex flex-col gap-5'>
@@ -173,7 +274,7 @@ export default function ProductDetail({ id }: { id: string }) {
                <div className='bg-background p-4 rounded space-y-2 text-sm'>
                   <div className='grid grid-cols-12'>
                      <span className='col-span-3 text-gray-500'>Thương hiệu:</span>
-                     <span className='col-span-9 font-medium'>{product.brand || 'Đang cập nhật'}</span>
+                     <span className='col-span-9 font-medium'>{product.brandName || 'Đang cập nhật'}</span>
                   </div>
                   <div className='grid grid-cols-12'>
                      <span className='col-span-3 text-gray-500'>Danh mục:</span>
@@ -360,23 +461,6 @@ export default function ProductDetail({ id }: { id: string }) {
          {/* Sản phẩm liên quan */}
          <div className='bg-secondary rounded-lg p-5 mt-5'>
             <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>Có thể bạn cũng thích</h2>
-            <Carousel
-               plugins={[
-                  Autoplay({
-                     delay: 4000
-                  })
-               ]}
-            >
-               <CarouselContent>
-                  {Array(10)
-                     .fill(0)
-                     .map((_, index) => (
-                        <CarouselItem key={index} className='basis-1/6 pl-4'></CarouselItem>
-                     ))}
-               </CarouselContent>
-               <CarouselPrevious />
-               <CarouselNext />
-            </Carousel>
          </div>
       </div>
    )

@@ -11,11 +11,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import ProductFilter from '@/components/product-filter'
 import { ShoppingBag, Star, TrendingUp, Zap, Scale } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
-import { useGetAllCategories } from '@/queries/useCategory'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
-import { useGetAllBrand } from '@/queries/useAdmin'
+import { useGetAllBrand, useGetAllCategories } from '@/queries/useAdmin'
 
 export default function Home() {
    const router = useRouter()
@@ -38,6 +37,7 @@ export default function Home() {
    const { data, isLoading } = useGetAllProducts(queryParams)
    const products = data?.data.data.content || []
    const totalPages = data?.data.data.totalPages || 0
+   console.log(products)
 
    // Cập nhật page trong queryParams khi currentPage thay đổi
    useEffect(() => {

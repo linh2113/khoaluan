@@ -125,13 +125,13 @@ export default function Compare() {
                      {products.map((product) => (
                         <th key={product.id} className='border p-4 '>
                            <div className='flex flex-col items-center'>
-                              <div className='aspect-square w-full'>
+                              <div className='w-full'>
                                  <Image
-                                    src={product.imageUrls?.[0] || '/placeholder.svg'}
+                                    src={product.image || '/placeholder.svg'}
                                     alt={product.name}
                                     width={100}
                                     height={100}
-                                    className='object-cover mb-2'
+                                    className='mb-2'
                                  />
                               </div>
                               <Link
@@ -184,7 +184,7 @@ export default function Compare() {
                      <td className='border p-4 font-medium'>Thương hiệu</td>
                      {products.map((product) => (
                         <td key={`${product.id}-brand`} className='border p-4 text-center'>
-                           {product.brand || 'Không có thông tin'}
+                           {product.brandName || 'Không có thông tin'}
                         </td>
                      ))}
                   </tr>

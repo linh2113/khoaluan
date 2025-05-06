@@ -174,9 +174,7 @@ export default function Cart() {
                                        width={80}
                                        height={80}
                                        className='w-[80px] h-[80px]'
-                                       src={
-                                          'https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'
-                                       }
+                                       src={cart.productImage}
                                        alt={cart.productName}
                                     />
                                  </div>

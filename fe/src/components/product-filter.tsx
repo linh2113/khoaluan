@@ -10,8 +10,7 @@ import { useState, useEffect } from 'react'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import { ChevronDown, ChevronUp, Filter, Search, SlidersHorizontal, Tag } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
-import { BrandType } from '@/types/admin.type'
-import { CategoryType } from '@/types/category.type'
+import { BrandType, CategoryType } from '@/types/admin.type'
 
 interface ProductFilterProps {
    initialFilters: GetProductQueryParamsType

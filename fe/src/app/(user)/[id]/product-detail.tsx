@@ -14,7 +14,18 @@ import { useAddToCart } from '@/queries/useCart'
 import { useAppContext } from '@/context/app.context'
 import { useAddToWishlist, useCheckProductInWishlist, useRemoveFromWishlist } from '@/queries/useWishlist'
 import { toast } from 'react-toastify'
-
+import {
+   FacebookShareButton,
+   TwitterShareButton,
+   LinkedinShareButton,
+   TelegramShareButton,
+   WhatsappShareButton,
+   FacebookIcon,
+   TwitterIcon,
+   LinkedinIcon,
+   TelegramIcon,
+   WhatsappIcon
+} from 'react-share'
 export default function ProductDetail({ id }: { id: string }) {
    const { userId } = useAppContext()
    const [buyCount, setBuyCount] = useState<number>(1)
@@ -28,6 +39,11 @@ export default function ProductDetail({ id }: { id: string }) {
    const [isWishlistLoading, setIsWishlistLoading] = useState(false)
    const { data, isLoading } = useGetProduct(Number(getIdFromNameId(id)))
    const product = data?.data.data
+
+   // Lấy URL hiện tại cho việc chia sẻ
+   const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
+   const shareTitle = product?.name || 'Sản phẩm tuyệt vời'
+   const shareDescription = product?.description?.substring(0, 100) || 'Xem chi tiết sản phẩm tại đây'
 
    // State cho hình ảnh chính đang được hiển thị
    const [activeImageIndex, setActiveImageIndex] = useState(0)
@@ -53,16 +69,18 @@ export default function ProductDetail({ id }: { id: string }) {
       setActiveImageIndex(currentIndexImg[0] + index)
    }
 
-   // Hàm điều hướng carousel
+   // Hàm điều hướng carousel - sửa lại để chỉ dịch chuyển 1 tấm ảnh mỗi lần
    const next = () => {
       if (product?.imageUrls && currentIndexImg[1] < product.imageUrls.length) {
-         setCurrentIndexImg((prev) => [prev[0] + 5, prev[1] + 5])
+         // Dịch chuyển chỉ 1 tấm ảnh mỗi lần
+         setCurrentIndexImg((prev) => [prev[0] + 1, prev[1] + 1])
       }
    }
 
    const prev = () => {
       if (currentIndexImg[0] > 0) {
-         setCurrentIndexImg((prev) => [Math.max(0, prev[0] - 5), Math.max(5, prev[1] - 5)])
+         // Dịch chuyển chỉ 1 tấm ảnh mỗi lần
+         setCurrentIndexImg((prev) => [prev[0] - 1, prev[1] - 1])
       }
    }
 
@@ -116,7 +134,7 @@ export default function ProductDetail({ id }: { id: string }) {
       return (
          <div className='my-5 container'>
             <div className='bg-secondary rounded-lg p-5 flex flex-col md:flex-row gap-10'>
-               <div className='w-full md:w-[40%] flex flex-col gap-4'>
+               <div className='w-full md:w-1/2 flex flex-col gap-4'>
                   <Skeleton className='aspect-square w-full h-auto rounded-md' />
                   <div className='grid grid-cols-5 gap-3'>
                      {Array(5)
@@ -126,7 +144,7 @@ export default function ProductDetail({ id }: { id: string }) {
                         ))}
                   </div>
                </div>
-               <div className='w-full md:w-[60%] flex flex-col gap-5'>
+               <div className='w-full md:w-1/2 flex flex-col gap-5'>
                   <Skeleton className='h-8 w-3/4' />
                   <Skeleton className='h-5 w-1/3' />
                   <Skeleton className='h-12 w-1/2' />
@@ -152,12 +170,12 @@ export default function ProductDetail({ id }: { id: string }) {
    return (
       <div className='my-5 container'>
          <div className='bg-secondary rounded-lg p-5 flex flex-col md:flex-row gap-10'>
-            <div className='w-full md:w-[40%] flex flex-col gap-2'>
+            <div className='w-full md:w-1/2 flex flex-col gap-2'>
                {/* Hình ảnh chính */}
                <div
                   onMouseMove={handleImageZoom}
                   onMouseLeave={handleImageZoomLeave}
-                  className='relative aspect-square w-full overflow-hidden rounded-md bg-white'
+                  className='relative w-full overflow-hidden rounded-md'
                >
                   {discountPercentage > 0 && (
                      <Badge className='absolute top-2 left-2 z-10 bg-secondaryColor hover:bg-secondaryColor'>
@@ -209,7 +227,7 @@ export default function ProductDetail({ id }: { id: string }) {
                         ))}
                      </div>
 
-                     {/* Nút điều hướng */}
+                     {/* Nút điều hướng - hiển thị khi có nhiều hơn 5 ảnh */}
                      {product.imageUrls.length > 5 && (
                         <>
                            <button
@@ -218,8 +236,9 @@ export default function ProductDetail({ id }: { id: string }) {
                               className={`absolute -left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md ${
                                  currentIndexImg[0] <= 0 ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-100'
                               }`}
+                              aria-label='Ảnh trước'
                            >
-                              <ChevronLeft className='h-5 w-5' />
+                              <ChevronLeft className='h-5 w-5 text-primaryColor' />
                            </button>
                            <button
                               onClick={next}
@@ -229,8 +248,9 @@ export default function ProductDetail({ id }: { id: string }) {
                                     ? 'cursor-not-allowed opacity-50'
                                     : 'hover:bg-gray-100'
                               }`}
+                              aria-label='Ảnh tiếp theo'
                            >
-                              <ChevronRight className='h-5 w-5' />
+                              <ChevronRight className='h-5 w-5 text-primaryColor' />
                            </button>
                         </>
                      )}
@@ -238,7 +258,7 @@ export default function ProductDetail({ id }: { id: string }) {
                )}
             </div>
 
-            <div className='w-full md:w-[60%] flex flex-col gap-5'>
+            <div className='w-full md:w-1/2 flex flex-col gap-5'>
                {/* Tên sản phẩm */}
                <h1 className='font-medium text-2xl'>{product.name}</h1>
 
@@ -341,6 +361,34 @@ export default function ProductDetail({ id }: { id: string }) {
                   >
                      <Heart className={isInWishlist?.data.data ? 'fill-red-500' : ''} />
                   </button>
+               </div>
+
+               {/* Chia sẻ mạng xã hội */}
+               <div className='flex gap-2'>
+                  <FacebookShareButton url={shareUrl} hashtag={shareTitle} className='focus:outline-none'>
+                     <FacebookIcon size={32} round />
+                  </FacebookShareButton>
+
+                  <TwitterShareButton url={shareUrl} title={shareTitle} className='focus:outline-none'>
+                     <TwitterIcon size={32} round />
+                  </TwitterShareButton>
+
+                  <LinkedinShareButton
+                     url={shareUrl}
+                     title={shareTitle}
+                     summary={shareDescription}
+                     className='focus:outline-none'
+                  >
+                     <LinkedinIcon size={32} round />
+                  </LinkedinShareButton>
+
+                  <TelegramShareButton url={shareUrl} title={shareTitle} className='focus:outline-none'>
+                     <TelegramIcon size={32} round />
+                  </TelegramShareButton>
+
+                  <WhatsappShareButton url={shareUrl} title={shareTitle} separator=' - ' className='focus:outline-none'>
+                     <WhatsappIcon size={32} round />
+                  </WhatsappShareButton>
                </div>
             </div>
          </div>

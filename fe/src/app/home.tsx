@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import Image from 'next/image'
@@ -18,6 +18,8 @@ import { useGetAllBrand, useGetAllCategories } from '@/queries/useAdmin'
 
 export default function Home() {
    const router = useRouter()
+   const autoplayRef = useRef(null)
+
    // Lấy danh sách thương hiệu sản phẩm
    const getAllBrand = useGetAllBrand({})
    const brands = getAllBrand.data?.data.data.content || []

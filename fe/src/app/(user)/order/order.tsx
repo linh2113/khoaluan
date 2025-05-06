@@ -225,12 +225,12 @@ export default function Order() {
                            <Image
                               width={80}
                               height={80}
-                              src='https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'
-                              alt={item.productName || ''}
-                              className='w-full rounded'
+                              src={item.productImage}
+                              alt={item.productName}
+                              className='w-full rounded aspect-square'
                            />
                         </div>
-                        <div className='col-span-6'>
+                        <div className='col-span-5'>
                            <h3 className='text-base font-medium line-clamp-2'>{item.productName}</h3>
                         </div>
                         <div className='col-span-2 text-center'>
@@ -238,7 +238,7 @@ export default function Order() {
                            <div>{formatCurrency(item.price)}</div>
                         </div>
                         <div className='col-span-1 text-center'>x{item.quantity}</div>
-                        <div className='col-span-1 font-medium text-secondaryColor text-center'>
+                        <div className='col-span-2 font-medium text-secondaryColor text-center'>
                            {formatCurrency(item.totalPrice)}
                         </div>
                      </div>

@@ -44,6 +44,7 @@
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-hook-form": "^7.53.2",
     "react-paginate": "^8.2.0",
+    "react-share": "^5.2.2",
     "react-toastify": "^10.0.6",
     "recharts": "^2.15.3",
     "swiper": "^11.1.14",

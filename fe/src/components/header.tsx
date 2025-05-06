@@ -177,7 +177,7 @@ export default function Header() {
                                  >
                                     <DropdownMenuItem className='flex items-center gap-2 cursor-pointer'>
                                        <Image
-                                          src={'/no-product.png'}
+                                          src={cart.productImage}
                                           alt={cart.productName}
                                           width={40}
                                           height={40}

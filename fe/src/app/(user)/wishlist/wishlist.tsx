@@ -64,7 +64,6 @@ export default function Wishlist() {
          },
          {
             onSuccess: () => {
-               toast.success('Đã thêm sản phẩm vào giỏ hàng')
                setIsAddingToCart(null)
             },
             onError: () => {
@@ -122,11 +121,11 @@ export default function Wishlist() {
 
          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
             {wishlistItems.map((item) => (
-               <div key={item.id} className=' rounded-lg shadow-sm p-4 border relative group'>
+               <div key={item.id} className=' rounded-lg shadow-sm p-4 border relative '>
                   {/* Nút xóa */}
                   <button
                      onClick={() => handleRemoveFromWishlist(item)}
-                     className='absolute top-2 right-2 p-2 rounded-full  shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50'
+                     className='absolute top-0 right-0 p-2 rounded-full shadow-sm bg-red-200 z-50'
                      aria-label='Xóa khỏi danh sách yêu thích'
                   >
                      <Trash2 className='w-4 h-4 text-red-500' />
@@ -136,7 +135,7 @@ export default function Wishlist() {
                   <Link href={`/${generateNameId({ name: item.productName, id: item.productId })}`}>
                      <div className='mb-4 overflow-hidden rounded-md'>
                         <Image
-                           src={'https://cdn.tgdd.vn/2024/09/timerseo/220729.jpg'}
+                           src={item.productImage}
                            alt={item.productName}
                            width={300}
                            height={300}

@@ -6,8 +6,7 @@ import { useAddToCart } from '@/queries/useCart'
 import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { ORDER_STATUS, ORDER_STATUS_TEXT, PAYMENT_STATUS_TEXT } from '@/types/order.type'
-import Link from 'next/link'
+import { ORDER_STATUS } from '@/types/order.type'
 import Image from 'next/image'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -213,7 +212,7 @@ export default function Purchase() {
                   <div className='flex items-center gap-4 mb-2'>
                      <div className='w-16 h-16 flex-shrink-0'>
                         <Image
-                           src={'https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'}
+                           src={order.orderDetails[0].productImage}
                            alt={order.orderDetails[0].productName}
                            width={64}
                            height={64}
@@ -440,9 +439,7 @@ export default function Purchase() {
                               <div key={item.id} className='flex items-center gap-4 border-b pb-3'>
                                  <div className='w-16 h-16 flex-shrink-0'>
                                     <Image
-                                       src={
-                                          'https://cdn.tgdd.vn/Products/Images/42/329143/iphone-16-pro-titan-sa-mac.png'
-                                       }
+                                       src={item.productImage}
                                        alt={item.productName}
                                        width={64}
                                        height={64}

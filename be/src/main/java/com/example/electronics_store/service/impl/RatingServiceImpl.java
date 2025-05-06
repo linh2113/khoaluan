@@ -57,20 +57,21 @@ public class RatingServiceImpl implements RatingService {
         return mapRatingToDTO(savedRating);
     }
 
+//    @Override
+//    @Transactional
+//    public RatingDTO updateRating(Integer id, RatingDTO ratingDTO) {
+//        Rating rating = ratingRepository.findById(id)
+//                .orElseThrow(() -> new RuntimeException("Rating not found"));
+//
+//        rating.setRating(ratingDTO.getRating());
+//        rating.setComment(ratingDTO.getComment());
+//
+//        Rating updatedRating = ratingRepository.save(rating);
+//        return mapRatingToDTO(updatedRating);
+//    }
+
     @Override
-    @Transactional
-    public RatingDTO updateRating(Integer id, RatingDTO ratingDTO) {
-        Rating rating = ratingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rating not found"));
-
-        rating.setRating(ratingDTO.getRating());
-        rating.setComment(ratingDTO.getComment());
-
-        Rating updatedRating = ratingRepository.save(rating);
-        return mapRatingToDTO(updatedRating);
-    }
-
-    @Override
+    @Transactional (readOnly = true)
     public RatingDTO getRatingById(Integer id) {
         Rating rating = ratingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Rating not found"));
@@ -78,6 +79,7 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional (readOnly = true)
     public List<RatingDTO> getRatingsByProductId(Integer productId) {
         if (productId == null) {
             // Return all ratings if productId is null
@@ -95,6 +97,7 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional (readOnly = true)
     public List<RatingDTO> getRatingsByUserId(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -106,7 +109,7 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     @Transactional
-    public RatingDTO replyToRating(Integer userId, Integer parentRatingId, RatingDTO ratingDTO) {
+    public RatingDTO replyToRating(Integer userId, Integer parentRatingId, String comment) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -117,7 +120,7 @@ public class RatingServiceImpl implements RatingService {
         reply.setUser(user);
         reply.setProduct(parentRating.getProduct());
         reply.setRating(null); // No rating for replies
-        reply.setComment(ratingDTO.getComment());
+        reply.setComment(comment.trim());
         reply.setParent(parentRating);
 
         Rating savedReply = ratingRepository.save(reply);
@@ -125,6 +128,7 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional (readOnly = true)
     public List<RatingDTO> getRepliesByParentId(Integer parentId) {
         Rating parentRating = ratingRepository.findById(parentId)
                 .orElseThrow(() -> new RuntimeException("Parent rating not found"));
@@ -143,6 +147,7 @@ public class RatingServiceImpl implements RatingService {
     public Long countRatingsByProduct(Integer productId) {
         return ratingRepository.countRatingsByProduct(productId);
     }
+
 
     @Override
     public Map<Integer, Long> getRatingDistributionForProduct(Integer productId) {

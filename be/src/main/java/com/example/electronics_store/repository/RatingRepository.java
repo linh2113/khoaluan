@@ -20,14 +20,14 @@ public interface RatingRepository extends JpaRepository<Rating, Integer> {
     Optional<Rating> findByProductAndUser(Product product, User user);
     
     List<Rating> findByParent(Rating parent);
-    
-    @Query("SELECT AVG(r.rating) FROM Rating r WHERE r.product.id = :productId")
+
+    @Query("SELECT AVG(r.rating) FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL AND r.rating IS NOT NULL")
     Double getAverageRatingForProduct(@Param("productId") Integer productId);
-    
-    @Query("SELECT COUNT(r) FROM Rating r WHERE r.product.id = :productId")
+
+    @Query("SELECT COUNT(r) FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL AND r.rating IS NOT NULL")
     Long countRatingsByProduct(@Param("productId") Integer productId);
-    
-    @Query("SELECT r.rating, COUNT(r) FROM Rating r WHERE r.product.id = :productId GROUP BY r.rating ORDER BY r.rating DESC")
+
+    @Query("SELECT r.rating, COUNT(r) FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL AND r.rating IS NOT NULL GROUP BY r.rating ORDER BY r.rating DESC")
     List<Object[]> getRatingDistributionForProduct(@Param("productId") Integer productId);
     
     @Query("SELECT r FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL ORDER BY r.createAt DESC")

@@ -26,7 +26,7 @@ export interface ProductType {
    stock: number
    averageRating: number
    reviewCount: number
-   imageUrls: any[]
+   productImages: { id: number; imageUrl: string; isPrimary: boolean; displayOrder: any }[]
    productDetail: {
       id: number
       productId: number

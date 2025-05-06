@@ -52,3 +52,5 @@ export const updateProduct = (body: CreateProductType & { id: number }) => http.
 
 // Thêm API xóa hình ảnh sản phẩm
 export const deleteProductImage = (imageId: number) => http.delete(`/admin/products/images/${imageId}`)
+
+export const updatePrimaryImage = (imageId: number) => http.put(`/admin/products/images/${imageId}/primary`)

@@ -275,7 +275,7 @@ export default function Home() {
                            '
                            >
                               <Image
-                                 src={product.imageUrls?.[0] || '/placeholder.svg'}
+                                 src={product.image || '/placeholder.svg'}
                                  alt={product.name}
                                  width={40}
                                  height={40}

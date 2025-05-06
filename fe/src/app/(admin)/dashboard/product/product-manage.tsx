@@ -1,10 +1,12 @@
 'use client'
 import {
    useCreateProduct,
+   useDeleteProductImage,
    useGetAllAdminProduct,
    useGetAllBrand,
    useGetAllCategories,
    useGetAllDiscount,
+   useUpdatePrimaryImage,
    useUpdateProduct,
    useUploadProductImage
 } from '@/queries/useAdmin'
@@ -43,13 +45,13 @@ export default function ProductManage() {
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
    const [editingProduct, setEditingProduct] = useState<(CreateProductType & { id: number }) | null>(null)
-   const [createdProductId, setCreatedProductId] = useState<number | null>(null)
    const [selectedFiles, setSelectedFiles] = useState<File[]>([])
    const [previewUrls, setPreviewUrls] = useState<string[]>([])
    const [primaryImageIndex, setPrimaryImageIndex] = useState<number>(0)
-   const [existingImages, setExistingImages] = useState<string[]>([])
+   const [productImages, setProductImages] = useState<{ id: number; imageUrl: string; isPrimary: boolean }[]>([])
    const fileInputRef = useRef<HTMLInputElement>(null)
-
+   // Thêm state để lưu ID của ảnh sẽ được đặt làm ảnh chính
+   const [pendingPrimaryImageId, setPendingPrimaryImageId] = useState<number | null>(null)
    const getAllAdminProduct = useGetAllAdminProduct({
       page: currentPage - 1,
       size: pageSize,
@@ -73,6 +75,9 @@ export default function ProductManage() {
    const createProduct = useCreateProduct()
    const uploadProductImage = useUploadProductImage()
    const updateProduct = useUpdateProduct()
+
+   const deleteProductImage = useDeleteProductImage()
+   const updatePrimaryImage = useUpdatePrimaryImage()
 
    const {
       register,
@@ -155,7 +160,7 @@ export default function ProductManage() {
                      await uploadProductImage.mutateAsync({
                         id: productId,
                         file: selectedFiles[primaryImageIndex],
-                        isPrimary: true
+                        isPrimary: true // Ảnh đầu tiên luôn là ảnh chính khi tạo mới
                      })
                   }
 
@@ -184,6 +189,7 @@ export default function ProductManage() {
                // Nếu không có ảnh, chỉ đóng dialog
                reset()
                setIsAddDialogOpen(false)
+               toast.success('Thêm sản phẩm thành công')
             }
          }
       })
@@ -219,13 +225,16 @@ export default function ProductManage() {
 
       setEditingProduct(formData)
 
-      // Lưu danh sách ảnh hiện tại
-      setExistingImages(product.imageUrls || [])
+      // Lưu danh sách ảnh hiện tại với đầy đủ thông tin
+      setProductImages(product.productImages || [])
+      // Xóa dòng này: setExistingImages(product.productImages?.map((image) => image.imageUrl) || [])
 
       // Reset các state liên quan đến ảnh mới
       setSelectedFiles([])
       setPreviewUrls([])
       setPrimaryImageIndex(0)
+      // Reset state pendingPrimaryImageId khi mở dialog
+      setPendingPrimaryImageId(null)
 
       Object.entries(formData).forEach(([key, value]) => {
          if (key !== 'id') {
@@ -248,40 +257,58 @@ export default function ProductManage() {
          { ...updatedProduct, discountId: data.discountId === 0 ? null : data.discountId },
          {
             onSuccess: async () => {
+               // Xử lý đặt ảnh chính nếu có
+               if (pendingPrimaryImageId !== null) {
+                  try {
+                     // Gọi API để cập nhật ảnh chính
+                     await updatePrimaryImage.mutateAsync(pendingPrimaryImageId)
+
+                     // Đợi một chút để đảm bảo dữ liệu được cập nhật trên server
+                     await new Promise((resolve) => setTimeout(resolve, 500))
+
+                     // Refresh dữ liệu sản phẩm để cập nhật trạng thái ảnh
+                     await getAllAdminProduct.refetch()
+
+                     // Reset state sau khi đã xử lý
+                     setPendingPrimaryImageId(null)
+                  } catch (error) {
+                     toast.error('Cập nhật ảnh chính thất bại')
+                  }
+               }
+
                // Nếu có file ảnh mới được chọn, upload từng ảnh
                if (selectedFiles.length > 0) {
                   try {
-                     // Upload ảnh chính trước
-                     if (selectedFiles[primaryImageIndex]) {
+                     // Kiểm tra xem đã có ảnh chính chưa (sau khi đã cập nhật ảnh chính ở trên)
+                     const hasPrimaryImage = productImages.some((img) => img.isPrimary)
+
+                     // Upload từng ảnh mới
+                     for (let i = 0; i < selectedFiles.length; i++) {
+                        const shouldBePrimary = i === primaryImageIndex && !hasPrimaryImage
+
                         await uploadProductImage.mutateAsync({
                            id: editingProduct.id,
-                           file: selectedFiles[primaryImageIndex],
-                           isPrimary: true
+                           file: selectedFiles[i],
+                           isPrimary: shouldBePrimary
                         })
                      }
 
-                     // Upload các ảnh còn lại
-                     for (let i = 0; i < selectedFiles.length; i++) {
-                        if (i !== primaryImageIndex) {
-                           await uploadProductImage.mutateAsync({
-                              id: editingProduct.id,
-                              file: selectedFiles[i],
-                              isPrimary: false
-                           })
-                        }
-                     }
+                     // Refresh lại dữ liệu sau khi upload ảnh
+                     await getAllAdminProduct.refetch()
                   } catch (error) {
-                     // Lỗi đã được xử lý trong hook useUploadProductImage
+                     toast.error('Upload ảnh thất bại')
                   }
                }
 
                // Đóng dialog và reset form
                setIsEditDialogOpen(false)
                setEditingProduct(null)
-               setExistingImages([])
                setSelectedFiles([])
                setPreviewUrls([])
+               setPendingPrimaryImageId(null)
                reset()
+
+               toast.success('Cập nhật sản phẩm thành công')
             }
          }
       )
@@ -293,6 +320,32 @@ export default function ProductManage() {
          previewUrls.forEach((url) => URL.revokeObjectURL(url))
       }
    }, [])
+
+   // Thêm hàm xử lý xóa ảnh
+   const handleDeleteImage = async (imageId: number) => {
+      try {
+         await deleteProductImage.mutateAsync(imageId)
+         // Cập nhật lại danh sách ảnh sau khi xóa
+         setProductImages((prev) => prev.filter((img) => img.id !== imageId))
+      } catch (error) {
+         toast.error('Xóa ảnh thất bại')
+      }
+   }
+
+   // Thêm hàm xử lý chọn ảnh làm ảnh chính
+   const handleSelectPrimaryImage = (imageId: number) => {
+      // Chỉ đánh dấu ảnh này sẽ là ảnh chính, chưa gọi API
+      setPendingPrimaryImageId(imageId)
+
+      // Cập nhật UI để hiển thị ảnh được chọn
+      // Đảm bảo chỉ có một ảnh được đánh dấu là isPrimary=true
+      setProductImages((prev) =>
+         prev.map((img) => ({
+            ...img,
+            isPrimary: img.id === imageId
+         }))
+      )
+   }
 
    return (
       <div className='container p-6'>
@@ -672,10 +725,10 @@ export default function ProductManage() {
                setIsEditDialogOpen(open)
                if (!open) {
                   setEditingProduct(null)
-                  setExistingImages([])
                   setSelectedFiles([])
                   previewUrls.forEach((url) => URL.revokeObjectURL(url))
                   setPreviewUrls([])
+                  setPendingPrimaryImageId(null)
                   reset()
                }
             }}
@@ -821,79 +874,107 @@ export default function ProductManage() {
                      <Label htmlFor='status'>Hiển thị sản phẩm</Label>
                   </div>
 
+                  {/* Hiển thị ảnh hiện tại với chức năng xóa và đặt ảnh chính */}
                   <div className='space-y-2'>
                      <Label>Hình ảnh hiện tại</Label>
-                     {existingImages.length > 0 ? (
+                     {productImages.length > 0 ? (
                         <div className='grid grid-cols-5 gap-4'>
-                           {existingImages.map((url, index) => (
-                              <div key={index} className='relative aspect-square border rounded-md overflow-hidden'>
-                                 <Image src={url} alt={`Ảnh ${index + 1}`} fill className='object-cover' />
+                           {productImages.map((image) => (
+                              <div
+                                 key={image.id}
+                                 className={`relative aspect-square border rounded-md overflow-hidden cursor-pointer ${
+                                    image.isPrimary ? 'ring-2 ring-primaryColor' : ''
+                                 }`}
+                                 onClick={() => handleSelectPrimaryImage(image.id)}
+                              >
+                                 <Image src={image.imageUrl} alt='Product image' fill className='object-cover' />
+                                 {image.isPrimary && (
+                                    <div className='absolute top-1 left-1 bg-primaryColor text-white text-xs px-1 rounded'>
+                                       Chính
+                                    </div>
+                                 )}
+                                 <button
+                                    type='button'
+                                    className='absolute top-1 right-1 bg-red-500 text-white rounded-full p-1'
+                                    onClick={(e) => {
+                                       e.stopPropagation() // Ngăn sự kiện click lan tỏa đến phần tử cha
+                                       handleDeleteImage(image.id)
+                                    }}
+                                 >
+                                    <X className='h-3 w-3' />
+                                 </button>
                               </div>
                            ))}
                         </div>
                      ) : (
                         <p className='text-sm text-muted-foreground'>Sản phẩm chưa có hình ảnh</p>
                      )}
+                  </div>
 
+                  <p className='text-xs text-gray-500 mt-2'>
+                     Nhấp vào ảnh để chọn làm ảnh chính. Thay đổi sẽ được áp dụng khi bạn nhấn nút "Cập nhật sản phẩm".
+                  </p>
+
+                  <div className='mt-4'>
+                     <Label htmlFor='editProductImage'>Thêm hình ảnh mới</Label>
+                     <div className='flex items-center gap-4'>
+                        <Input
+                           id='editProductImage'
+                           type='file'
+                           ref={fileInputRef}
+                           accept='image/*'
+                           multiple
+                           onChange={handleFileChange}
+                        />
+                        <Button type='button' variant='outline' onClick={() => fileInputRef.current?.click()}>
+                           Chọn ảnh
+                        </Button>
+                     </div>
+                  </div>
+
+                  {/* Hiển thị preview ảnh mới */}
+                  {previewUrls.length > 0 && (
                      <div className='mt-4'>
-                        <Label htmlFor='editProductImage'>Thêm hình ảnh mới</Label>
-                        <div className='flex items-center gap-4'>
-                           <Input
-                              id='editProductImage'
-                              type='file'
-                              ref={fileInputRef}
-                              accept='image/*'
-                              multiple
-                              onChange={handleFileChange}
-                           />
-                           <Button type='button' variant='outline' onClick={() => fileInputRef.current?.click()}>
-                              Chọn ảnh
-                           </Button>
+                        <p className='text-sm font-medium mb-2'>
+                           Đã chọn {selectedFiles.length} ảnh mới (click vào ảnh để đặt làm ảnh chính)
+                        </p>
+                        <div className='grid grid-cols-5 gap-4'>
+                           {previewUrls.map((url, index) => (
+                              <div
+                                 key={index}
+                                 className={`relative aspect-square border rounded-md overflow-hidden cursor-pointer ${
+                                    index === primaryImageIndex ? 'ring-2 ring-primaryColor' : ''
+                                 }`}
+                                 onClick={() => handleSetPrimary(index)}
+                              >
+                                 <Image src={url} alt={`Preview ${index + 1}`} fill className='object-cover' />
+                                 {index === primaryImageIndex && (
+                                    <div className='absolute top-1 left-1 bg-primaryColor text-white text-xs px-1 rounded'>
+                                       Chính
+                                    </div>
+                                 )}
+                                 <button
+                                    type='button'
+                                    className='absolute top-1 right-1 bg-red-500 text-white rounded-full p-1'
+                                    onClick={(e) => {
+                                       e.stopPropagation()
+                                       handleRemoveFile(index)
+                                    }}
+                                 >
+                                    <X className='h-3 w-3' />
+                                 </button>
+                              </div>
+                           ))}
                         </div>
                      </div>
+                  )}
 
-                     {/* Hiển thị preview ảnh mới */}
-                     {previewUrls.length > 0 && (
-                        <div className='mt-4'>
-                           <p className='text-sm font-medium mb-2'>
-                              Đã chọn {selectedFiles.length} ảnh mới (click vào ảnh để đặt làm ảnh chính)
-                           </p>
-                           <div className='grid grid-cols-5 gap-4'>
-                              {previewUrls.map((url, index) => (
-                                 <div
-                                    key={index}
-                                    className={`relative aspect-square border rounded-md overflow-hidden cursor-pointer ${
-                                       index === primaryImageIndex ? 'ring-2 ring-primaryColor' : ''
-                                    }`}
-                                    onClick={() => handleSetPrimary(index)}
-                                 >
-                                    <Image src={url} alt={`Preview ${index + 1}`} fill className='object-cover' />
-                                    {index === primaryImageIndex && (
-                                       <div className='absolute top-1 left-1 bg-primaryColor text-white text-xs px-1 rounded'>
-                                          Chính
-                                       </div>
-                                    )}
-                                    <button
-                                       type='button'
-                                       className='absolute top-1 right-1 bg-red-500 text-white rounded-full p-1'
-                                       onClick={(e) => {
-                                          e.stopPropagation()
-                                          handleRemoveFile(index)
-                                       }}
-                                    >
-                                       <X className='h-3 w-3' />
-                                    </button>
-                                 </div>
-                              ))}
-                           </div>
-                        </div>
-                     )}
-
-                     <p className='text-xs text-gray-500'>
-                        Hình ảnh mới sẽ được tự động upload sau khi cập nhật sản phẩm thành công.
-                        {previewUrls.length > 0 && ' Ảnh được đánh dấu là ảnh chính sẽ thay thế ảnh chính hiện tại.'}
-                     </p>
-                  </div>
+                  <p className='text-xs text-gray-500'>
+                     Hình ảnh mới sẽ được tự động upload sau khi cập nhật sản phẩm thành công.
+                     {previewUrls.length > 0 &&
+                        productImages.some((img) => img.isPrimary) &&
+                        ' Ảnh được đánh dấu là ảnh chính sẽ chỉ được áp dụng nếu sản phẩm chưa có ảnh chính.'}
+                  </p>
 
                   <div className='flex justify-end gap-2'>
                      <Button
@@ -902,7 +983,6 @@ export default function ProductManage() {
                         onClick={() => {
                            setIsEditDialogOpen(false)
                            setEditingProduct(null)
-                           setExistingImages([])
                            setSelectedFiles([])
                            previewUrls.forEach((url) => URL.revokeObjectURL(url))
                            setPreviewUrls([])
@@ -997,7 +1077,7 @@ export default function ProductManage() {
                                  <TableCell>
                                     <div className='h-16 w-16 relative'>
                                        <Image
-                                          src={product.imageUrls[0] || '/placeholder.svg'}
+                                          src={product.image || '/placeholder.svg'}
                                           alt={product.name}
                                           fill
                                           className='object-cover rounded-md'

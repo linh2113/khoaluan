@@ -7,6 +7,7 @@ import {
    getAllDiscount,
    getAllPaymentMethod,
    getAllShippingMethod,
+   updatePrimaryImage,
    updateProduct,
    uploadProductImage
 } from '@/apiRequest/admin'
@@ -113,6 +114,21 @@ export const useDeleteProductImage = () => {
    const queryClient = useQueryClient()
    return useMutation({
       mutationFn: deleteProductImage,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['product']
+         })
+      },
+      onError: () => {
+         toast.error('Xóa ảnh thất bại')
+      }
+   })
+}
+
+export const useUpdatePrimaryImage = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updatePrimaryImage,
       onSuccess: () => {
          queryClient.invalidateQueries({
             queryKey: ['product']

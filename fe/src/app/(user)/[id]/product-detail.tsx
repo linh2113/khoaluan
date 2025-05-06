@@ -52,13 +52,13 @@ export default function ProductDetail({ id }: { id: string }) {
 
    // Lấy danh sách ảnh hiện tại để hiển thị trong carousel
    const currentImages = useMemo(
-      () => (product?.imageUrls ? product.imageUrls.slice(currentIndexImg[0], currentIndexImg[1]) : []),
+      () => (product?.productImages ? product.productImages.slice(currentIndexImg[0], currentIndexImg[1]) : []),
       [product, currentIndexImg]
    )
 
    // Cập nhật activeImageIndex khi product thay đổi
    useEffect(() => {
-      if (product?.imageUrls && product.imageUrls.length > 0) {
+      if (product?.productImages && product.productImages.length > 0) {
          setActiveImageIndex(0)
       }
    }, [product])
@@ -71,7 +71,7 @@ export default function ProductDetail({ id }: { id: string }) {
 
    // Hàm điều hướng carousel - sửa lại để chỉ dịch chuyển 1 tấm ảnh mỗi lần
    const next = () => {
-      if (product?.imageUrls && currentIndexImg[1] < product.imageUrls.length) {
+      if (product?.productImages && currentIndexImg[1] < product.productImages.length) {
          // Dịch chuyển chỉ 1 tấm ảnh mỗi lần
          setCurrentIndexImg((prev) => [prev[0] + 1, prev[1] + 1])
       }
@@ -182,10 +182,10 @@ export default function ProductDetail({ id }: { id: string }) {
                         -{discountPercentage}%
                      </Badge>
                   )}
-                  {product.imageUrls && product.imageUrls.length > 0 ? (
+                  {product.productImages && product.productImages.length > 0 ? (
                      <Image
                         ref={imageRef}
-                        src={product.imageUrls[activeImageIndex]}
+                        src={product.productImages[activeImageIndex].imageUrl}
                         alt={product.name}
                         width={500}
                         height={500}
@@ -203,7 +203,7 @@ export default function ProductDetail({ id }: { id: string }) {
                </div>
 
                {/* Hình ảnh nhỏ */}
-               {product.imageUrls && product.imageUrls.length > 0 && (
+               {product.productImages && product.productImages.length > 0 && (
                   <div className='relative'>
                      <div className='grid grid-cols-5 gap-2'>
                         {currentImages.map((imageUrl, index) => (
@@ -217,7 +217,7 @@ export default function ProductDetail({ id }: { id: string }) {
                               onClick={() => handleThumbnailClick(index)}
                            >
                               <Image
-                                 src={imageUrl}
+                                 src={imageUrl.imageUrl}
                                  alt={`${product.name} - ảnh ${index + 1}`}
                                  width={100}
                                  height={100}
@@ -228,7 +228,7 @@ export default function ProductDetail({ id }: { id: string }) {
                      </div>
 
                      {/* Nút điều hướng - hiển thị khi có nhiều hơn 5 ảnh */}
-                     {product.imageUrls.length > 5 && (
+                     {product.productImages.length > 5 && (
                         <>
                            <button
                               onClick={prev}
@@ -242,9 +242,9 @@ export default function ProductDetail({ id }: { id: string }) {
                            </button>
                            <button
                               onClick={next}
-                              disabled={currentIndexImg[1] >= product.imageUrls.length}
+                              disabled={currentIndexImg[1] >= product.productImages.length}
                               className={`absolute -right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md ${
-                                 currentIndexImg[1] >= product.imageUrls.length
+                                 currentIndexImg[1] >= product.productImages.length
                                     ? 'cursor-not-allowed opacity-50'
                                     : 'hover:bg-gray-100'
                               }`}

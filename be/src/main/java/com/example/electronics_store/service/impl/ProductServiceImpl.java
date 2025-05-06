@@ -513,8 +513,17 @@ public class ProductServiceImpl implements ProductService {
         ProductImage newPrimaryImage = productImageRepository.findById(imageId)
                 .orElseThrow(() -> new RuntimeException("Image not found"));
         Product product = newPrimaryImage.getProduct();
+        
+        // Set all other images as non-primary
+        List<ProductImage> allProductImages = productImageRepository.findByProduct(product);
+        for (ProductImage img : allProductImages) {
+            img.setIsPrimary(false);
+        }
+        productImageRepository.saveAll(allProductImages);
+        
         // Set the selected image as primary
         newPrimaryImage.setIsPrimary(true);
+        productImageRepository.save(newPrimaryImage);
 
         // Update product's main image
         product.setImage(newPrimaryImage.getImageUrl());

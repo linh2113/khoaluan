@@ -36,6 +36,6 @@ public class ProductDTO {
     private Integer stock;
     private Double averageRating;
     private Long reviewCount;
-    private List<String> imageUrls;
+    private List<ProductImageDTO> productImages;
     private ProductDetailDTO productDetail;
 }

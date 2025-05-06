@@ -624,10 +624,15 @@ public class ProductServiceImpl implements ProductService {
         dto.setReviewCount(reviewCount != null ? reviewCount : 0L);
         
         // Get all images
-        List<String> imageUrls = productImageRepository.findByProductOrderByDisplayOrder(product).stream()
-                .map(ProductImage::getImageUrl)
+        List<ProductImageDTO> imageList = productImageRepository.findByProductOrderByDisplayOrder(product).stream()
+                .map(image -> ProductImageDTO.builder()
+                        .id(image.getId())
+                        .imageUrl(image.getImageUrl())
+                        .isPrimary(image.getIsPrimary())
+                        .displayOrder(image.getDisplayOrder())
+                        .build())
                 .collect(Collectors.toList());
-        dto.setImageUrls(imageUrls);
+        dto.setProductImages(imageList);
         
         // Get product detail
         productDetailRepository.findByProduct(product).ifPresent(detail -> {

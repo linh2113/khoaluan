@@ -72,12 +72,12 @@ export default function Order() {
    }, [user])
 
    // Kiểm tra nếu không có sản phẩm nào được chọn, chuyển hướng về trang giỏ hàng
-   useEffect(() => {
-      if (!isLoadingCart && cartItems.length === 0) {
-         toast.warning('Vui lòng chọn sản phẩm để đặt hàng')
-         router.push('/cart')
-      }
-   }, [cartItems.length, isLoadingCart, router])
+   // useEffect(() => {
+   //    if (!isLoadingCart && cartItems.length === 0) {
+   //       toast.warning('Vui lòng chọn sản phẩm để đặt hàng')
+   //       router.push('/cart')
+   //    }
+   // }, [cartItems.length, isLoadingCart, router])
 
    // Xử lý thay đổi input
    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -106,6 +106,11 @@ export default function Order() {
 
    // Xử lý đặt hàng
    const handlePlaceOrder = () => {
+      if (!isLoadingCart && cartItems.length === 0) {
+         toast.warning('Vui lòng chọn sản phẩm để đặt hàng')
+         router.push('/cart')
+         return
+      }
       // Kiểm tra thông tin đầu vào
       if (!formData.address.trim()) {
          toast.error('Vui lòng nhập địa chỉ giao hàng')

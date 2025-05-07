@@ -81,13 +81,15 @@ export default function Header() {
                                     <User size={20} />
                                     Hồ sơ
                                  </Link>
-                                 <Link
-                                    className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2'
-                                    href={'/dashboard'}
-                                 >
-                                    <LayoutDashboard size={20} />
-                                    Quản lý
-                                 </Link>
+                                 {userInfo.role && (
+                                    <Link
+                                       className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2'
+                                       href={'/dashboard/statistics'}
+                                    >
+                                       <LayoutDashboard size={20} />
+                                       Quản lý
+                                    </Link>
+                                 )}
                                  <Link
                                     className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2'
                                     href={'/purchase'}

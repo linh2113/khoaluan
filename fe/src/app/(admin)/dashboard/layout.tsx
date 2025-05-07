@@ -143,7 +143,7 @@ export default function DashboardLayout({
                         </Link>
                         <Link
                            className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2'
-                           href={'/dashboard'}
+                           href={'/dashboard/statistics'}
                         >
                            <LayoutDashboard size={20} />
                            Quản lý

@@ -28,7 +28,8 @@ export const useCreateOrder = () => {
 
          // Chuyển hướng đến trang chi tiết đơn hàng
          const orderId = data.data.data.id
-         router.push(`/account/orders/${orderId}`)
+         router.push(`/`)
+         // router.push(`/account/orders/${orderId}`)
       },
       onError: () => {
          toast.error('Đặt hàng thất bại. Vui lòng thử lại sau.')

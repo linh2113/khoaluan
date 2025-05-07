@@ -2,7 +2,7 @@
 import ProductRating from '@/components/product-rating'
 import QuantityController from '@/components/quantity-controller'
 import { formatCurrency, formatNumberToK, getIdFromNameId } from '@/lib/utils'
-import { ChevronLeft, ChevronRight, Heart, ShoppingBasket, Star } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Heart, SendHorizontal, ShoppingBasket, Star } from 'lucide-react'
 import Image from 'next/image'
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { Textarea } from '@/components/ui/textarea'
@@ -708,6 +708,7 @@ export default function ProductDetail({ id }: { id: string }) {
                         className='min-h-[120px] border-primary'
                      />
                      <Button onClick={handleSubmitRating} disabled={createRating.isPending} className='self-start'>
+                        <SendHorizontal />
                         {createRating.isPending ? 'Đang gửi...' : 'Gửi đánh giá'}
                      </Button>
                   </>

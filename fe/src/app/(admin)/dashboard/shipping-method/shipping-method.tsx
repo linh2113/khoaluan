@@ -101,7 +101,7 @@ export default function ShippingMethod() {
          {getAllShippingMethod.isLoading ? (
             <div className='text-center py-4'>Đang tải...</div>
          ) : (
-            <Table>
+            <Table className='overflow-auto'>
                <TableHeader>
                   <TableRow>
                      <TableHead className='w-[80px]'>ID</TableHead>
@@ -134,11 +134,11 @@ export default function ShippingMethod() {
                            <TableCell>{method.estimatedDays}</TableCell>
                            <TableCell>
                               {method.isActive ? (
-                                 <span className='px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs'>
+                                 <span className='px-2 py-1 bg-green-100 text-green-800 whitespace-nowrap rounded-full text-xs'>
                                     Hoạt động
                                  </span>
                               ) : (
-                                 <span className='px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs'>
+                                 <span className='px-2 py-1 bg-red-100 text-red-800 whitespace-nowrap rounded-full text-xs'>
                                     Không hoạt động
                                  </span>
                               )}

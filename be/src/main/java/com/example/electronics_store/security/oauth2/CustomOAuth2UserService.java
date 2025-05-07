@@ -71,7 +71,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         user.setRole(false); // Regular user
         user.setActive(1); // Active by default for OAuth2 users
         user.setLoginTimes(1);
-        user.setLoginBy(provider.equals("google") ? 1 : 2); // 1 for Google, 2 for Facebook
+        // Update login provider code
+        user.setLoginBy(provider.equals("google") ? 1 :
+                (provider.equals("facebook") ? 2 :
+                        (provider.equals("discord") ? 3 : 0)));
         user.setLockFail(0);
         user.setPassword(UUID.randomUUID().toString()); // Random password as it's not used
         user.setHash(UUID.randomUUID().toString());
@@ -84,23 +87,31 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         if (oAuth2UserInfo.getFirstName() != null && !oAuth2UserInfo.getFirstName().isEmpty()) {
             existingUser.setSurName(oAuth2UserInfo.getFirstName());
         }
-        
+
         if (oAuth2UserInfo.getLastName() != null && !oAuth2UserInfo.getLastName().isEmpty()) {
             existingUser.setLastName(oAuth2UserInfo.getLastName());
         }
-        
+
         if (oAuth2UserInfo.getImageUrl() != null && !oAuth2UserInfo.getImageUrl().isEmpty()) {
             existingUser.setPicture(oAuth2UserInfo.getImageUrl());
         }
-        
+
         // Increment login times
         existingUser.setLoginTimes(existingUser.getLoginTimes() + 1);
-        
+
         // Set login by if not already set
         if (existingUser.getLoginBy() == 0) {
-            existingUser.setLoginBy(provider.equals("google") ? 1 : 2);
+            if (provider.equals("google")) {
+                existingUser.setLoginBy(1);
+            } else if (provider.equals("facebook")) {
+                existingUser.setLoginBy(2);
+            } else if (provider.equals("discord")) {
+                existingUser.setLoginBy(3);
+            } else {
+                existingUser.setLoginBy(0); // Default value for unknown providers
+            }
         }
-        
+
         return userRepository.save(existingUser);
     }
 }

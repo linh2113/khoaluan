@@ -86,3 +86,77 @@ export interface CreateProductType {
    connectivity: string
    otherFeatures: string
 }
+
+// order
+export interface OrderType {
+   id: number
+   userId: number
+   userName: string
+   totalPrice: number
+   shippingFee: number
+   address: string
+   phoneNumber: string
+   shippingMethodId: number
+   shippingMethodName: string
+   paymentMethodId: number
+   paymentMethodName: string
+   trackingNumber: any
+   createAt: string
+   paymentStatus: string
+   orderStatus: number
+   orderStatusText: string
+   orderDetails: OrderDetail[]
+}
+export interface OrderDetail {
+   id: number
+   orderId: number
+   productId: number
+   productName: string
+   productImage: string
+   quantity: number
+   price: number
+   totalPrice: number
+   reviewStatus: boolean
+}
+
+// statistics
+export interface DashboardStatisticsType {
+   totalUsers: number
+   topSellingProducts: TopSellingProduct[]
+   shippedOrders: number
+   deliveredOrders: number
+   topCustomers: TopCustomer[]
+   pendingOrders: number
+   revenueToday: number
+   cancelledOrders: number
+   recentOrders: RecentOrder[]
+   lowStockProducts: number
+   totalProducts: number
+   newUsersToday: number
+   totalOrders: number
+   totalRevenue: number
+   processingOrders: number
+   newOrdersToday: number
+}
+export interface TopSellingProduct {
+   price: number
+   name: string
+   id: number
+   soldQuantity: number
+}
+
+export interface TopCustomer {
+   orderCount: number
+   id: number
+   userName: string
+   email: string
+}
+
+export interface RecentOrder {
+   totalPrice: number
+   orderStatus: number
+   id: number
+   userName: string
+   userId: number
+   createAt: string
+}

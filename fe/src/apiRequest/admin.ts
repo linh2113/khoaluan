@@ -3,9 +3,11 @@ import {
    BrandType,
    CategoryType,
    CreateProductType,
+   DashboardStatisticsType,
    DiscountType,
    GetAllBrandType,
    GetBrandQueryParamsType,
+   OrderType,
    PaymentMethodType,
    ShippingMethodType
 } from '@/types/admin.type'
@@ -43,7 +45,6 @@ export const getAllAdminProduct = (
 ) => http.get<GetAllProductType>(`/admin/products?` + queryString.stringify(queryParams))
 
 export const createProduct = (body: CreateProductType) => http.post(`/admin/products`, body)
-
 // Thêm API upload hình ảnh sản phẩm
 export const uploadProductImage = (id: number, file: File, isPrimary: boolean = false) => {
    const formData = new FormData()
@@ -56,10 +57,15 @@ export const uploadProductImage = (id: number, file: File, isPrimary: boolean = 
       }
    })
 }
-
 export const updateProduct = (body: CreateProductType & { id: number }) => http.put(`/admin/products/${body.id}`, body)
-
 // Thêm API xóa hình ảnh sản phẩm
 export const deleteProductImage = (imageId: number) => http.delete(`/admin/products/images/${imageId}`)
-
 export const updatePrimaryImage = (imageId: number) => http.put(`/admin/products/images/${imageId}/primary`)
+
+// Order
+export const getAllAdminOrder = (
+   queryParams: Pick<GetProductQueryParamsType, 'page' | 'size' | 'sortBy' | 'sortDir'>
+) => http.get<ResponseData<OrderType[]>>(`/admin/orders?` + queryString.stringify(queryParams))
+
+//statistics
+export const getDashboardStatistics = () => http.get<ResponseData<DashboardStatisticsType>>(`/admin/dashboard`)

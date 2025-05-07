@@ -5,12 +5,14 @@ import {
    createProduct,
    createShippingMethod,
    deleteProductImage,
+   getAllAdminOrder,
    getAllAdminProduct,
    getAllBrand,
    getAllCategories,
    getAllDiscount,
    getAllPaymentMethod,
    getAllShippingMethod,
+   getDashboardStatistics,
    updateBrand,
    updateCategory,
    updatePaymentMethod,
@@ -266,5 +268,23 @@ export const useUpdatePrimaryImage = () => {
       onError: () => {
          toast.error('Xóa ảnh thất bại')
       }
+   })
+}
+
+// order
+export const useGetAllAdminOrder = (
+   queryParams: Pick<GetProductQueryParamsType, 'page' | 'size' | 'sortBy' | 'sortDir'>
+) => {
+   return useQuery({
+      queryKey: ['order', queryParams],
+      queryFn: () => getAllAdminOrder(queryParams)
+   })
+}
+
+// statistics
+export const useGetDashboardStatistics = () => {
+   return useQuery({
+      queryKey: ['statistics'],
+      queryFn: getDashboardStatistics
    })
 }

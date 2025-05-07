@@ -53,34 +53,23 @@ public class AdminController {
         this.paymentMethodService = paymentMethodService;
     }
 
-    // User Management
+    // User Management - Unified API with filtering and pagination
     @GetMapping("/users")
-    public ResponseEntity<ApiResponse<?>> getAllUsers() {
+    public ResponseEntity<ApiResponse<?>> getUsers(
+            @RequestParam(required = false) Boolean role,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
         try {
-            List<UserDTO> users = userService.getAllUsers();
-            return ResponseEntity.ok(ApiResponse.success(users));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() :
+                    Sort.by(sortBy).ascending();
 
-    @GetMapping("/users/admins")
-    public ResponseEntity<ApiResponse<?>> getAllAdmins() {
-        try {
-            List<UserDTO> admins = userService.getAllAdmins();
-            return ResponseEntity.ok(ApiResponse.success(admins));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    @GetMapping("/users/customers")
-    public ResponseEntity<ApiResponse<?>> getAllCustomers() {
-        try {
-            List<UserDTO> customers = userService.getAllCustomers();
-            return ResponseEntity.ok(ApiResponse.success(customers));
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<UserDTO> userPage = userService.getUsersWithFilters(role, search, pageable);
+            return ResponseEntity.ok(ApiResponse.success(userPage));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(e.getMessage()));
@@ -213,16 +202,15 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-
         try {
             Sort sort = sortDir.equalsIgnoreCase("desc") ?
                     Sort.by(sortBy).descending() :
                     Sort.by(sortBy).ascending();
 
             Pageable pageable = PageRequest.of(page, size, sort);
-            List<OrderDTO> orders = orderService.getAllOrders();
+            Page<OrderDTO> orderPage = orderService.getAllOrdersWithPagination(pageable);
 
-            return ResponseEntity.ok(ApiResponse.success(orders));
+            return ResponseEntity.ok(ApiResponse.success(orderPage));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(e.getMessage()));

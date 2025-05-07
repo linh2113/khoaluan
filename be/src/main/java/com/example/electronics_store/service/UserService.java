@@ -5,6 +5,8 @@ import com.example.electronics_store.dto.LoginResponseDTO;
 import com.example.electronics_store.dto.UserDTO;
 import com.example.electronics_store.dto.UserRegistrationDTO;
 import com.example.electronics_store.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,7 +21,9 @@ public interface UserService {
     UserDTO getUserById(Integer id);
     
     UserDTO getUserByUsername(String username);
-    
+
+    Page<UserDTO> getUsersWithFilters(Boolean role, String search, Pageable pageable);
+
     List<UserDTO> getAllUsers();
     
     List<UserDTO> getAllAdmins();

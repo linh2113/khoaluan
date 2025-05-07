@@ -12,6 +12,9 @@ import com.example.electronics_store.security.JwtTokenProvider;
 import com.example.electronics_store.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -414,5 +417,42 @@ public class UserServiceImpl implements UserService {
         } catch (MessagingException e) {
             throw new RuntimeException("Failed to send verification email", e);
         }
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserDTO> getUsersWithFilters(Boolean role, String search, Pageable pageable) {
+        Specification<User> spec = Specification.where(null);
+
+        // Add role filter if provided
+        if (role != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("role"), role ? "ADMIN" : "CUSTOMER"));
+        }
+
+        // Add search filter if provided
+        if (search != null && !search.trim().isEmpty()) {
+            String searchTerm = "%" + search.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) ->
+                    cb.or(
+                            cb.like(cb.lower(root.get("userName")), searchTerm),
+                            cb.like(cb.lower(root.get("email")), searchTerm),
+                            cb.like(cb.lower(root.get("phone")), searchTerm),
+                            cb.like(cb.lower(root.get("address")), searchTerm),
+                            cb.like(cb.lower(root.get("surName")), searchTerm),
+                            cb.like(cb.lower(root.get("lastName")), searchTerm),
+                            cb.like(cb.lower(root.get("gender")), searchTerm),
+                            cb.like(cb.lower(root.get("dateOfBirth")), searchTerm),
+                            cb.like(cb.lower(root.get("createAt")), searchTerm),
+                            cb.like(cb.lower(root.get("loginTimes")), searchTerm),
+                            cb.like(cb.lower(root.get("active")), searchTerm)
+                    )
+            );
+        }
+
+        // Execute the query with the specification
+        Page<User> userPage = userRepository.findAll(spec, pageable);
+
+        // Map to DTOs
+        return userPage.map(this::mapUserToDTO);
     }
 }

@@ -9,6 +9,8 @@ import com.example.electronics_store.service.CartService;
 import com.example.electronics_store.service.DiscountService;
 import com.example.electronics_store.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -175,7 +177,12 @@ public class OrderServiceImpl implements OrderService {
                 .map(this::mapOrderToDTO)
                 .collect(Collectors.toList());
     }
-
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderDTO> getAllOrdersWithPagination(Pageable pageable) {
+        Page<Order> orderPage = orderRepository.findAll(pageable);
+        return orderPage.map(this::mapOrderToDTO);
+    }
     @Override
     @Transactional
     public OrderDTO updateOrderStatus(Integer id, Integer status) {

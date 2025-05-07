@@ -42,7 +42,7 @@ public class RatingServiceImpl implements RatingService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
         // Check if user has already rated this product
-        Optional<Rating> existingRating = ratingRepository.findByProductAndUser(product, user);
+        Optional<Rating> existingRating = ratingRepository.findByProductAndUserAndParentIsNull(product, user);
         if (existingRating.isPresent()) {
             throw new RuntimeException("You have already rated this product");
         }
@@ -52,7 +52,7 @@ public class RatingServiceImpl implements RatingService {
         rating.setProduct(product);
         rating.setRating(ratingDTO.getRating());
         rating.setComment(ratingDTO.getComment());
-
+        rating.setParent(null);
         Rating savedRating = ratingRepository.save(rating);
         return mapRatingToDTO(savedRating);
     }
@@ -79,19 +79,11 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
-    @Transactional (readOnly = true)
+    @Transactional(readOnly = true)
     public List<RatingDTO> getRatingsByProductId(Integer productId) {
-        if (productId == null) {
-            // Return all ratings if productId is null
-            return ratingRepository.findAll().stream()
-                    .map(this::mapRatingToDTO)
-                    .collect(Collectors.toList());
-        }
-        
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        return ratingRepository.findByProduct(product).stream()
+        return ratingRepository.findByProductAndParentIsNull(product).stream()
                 .map(this::mapRatingToDTO)
                 .collect(Collectors.toList());
     }

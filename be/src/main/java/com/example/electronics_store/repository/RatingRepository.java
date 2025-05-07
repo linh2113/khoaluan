@@ -13,12 +13,12 @@ import java.util.Optional;
 
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, Integer> {
-    List<Rating> findByProduct(Product product);
+//    List<Rating> findByProduct(Product product);
     
     List<Rating> findByUser(User user);
-    
-    Optional<Rating> findByProductAndUser(Product product, User user);
-    
+    Optional<Rating> findByProductAndUserAndParentIsNull(Product product, User user);
+//    Optional<Rating> findByProductAndUser(Product product, User user);
+//
     List<Rating> findByParent(Rating parent);
 
     @Query("SELECT AVG(r.rating) FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL AND r.rating IS NOT NULL")
@@ -29,7 +29,7 @@ public interface RatingRepository extends JpaRepository<Rating, Integer> {
 
     @Query("SELECT r.rating, COUNT(r) FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL AND r.rating IS NOT NULL GROUP BY r.rating ORDER BY r.rating DESC")
     List<Object[]> getRatingDistributionForProduct(@Param("productId") Integer productId);
-    
+    List<Rating> findByProductAndParentIsNull(Product product);
     @Query("SELECT r FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL ORDER BY r.createAt DESC")
     List<Rating> findTopLevelRatingsByProduct(@Param("productId") Integer productId);
 }

@@ -4,6 +4,7 @@ import com.example.electronics_store.model.Product;
 import com.example.electronics_store.model.Rating;
 import com.example.electronics_store.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RatingRepository extends JpaRepository<Rating, Integer> {
+public interface RatingRepository extends JpaRepository<Rating, Integer>, JpaSpecificationExecutor<Rating> {
 //    List<Rating> findByProduct(Product product);
     
     List<Rating> findByUser(User user);

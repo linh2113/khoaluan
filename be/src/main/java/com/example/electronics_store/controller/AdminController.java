@@ -289,13 +289,22 @@ public class AdminController {
         }
     }
 
-    // Rating Management
     @GetMapping("/ratings")
-    public ResponseEntity<ApiResponse<?>> getAllRatings() {
+    public ResponseEntity<ApiResponse<?>> getAllRatings(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
         try {
-            // Get all ratings from all products
-            List<RatingDTO> allRatings = ratingService.getRatingsByProductId(null);
-            return ResponseEntity.ok(ApiResponse.success(allRatings));
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() :
+                    Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<RatingDTO> ratingPage = ratingService.getRatingsWithSearch(search, pageable);
+
+            return ResponseEntity.ok(ApiResponse.success(ratingPage));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(e.getMessage()));

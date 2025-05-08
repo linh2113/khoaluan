@@ -200,9 +200,10 @@ public class DiscountServiceImpl implements DiscountService {
                 predicates.add(cb.like(cb.lower(root.get("discountName")), searchTerm));
                 predicates.add(cb.like(cb.lower(root.get("value").as(String.class)), searchTerm));
                 predicates.add(cb.like(cb.lower(root.get("quantity").as(String.class)), searchTerm));
-                predicates.add(cb.like(cb.lower(root.get("startDate").as(String.class)), searchTerm));
-                predicates.add(cb.like(cb.lower(root.get("endDate").as(String.class)), searchTerm));
-
+                if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
+                    predicates.add(cb.like(cb.function("DATE_FORMAT", String.class, root.get("startDate"), cb.literal("%Y-%m-%d")), search + "%"));
+                    predicates.add(cb.like(cb.function("DATE_FORMAT", String.class, root.get("endDate"), cb.literal("%Y-%m-%d")), search + "%"));
+                }
                 // Thêm tìm kiếm theo trạng thái
                 if ("active".equalsIgnoreCase(search)) {
                     LocalDateTime now = LocalDateTime.now();

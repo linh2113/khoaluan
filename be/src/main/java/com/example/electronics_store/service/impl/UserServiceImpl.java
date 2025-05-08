@@ -441,8 +441,8 @@ public class UserServiceImpl implements UserService {
                             cb.like(cb.lower(root.get("surName")), searchTerm),
                             cb.like(cb.lower(root.get("lastName")), searchTerm),
                             cb.like(cb.lower(root.get("gender")), searchTerm),
-                            cb.like(cb.lower(root.get("dateOfBirth").as(String.class)), searchTerm),
-                            cb.like(cb.lower(root.get("createAt").as(String.class)), searchTerm),
+                            cb.like(cb.function("DATE_FORMAT", String.class, root.get("dateOfBirth"), cb.literal("%Y-%m-%d")), "%" + search + "%"),
+                            cb.like(cb.function("DATE_FORMAT", String.class, root.get("createAt"), cb.literal("%Y-%m-%d %H:%i:%s")), "%" + search + "%"),
                             cb.like(cb.lower(root.get("loginTimes").as(String.class)), searchTerm),
                             cb.like(cb.lower(root.get("active").as(String.class)), searchTerm)
                     )

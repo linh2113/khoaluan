@@ -2,6 +2,8 @@ package com.example.electronics_store.service;
 
 import com.example.electronics_store.dto.RatingDTO;
 import com.example.electronics_store.model.Rating;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Map;
@@ -9,7 +11,7 @@ import java.util.Optional;
 
 public interface RatingService {
     RatingDTO createRating(Integer userId, Integer productId, RatingDTO ratingDTO);
-    
+    Page<RatingDTO> getRatingsWithSearch(String search, Pageable pageable);
 //    RatingDTO updateRating(Integer id, RatingDTO ratingDTO);
     
     RatingDTO getRatingById(Integer id);

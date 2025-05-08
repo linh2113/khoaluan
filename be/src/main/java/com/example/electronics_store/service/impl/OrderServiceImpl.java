@@ -211,7 +211,9 @@ public class OrderServiceImpl implements OrderService {
                     predicates.add(cb.like(cb.lower(root.get("address")), searchTerm));
                     predicates.add(cb.like(cb.lower(root.get("phoneNumber")), searchTerm));
                     predicates.add(cb.like(cb.lower(root.get("trackingNumber")), searchTerm));
-                    predicates.add(cb.like(cb.lower(root.get("createAt").as(String.class)), searchTerm));
+                    if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
+                        predicates.add(cb.like(cb.function("DATE_FORMAT", String.class, root.get("createAt"), cb.literal("%Y-%m-%d")), search + "%"));
+                    }
                     predicates.add(cb.like(cb.lower(root.get("paymentStatus")), searchTerm));
                     predicates.add(cb.like(cb.lower(root.get("orderStatus").as(String.class)), searchTerm));
 

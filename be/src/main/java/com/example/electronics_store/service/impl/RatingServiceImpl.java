@@ -8,7 +8,11 @@ import com.example.electronics_store.repository.ProductRepository;
 import com.example.electronics_store.repository.RatingRepository;
 import com.example.electronics_store.repository.UserRepository;
 import com.example.electronics_store.service.RatingService;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -155,7 +159,60 @@ public class RatingServiceImpl implements RatingService {
         return result;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<RatingDTO> getRatingsWithSearch(String search, Pageable pageable) {
+        Specification<Rating> spec = Specification.where(null);
+        if (search != null && !search.trim().isEmpty()) {
+            String searchTerm = "%" + search.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                Integer ratingId = null;
+                Integer productId = null;
+                Integer userId = null;
+                Integer ratingValue = null;
 
+                try {
+                    //Prioritize
+                    ratingId = Integer.parseInt(search);
+                    productId = ratingId;
+                    userId = ratingId; //second
+                    // Check if it's a valid rating value (1-5)
+                    if (ratingId >= 1 && ratingId <= 5) { //first
+                        ratingValue = ratingId;
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+                if (ratingId != null) predicates.add(cb.equal(root.get("id"), ratingId));
+
+                if (productId != null) predicates.add(cb.equal(root.get("product").get("id"), productId));
+
+                if (userId != null) predicates.add(cb.equal(root.get("user").get("id"), userId));
+
+                if (ratingValue != null) predicates.add(cb.equal(root.get("rating"), ratingValue));
+
+                // Add text search predicates
+                predicates.add(cb.like(cb.lower(root.get("comment")), searchTerm));
+                // Search in related product fields
+                predicates.add(cb.like(cb.lower(root.get("product").get("name")), searchTerm));
+                // Search in related user fields
+                predicates.add(cb.like(cb.lower(root.get("user").get("userName")), searchTerm));
+                predicates.add(cb.like(cb.lower(root.get("user").get("surName")), searchTerm));
+                predicates.add(cb.like(cb.lower(root.get("user").get("lastName")), searchTerm));
+                if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
+                    predicates.add(cb.like(
+                            cb.function("DATE_FORMAT", String.class, root.get("createAt"), cb.literal("%Y-%m-%d")),
+                            search + "%"
+                    ));
+                }
+                return cb.or(predicates.toArray(new Predicate[0]));
+            });
+        }
+        spec = spec.and((root, query, cb) -> cb.isNull(root.get("parent")));
+        Page<Rating> ratingPage = ratingRepository.findAll(spec, pageable);
+
+        return ratingPage.map(this::mapRatingToDTO);
+    }
 
     @Override
     public Optional<Rating> getRatingEntityById(Integer id) {

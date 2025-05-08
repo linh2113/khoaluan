@@ -124,6 +124,16 @@ public class CategoryServiceImpl implements CategoryService {
                 } else if ("inactive".equalsIgnoreCase(search) || "0".equals(search)) {
                     predicates.add(cb.equal(root.get("status"), 0));
                 }
+                if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
+                    predicates.add(cb.like(
+                            cb.function("DATE_FORMAT", String.class, root.get("createdAt"), cb.literal("%Y-%m-%d")),
+                            search + "%"
+                    ));
+                    predicates.add(cb.like(
+                            cb.function("DATE_FORMAT", String.class, root.get("updatedAt"), cb.literal("%Y-%m-%d")),
+                            search + "%"
+                    ));
+                }
                 return cb.or(predicates.toArray(new Predicate[0]));
             });
         }
@@ -138,6 +148,8 @@ public class CategoryServiceImpl implements CategoryService {
                 .id(category.getId())
                 .categoryName(category.getCategoryName())
                 .status(category.getStatus())
+                .createdAt(category.getCreatedAt())
+                .updatedAt(category.getUpdatedAt())
                 .build();
     }
 }

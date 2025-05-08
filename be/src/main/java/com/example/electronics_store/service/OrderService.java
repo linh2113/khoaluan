@@ -17,7 +17,7 @@ public interface OrderService {
     OrderDTO getOrderById(Integer id);
     Page<OrderDTO> getAllOrdersWithPagination(Pageable pageable);
     List<OrderDTO> getOrdersByUserId(Integer userId);
-    
+    Page<OrderDTO> getOrdersWithSearch(String search, Pageable pageable);
     List<OrderDTO> getAllOrders();
     
     List<OrderDTO> getOrdersByStatus(Integer status);

@@ -198,6 +198,7 @@ public class AdminController {
     // Order Management
     @GetMapping("/orders")
     public ResponseEntity<ApiResponse<?>> getAllOrders(
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -208,7 +209,7 @@ public class AdminController {
                     Sort.by(sortBy).ascending();
 
             Pageable pageable = PageRequest.of(page, size, sort);
-            Page<OrderDTO> orderPage = orderService.getAllOrdersWithPagination(pageable);
+            Page<OrderDTO> orderPage = orderService.getOrdersWithSearch(search, pageable);
 
             return ResponseEntity.ok(ApiResponse.success(orderPage));
         } catch (Exception e) {

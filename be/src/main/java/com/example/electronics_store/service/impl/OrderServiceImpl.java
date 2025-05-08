@@ -8,9 +8,11 @@ import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.CartService;
 import com.example.electronics_store.service.DiscountService;
 import com.example.electronics_store.service.OrderService;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -171,6 +173,71 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderDTO> getOrdersWithSearch(String search, Pageable pageable) {
+        Specification<Order> spec = Specification.where(null);
+        if (search != null && !search.trim().isEmpty()) {
+            Integer orderId = null;
+            try {
+                orderId = Integer.parseInt(search);
+            } catch (NumberFormatException ignored) {
+            }
+            Integer orderStatus = null;
+            if ("pending".equalsIgnoreCase(search)) orderStatus = 0;
+            else if ("processing".equalsIgnoreCase(search)) orderStatus = 1;
+            else if ("shipped".equalsIgnoreCase(search)) orderStatus = 2;
+            else if ("delivered".equalsIgnoreCase(search)) orderStatus = 3;
+            else if ("completed".equalsIgnoreCase(search)) orderStatus = 4;
+            else if ("cancelled".equalsIgnoreCase(search)) orderStatus = 5;
+            final Integer finalOrderId = orderId;
+            final Integer finalOrderStatus = orderStatus;
+
+            // only search by ID
+            if (finalOrderId != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("id"), finalOrderId));
+            }
+            // only search by status
+            else if (finalOrderStatus != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("orderStatus"), finalOrderStatus));
+            }
+            else {
+                String searchTerm = "%" + search.toLowerCase() + "%";
+                spec = spec.and((root, query, cb) -> {
+                    List<Predicate> predicates = new ArrayList<>();
+                    predicates.add(cb.like(cb.lower(root.get("id").as(String.class)), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("totalPrice").as(String.class)), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("shippingFee").as(String.class)), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("address")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("phoneNumber")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("trackingNumber")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("createAt").as(String.class)), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("paymentStatus")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("orderStatus").as(String.class)), searchTerm));
+
+                    // Search in related user fields
+                    predicates.add(cb.like(cb.lower(root.get("user").get("userName")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("user").get("email")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("user").get("surName")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("user").get("lastName")), searchTerm));
+
+                    // Search in related shipping method
+                    predicates.add(cb.like(cb.lower(root.get("shippingMethod").get("methodName")), searchTerm));
+
+                    // Search in related payment method
+                    predicates.add(cb.like(cb.lower(root.get("paymentMethod").get("methodName")), searchTerm));
+
+                    return cb.or(predicates.toArray(new Predicate[0]));
+                });
+            }
+        }
+
+
+        Page<Order> orderPage = orderRepository.findAll(spec, pageable);
+
+        // Map to DTOs
+        return orderPage.map(this::mapOrderToDTO);
+    }
     @Override
     public List<OrderDTO> getOrdersInDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         return orderRepository.findOrdersInDateRange(startDate, endDate).stream()

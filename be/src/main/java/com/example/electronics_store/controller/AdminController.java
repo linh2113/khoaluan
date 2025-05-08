@@ -583,5 +583,15 @@ public class AdminController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
-
+    @PostMapping("/users")
+    public ResponseEntity<ApiResponse<?>> createUser(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
+        try {
+            UserDTO createdUser = userService.registerUser(registrationDTO);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("User created successfully", createdUser));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
 }

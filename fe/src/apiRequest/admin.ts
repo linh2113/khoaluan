@@ -7,12 +7,14 @@ import {
    DiscountType,
    GetAllBrandType,
    GetBrandQueryParamsType,
+   GetUserQueryParamsType,
    OrderType,
    PaymentMethodType,
-   ShippingMethodType
+   ShippingMethodType,
+   UserType
 } from '@/types/admin.type'
 import { GetAllProductType, GetProductQueryParamsType } from '@/types/product.type'
-import { ResponseData } from '@/types/utils.type'
+import { ResponseData, ResponseDataWithPaginate } from '@/types/utils.type'
 import queryString from 'query-string'
 
 // ShippingMethod
@@ -69,3 +71,8 @@ export const getAllAdminOrder = (
 
 //statistics
 export const getDashboardStatistics = () => http.get<ResponseData<DashboardStatisticsType>>(`/admin/dashboard`)
+
+//user
+export const getAllUser = (queryParams: GetUserQueryParamsType) =>
+   http.get<ResponseData<ResponseDataWithPaginate<UserType[]>>>(`/admin/users?` + queryString.stringify(queryParams))
+export const updateUser = (body: UserType) => http.put(`/admin/users/${body.id}`, body)

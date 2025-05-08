@@ -12,6 +12,7 @@ import {
    getAllDiscount,
    getAllPaymentMethod,
    getAllShippingMethod,
+   getAllUser,
    getDashboardStatistics,
    updateBrand,
    updateCategory,
@@ -19,9 +20,10 @@ import {
    updatePrimaryImage,
    updateProduct,
    updateShippingMethod,
+   updateUser,
    uploadProductImage
 } from '@/apiRequest/admin'
-import { GetBrandQueryParamsType } from '@/types/admin.type'
+import { GetBrandQueryParamsType, GetUserQueryParamsType } from '@/types/admin.type'
 import { GetProductQueryParamsType } from '@/types/product.type'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
@@ -286,5 +288,28 @@ export const useGetDashboardStatistics = () => {
    return useQuery({
       queryKey: ['statistics'],
       queryFn: getDashboardStatistics
+   })
+}
+
+//user
+export const useGetAllUser = (queryParams: GetUserQueryParamsType) => {
+   return useQuery({
+      queryKey: ['user', queryParams],
+      queryFn: () => getAllUser(queryParams)
+   })
+}
+export const useUpdateUser = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updateUser,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['user']
+         }),
+            toast.success('Cập nhật người dùng thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật người dùng thất bại')
+      }
    })
 }

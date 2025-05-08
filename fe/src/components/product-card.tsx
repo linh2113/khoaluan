@@ -61,7 +61,7 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
          <Link href={productUrl}>
             <div className='h-52 overflow-hidden relative'>
                {discountPercentage > 0 && (
-                  <Badge className='absolute top-2 left-2 z-10 bg-secondaryColor hover:bg-secondaryColor'>
+                  <Badge className='absolute top-2 left-2 z-10 bg-secondaryColor hover:bg-secondaryColor text-white'>
                      -{discountPercentage}%
                   </Badge>
                )}
@@ -69,7 +69,9 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
                   <Badge className='absolute top-2 right-2 z-10 bg-amber-500 hover:bg-amber-500'>{t('lowStock')}</Badge>
                )}
                {product.stock === 0 && (
-                  <Badge className='absolute top-2 right-2 z-10 bg-gray-500 hover:bg-gray-500'>{t('outOfStock')}</Badge>
+                  <Badge className='absolute top-2 right-2 z-10 bg-secondaryColor text-white hover:bg-secondaryColor hover:text-white'>
+                     {t('outOfStock')}
+                  </Badge>
                )}
                <Image
                   src={product.image}
@@ -123,6 +125,7 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
          </CardContent>
          <CardFooter className='p-4 pt-0 flex flex-col gap-2'>
             <Button
+               disabled={product.stock === 0}
                onClick={() => addToCart.mutate({ userId: userId!, productId: product.id, quantity: 1 })}
                variant='outline'
                size='sm'

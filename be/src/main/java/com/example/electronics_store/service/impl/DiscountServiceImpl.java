@@ -4,11 +4,16 @@ import com.example.electronics_store.dto.DiscountDTO;
 import com.example.electronics_store.model.Discount;
 import com.example.electronics_store.repository.DiscountRepository;
 import com.example.electronics_store.service.DiscountService;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -177,7 +182,50 @@ public class DiscountServiceImpl implements DiscountService {
         discountRepository.save(discount);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DiscountDTO> getDiscountsWithSearch(String search, Pageable pageable) {
+        Specification<Discount> spec = Specification.where(null);
+        if (search != null && !search.trim().isEmpty()) {
+            spec = spec.and((root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                Integer discountId = null;
+                try {
+                    discountId = Integer.parseInt(search);
+                    predicates.add(cb.equal(root.get("id"), discountId));
+                } catch (NumberFormatException ignored) {
+                }
+                String searchTerm = "%" + search.toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(root.get("description")), searchTerm));
+                predicates.add(cb.like(cb.lower(root.get("discountName")), searchTerm));
+                predicates.add(cb.like(cb.lower(root.get("value").as(String.class)), searchTerm));
+                predicates.add(cb.like(cb.lower(root.get("quantity").as(String.class)), searchTerm));
+                predicates.add(cb.like(cb.lower(root.get("startDate").as(String.class)), searchTerm));
+                predicates.add(cb.like(cb.lower(root.get("endDate").as(String.class)), searchTerm));
 
+                // Thêm tìm kiếm theo trạng thái
+                if ("active".equalsIgnoreCase(search)) {
+                    LocalDateTime now = LocalDateTime.now();
+                    predicates.add(cb.and(
+                            cb.lessThanOrEqualTo(root.get("startDate"), now),
+                            cb.greaterThanOrEqualTo(root.get("endDate"), now),
+                            cb.greaterThan(root.get("quantity"), 0)
+                    ));
+                } else if ("expired".equalsIgnoreCase(search)) {
+                    predicates.add(cb.lessThan(root.get("endDate"), LocalDateTime.now()));
+                } else if ("upcoming".equalsIgnoreCase(search)) {
+                    predicates.add(cb.greaterThan(root.get("startDate"), LocalDateTime.now()));
+                } else if ("out_of_stock".equalsIgnoreCase(search) || "outofstock".equalsIgnoreCase(search)) {
+                    predicates.add(cb.equal(root.get("quantity"), 0));
+                }
+
+                return cb.or(predicates.toArray(new Predicate[0]));
+            });
+        }
+
+        Page<Discount> discountPage = discountRepository.findAll(spec, pageable);
+        return discountPage.map(this::mapDiscountToDTO);
+    }
 
     @Override
     public Optional<Discount> getDiscountEntityById(Integer id) {

@@ -217,7 +217,7 @@ public class AdminController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
-
+    // Bỏ (lấy getOrder với search)
     @GetMapping("/orders/status/{status}")
     public ResponseEntity<ApiResponse<?>> getOrdersByStatus(@PathVariable Integer status) {
         try {
@@ -228,7 +228,7 @@ public class AdminController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
-
+    // Bỏ (lấy getOrder với search)
     @GetMapping("/orders/payment/{paymentStatus}")
     public ResponseEntity<ApiResponse<?>> getOrdersByPaymentStatus(@PathVariable String paymentStatus) {
         try {
@@ -268,9 +268,20 @@ public class AdminController {
 
 
     @GetMapping("/discounts")
-    public ResponseEntity<ApiResponse<?>> getAllDiscounts() {
+    public ResponseEntity<ApiResponse<?>> getAllDiscounts(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
         try {
-            List<DiscountDTO> discounts = discountService.getAllDiscounts();
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() :
+                    Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<DiscountDTO> discounts = discountService.getDiscountsWithSearch(search, pageable);
+
             return ResponseEntity.ok(ApiResponse.success(discounts));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

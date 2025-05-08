@@ -426,7 +426,7 @@ public class UserServiceImpl implements UserService {
         // Add role filter if provided
         if (role != null) {
             spec = spec.and((root, query, cb) ->
-                    cb.equal(root.get("role"), role ? "ADMIN" : "CUSTOMER"));
+                    cb.equal(root.get("role"), role));
         }
 
         // Add search filter if provided
@@ -441,10 +441,10 @@ public class UserServiceImpl implements UserService {
                             cb.like(cb.lower(root.get("surName")), searchTerm),
                             cb.like(cb.lower(root.get("lastName")), searchTerm),
                             cb.like(cb.lower(root.get("gender")), searchTerm),
-                            cb.like(cb.lower(root.get("dateOfBirth")), searchTerm),
-                            cb.like(cb.lower(root.get("createAt")), searchTerm),
-                            cb.like(cb.lower(root.get("loginTimes")), searchTerm),
-                            cb.like(cb.lower(root.get("active")), searchTerm)
+                            cb.like(cb.lower(root.get("dateOfBirth").as(String.class)), searchTerm),
+                            cb.like(cb.lower(root.get("createAt").as(String.class)), searchTerm),
+                            cb.like(cb.lower(root.get("loginTimes").as(String.class)), searchTerm),
+                            cb.like(cb.lower(root.get("active").as(String.class)), searchTerm)
                     )
             );
         }

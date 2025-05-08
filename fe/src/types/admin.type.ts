@@ -160,3 +160,30 @@ export interface RecentOrder {
    userId: number
    createAt: string
 }
+
+//user
+export interface GetUserQueryParamsType {
+   page?: number
+   size?: number
+   sortBy?: string | 'id'
+   sortDir?: string | 'desc'
+   role?: boolean
+   search?: string
+}
+
+export interface UserType {
+   id: number
+   role: boolean
+   userName: string
+   email: string
+   phone: string
+   surName: string
+   lastName: string
+   active: number
+   picture: string
+   createAt: string
+   loginTimes: number
+   address: string
+   dateOfBirth: string
+   gender: string
+}

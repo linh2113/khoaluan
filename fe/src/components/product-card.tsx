@@ -11,6 +11,7 @@ import { useAppContext } from '@/context/app.context'
 import { useAddToWishlist, useCheckProductInWishlist, useRemoveFromWishlist } from '@/queries/useWishlist'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
+import { useTranslations } from 'next-intl'
 
 interface ProductCardProps {
    product: ProductType
@@ -25,6 +26,7 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
    const removeFromWishlist = useRemoveFromWishlist()
    const { data: isInWishlist } = useCheckProductInWishlist(userId || 0, product.id)
    const [isWishlistLoading, setIsWishlistLoading] = useState(false)
+   const t = useTranslations('ProductCard')
 
    // Xử lý thêm/xóa sản phẩm khỏi danh sách yêu thích
    const handleWishlistToggle = (e: React.MouseEvent) => {
@@ -32,7 +34,7 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
       e.stopPropagation()
 
       if (!userId) {
-         toast.warning('Vui lòng đăng nhập để sử dụng tính năng này')
+         toast.warning(t('loginRequired'))
          return
       }
 
@@ -59,19 +61,21 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
          <Link href={productUrl}>
             <div className='h-52 overflow-hidden relative'>
                {discountPercentage > 0 && (
-                  <Badge className='absolute top-2 left-2 z-10 bg-secondaryColor hover:bg-secondaryColor'>
+                  <Badge className='absolute top-2 left-2 z-10 bg-secondaryColor hover:bg-secondaryColor text-white'>
                      -{discountPercentage}%
                   </Badge>
                )}
                {product.stock <= 5 && product.stock > 0 && (
-                  <Badge className='absolute top-2 right-2 z-10 bg-amber-500 hover:bg-amber-500'>Sắp hết hàng</Badge>
+                  <Badge className='absolute top-2 right-2 z-10 bg-amber-500 hover:bg-amber-500'>{t('lowStock')}</Badge>
                )}
                {product.stock === 0 && (
-                  <Badge className='absolute top-2 right-2 z-10 bg-gray-500 hover:bg-gray-500'>Hết hàng</Badge>
+                  <Badge className='absolute top-2 right-2 z-10 bg-secondaryColor text-white hover:bg-secondaryColor hover:text-white'>
+                     {t('outOfStock')}
+                  </Badge>
                )}
                <Image
                   src={product.image}
-                  alt={product.name || 'Product image'}
+                  alt={product.name || t('productName')}
                   width={300}
                   height={300}
                   className='w-full h-full object-cover aspect-square transition-transform group-hover:scale-105'
@@ -91,15 +95,15 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
             </button>
             <div className='flex items-center gap-1 mb-1.5'>
                <Badge variant='outline' className='text-xs font-normal px-1.5 py-0 h-5 bg-primary-foreground'>
-                  {product.categoryName || 'Danh mục'}
+                  {product.categoryName || t('category')}
                </Badge>
                <Badge variant='outline' className='text-xs font-normal px-1.5 py-0 h-5 bg-primary-foreground'>
-                  {product.brandName || 'Thương hiệu'}
+                  {product.brandName || t('brand')}
                </Badge>
             </div>
             <Link href={productUrl}>
                <h3 className='font-medium text-sm line-clamp-2 min-h-[40px] group-hover:text-primaryColor transition-colors'>
-                  {product.name || 'Tên sản phẩm'}
+                  {product.name || t('productName')}
                </h3>
             </Link>
             <div className='mt-2 flex items-center justify-between'>
@@ -121,13 +125,14 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
          </CardContent>
          <CardFooter className='p-4 pt-0 flex flex-col gap-2'>
             <Button
+               disabled={product.stock === 0}
                onClick={() => addToCart.mutate({ userId: userId!, productId: product.id, quantity: 1 })}
                variant='outline'
                size='sm'
                className='w-full border-primaryColor text-primaryColor hover:bg-primaryColor hover:text-white transition-colors'
             >
                <ShoppingCart className='h-4 w-4 mr-2' />
-               Thêm vào giỏ
+               {t('addToCart')}
             </Button>
 
             {onSelectForCompare && (
@@ -138,7 +143,7 @@ export default function ProductCard({ product, onSelectForCompare, isSelectedFor
                   className={`w-full ${isSelectedForCompare ? 'bg-primaryColor' : 'border-gray-300'}`}
                >
                   <Scale className='h-4 w-4 mr-2' />
-                  {isSelectedForCompare ? 'Đã chọn' : 'So sánh'}
+                  {isSelectedForCompare ? t('selected') : t('compare')}
                </Button>
             )}
          </CardFooter>

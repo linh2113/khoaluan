@@ -13,15 +13,10 @@ import { useGetUserInfo } from '@/queries/useUser'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useGetAllPaymentMethod, useGetAllShippingMethod } from '@/queries/useAdmin'
-
-// Giả lập dữ liệu phương thức thanh toán
-const PAYMENT_METHODS = [
-   { id: 1, name: 'Thanh toán khi nhận hàng (COD)', description: 'Thanh toán bằng tiền mặt khi nhận hàng' },
-   { id: 2, name: 'Thẻ tín dụng / Thẻ ghi nợ', description: 'Thanh toán an toàn với cổng thanh toán' },
-   { id: 3, name: 'Ví điện tử', description: 'Thanh toán qua ví điện tử (MoMo, ZaloPay, VNPay)' }
-]
+import { useTranslations } from 'next-intl'
 
 export default function Order() {
+   const t = useTranslations('Order')
    const { userId } = useAppContext()
    const router = useRouter()
    const [formData, setFormData] = useState<OrderCreateDTO>({
@@ -71,14 +66,6 @@ export default function Order() {
       }
    }, [user])
 
-   // Kiểm tra nếu không có sản phẩm nào được chọn, chuyển hướng về trang giỏ hàng
-   // useEffect(() => {
-   //    if (!isLoadingCart && cartItems.length === 0) {
-   //       toast.warning('Vui lòng chọn sản phẩm để đặt hàng')
-   //       router.push('/cart')
-   //    }
-   // }, [cartItems.length, isLoadingCart, router])
-
    // Xử lý thay đổi input
    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target
@@ -107,25 +94,25 @@ export default function Order() {
    // Xử lý đặt hàng
    const handlePlaceOrder = () => {
       if (!isLoadingCart && cartItems.length === 0) {
-         toast.warning('Vui lòng chọn sản phẩm để đặt hàng')
+         toast.warning(t('validation.selectProducts'))
          router.push('/cart')
          return
       }
       // Kiểm tra thông tin đầu vào
       if (!formData.address.trim()) {
-         toast.error('Vui lòng nhập địa chỉ giao hàng')
+         toast.error(t('validation.addressRequired'))
          return
       }
 
       if (!formData.phoneNumber.trim()) {
-         toast.error('Vui lòng nhập số điện thoại')
+         toast.error(t('validation.phoneRequired'))
          return
       }
 
       // Kiểm tra định dạng số điện thoại
       const phoneRegex = /^[0-9]{10,11}$/
       if (!phoneRegex.test(formData.phoneNumber)) {
-         toast.error('Số điện thoại không hợp lệ (10-11 số)')
+         toast.error(t('validation.invalidPhone'))
          return
       }
 
@@ -148,15 +135,15 @@ export default function Order() {
       <div className='flex flex-col md:flex-row items-start gap-5 my-5 container'>
          {/* Cột thông tin sản phẩm và địa chỉ */}
          <div className='w-full md:w-2/3 bg-secondary rounded-lg shadow-lg p-5'>
-            <h1 className='text-2xl font-medium mb-5'>Xác nhận đơn hàng</h1>
+            <h1 className='text-2xl font-medium mb-5'>{t('confirmOrder')}</h1>
 
             {/* Thông tin người nhận */}
             <div className='border-b border-gray-200 pb-5 mb-5'>
-               <h2 className='font-semibold text-lg mb-3'>Địa chỉ nhận hàng</h2>
+               <h2 className='font-semibold text-lg mb-3'>{t('shippingAddress')}</h2>
                <div className='space-y-3'>
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                      <div>
-                        <label className='block text-sm font-medium mb-1'>Họ tên người nhận</label>
+                        <label className='block text-sm font-medium mb-1'>{t('recipientName')}</label>
                         <Input
                            className='border-primary'
                            type='text'
@@ -165,25 +152,25 @@ export default function Order() {
                         />
                      </div>
                      <div>
-                        <label className='block text-sm font-medium mb-1'>Số điện thoại</label>
+                        <label className='block text-sm font-medium mb-1'>{t('phoneNumber')}</label>
                         <Input
                            className='border-primary'
                            type='text'
                            name='phoneNumber'
                            value={formData.phoneNumber}
                            onChange={handleInputChange}
-                           placeholder='Nhập số điện thoại'
+                           placeholder={t('enterPhoneNumber')}
                         />
                      </div>
                   </div>
                   <div>
-                     <label className='block text-sm font-medium mb-1'>Địa chỉ</label>
+                     <label className='block text-sm font-medium mb-1'>{t('address')}</label>
                      <Textarea
                         className='border-primary'
                         name='address'
                         value={formData.address}
                         onChange={handleInputChange}
-                        placeholder='Nhập địa chỉ giao hàng'
+                        placeholder={t('enterShippingAddress')}
                         rows={2}
                      />
                   </div>
@@ -192,7 +179,7 @@ export default function Order() {
 
             {/* Phương thức vận chuyển */}
             <div className='border-b border-gray-200 pb-5 mb-5'>
-               <h2 className='font-semibold text-lg mb-3'>Phương thức vận chuyển</h2>
+               <h2 className='font-semibold text-lg mb-3'>{t('shippingMethod')}</h2>
                <div className='space-y-3'>
                   {shippingMethods
                      .filter((method) => method.isActive)
@@ -211,7 +198,9 @@ export default function Order() {
                            <div className='ml-3'>
                               <div className='font-medium'>{method.methodName}</div>
                               <div className='text-sm text-gray-500'>{method.description}</div>
-                              <div className='text-sm text-gray-500'>Thời gian: {method.estimatedDays} ngày</div>
+                              <div className='text-sm text-gray-500'>
+                                 {t('estimatedDays', { days: method.estimatedDays })}
+                              </div>
                               <div className='text-secondaryColor'>{formatCurrency(method.baseCost)}</div>
                            </div>
                         </label>
@@ -221,7 +210,7 @@ export default function Order() {
 
             {/* Danh sách sản phẩm */}
             <div>
-               <h2 className='font-semibold text-lg mb-3'>Sản phẩm ({cartItems.length})</h2>
+               <h2 className='font-semibold text-lg mb-3'>{t('products', { count: cartItems.length })}</h2>
                <div className='grid gap-5'>
                   {cartItems.map((item) => (
                      <div
@@ -256,7 +245,7 @@ export default function Order() {
 
          {/* Cột phương thức thanh toán */}
          <div className='w-full md:w-1/3 bg-secondary rounded-lg shadow-lg p-5 sticky top-0'>
-            <h2 className='text-xl font-semibold mb-5'>Phương thức thanh toán</h2>
+            <h2 className='text-xl font-semibold mb-5'>{t('paymentMethod')}</h2>
             <div className='space-y-3 mb-5'>
                {paymentMethods
                   .filter((method) => method.isActive)
@@ -283,29 +272,30 @@ export default function Order() {
             {/* Tổng thanh toán */}
             <div className='space-y-3'>
                <div className='flex justify-between'>
-                  <span>Tạm tính</span>
+                  <span>{t('subtotal')}</span>
                   <span>{formatCurrency(subtotal)}</span>
                </div>
                <div className='flex justify-between'>
-                  <span>Phí vận chuyển</span>
+                  <span>{t('shippingFee')}</span>
                   <span>{formatCurrency(shippingFee)}</span>
                </div>
                <div className='flex justify-between font-medium text-lg'>
-                  <span>Tổng cộng</span>
+                  <span>{t('total')}</span>
                   <span className='text-secondaryColor'>{formatCurrency(total)}</span>
                </div>
             </div>
 
             {/* Nút đặt hàng */}
-            <div className='mt-5'>
-               <Link href='/cart' className='text-secondaryColor hover:underline'>
-                  &lt; Quay lại giỏ hàng
+            <div className='mt-5 space-y-3'>
+               <Link href='/cart' className='text-secondaryColor'>
+                  {t('backToCart')}
                </Link>
                <button
-                  className='w-full mt-3 bg-secondaryColor text-white py-3 rounded hover:bg-secondaryColor/90'
                   onClick={handlePlaceOrder}
+                  disabled={createOrderMutation.isPending}
+                  className='w-full py-3 bg-secondaryColor text-white rounded hover:bg-secondaryColor/90 disabled:opacity-70'
                >
-                  Đặt hàng
+                  {createOrderMutation.isPending ? t('loading') : t('placeOrder')}
                </button>
             </div>
          </div>

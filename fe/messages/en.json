@@ -1,0 +1,34 @@
+{
+   "SwitchLanguage": {
+      "title": "Switch Language",
+      "en": "English",
+      "vi": "Vietnamese"
+   },
+   "Header": {
+      "notifications": "Notifications",
+      "login": "Login",
+      "register": "Register",
+      "profile": "Profile",
+      "dashboard": "Dashboard",
+      "purchases": "Purchases",
+      "wishlist": "Wishlist",
+      "logout": "Logout",
+      "search": {
+         "placeholder": "What are you looking for...",
+         "button": "Search"
+      },
+      "cart": {
+         "title": "Recently added products",
+         "empty": "No products yet",
+         "more": "More items in cart",
+         "viewCart": "View cart"
+      },
+      "logoutDialog": {
+         "title": "Confirm logout",
+         "description": "Are you sure you want to log out of your account?",
+         "cancel": "Cancel",
+         "confirm": "Logout"
+      },
+      "logoutSuccess": "Logged out successfully"
+   }
+}

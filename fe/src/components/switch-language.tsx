@@ -37,7 +37,7 @@ export default function SwitchLanguage({ variant = 'default' }: { variant?: 'def
                   <Globe size={18} strokeWidth={1.5} />
                ) : (
                   <>
-                     <span className='font-medium flex items-center gap-2'>
+                     <span className='font-medium flex items-center gap-2 text-white'>
                         <Image
                            src={currentLocale.flagSrc}
                            alt={currentLocale.name}

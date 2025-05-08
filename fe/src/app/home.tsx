@@ -15,8 +15,12 @@ import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { useGetAllBrand, useGetAllCategories } from '@/queries/useAdmin'
+import { useTranslations } from 'next-intl'
+
 export default function Home() {
    const router = useRouter()
+   const t = useTranslations('Home')
+
    // Lấy danh sách thương hiệu sản phẩm
    const getAllBrand = useGetAllBrand({})
    const brands = getAllBrand.data?.data.data.content || []
@@ -84,13 +88,13 @@ export default function Home() {
 
       // Kiểm tra số lượng sản phẩm đã chọn
       if (selectedProducts.length >= 4) {
-         toast.warning('Chỉ có thể so sánh tối đa 4 sản phẩm')
+         toast.warning(t('compare.maxProducts'))
          return
       }
 
       // Kiểm tra danh mục sản phẩm
       if (selectedProducts.length > 0 && selectedProducts[0].categoryId !== product.categoryId) {
-         toast.warning('Chỉ có thể so sánh các sản phẩm cùng danh mục')
+         toast.warning(t('compare.sameCategory'))
          return
       }
 
@@ -100,7 +104,7 @@ export default function Home() {
    // Xử lý so sánh sản phẩm
    const handleCompareProducts = () => {
       if (selectedProducts.length < 2) {
-         toast.warning('Vui lòng chọn ít nhất 2 sản phẩm để so sánh')
+         toast.warning(t('compare.minProducts'))
          return
       }
 
@@ -128,7 +132,7 @@ export default function Home() {
                   <CarouselItem className='basis-full md:basis-1/2 aspect-[3/1]'>
                      <Image
                         src={'https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:quality(100)/H2_612x212_e05bf4a220.png'}
-                        alt='Banner 1'
+                        alt={t('banners.banner1')}
                         priority
                         width={1200}
                         height={400}
@@ -138,7 +142,7 @@ export default function Home() {
                   <CarouselItem className='basis-full md:basis-1/2 aspect-[3/1]'>
                      <Image
                         src={'https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:quality(100)/H2_614x212_c6fb24bf6b.png'}
-                        alt='Banner 2'
+                        alt={t('banners.banner2')}
                         priority
                         width={1200}
                         height={400}
@@ -148,7 +152,7 @@ export default function Home() {
                   <CarouselItem className='basis-full md:basis-1/2 aspect-[3/1]'>
                      <Image
                         src={'https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:quality(100)/H2_612x212_e05bf4a220.png'}
-                        alt='Banner 3'
+                        alt={t('banners.banner3')}
                         priority
                         width={1200}
                         height={400}
@@ -158,7 +162,7 @@ export default function Home() {
                   <CarouselItem className='basis-full md:basis-1/2 aspect-[3/1]'>
                      <Image
                         src={'https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:quality(100)/H2_614x212_c6fb24bf6b.png'}
-                        alt='Banner 4'
+                        alt={t('banners.banner4')}
                         priority
                         width={1200}
                         height={400}
@@ -189,11 +193,11 @@ export default function Home() {
                <div className='flex items-center mb-6'>
                   {renderFilterTypeIcon()}
                   <h2 className='text-2xl font-bold'>
-                     {queryParams.filterType === 'TOP_SELLING' && 'Sản phẩm bán chạy'}
-                     {queryParams.filterType === 'NEW_ARRIVALS' && 'Sản phẩm mới'}
-                     {queryParams.filterType === 'TOP_RATED' && 'Sản phẩm đánh giá cao'}
-                     {queryParams.filterType === 'DISCOUNTED' && 'Sản phẩm giảm giá'}
-                     {(!queryParams.filterType || queryParams.filterType === 'ALL') && 'Tất cả sản phẩm'}
+                     {queryParams.filterType === 'TOP_SELLING' && t('filterTypes.TOP_SELLING')}
+                     {queryParams.filterType === 'NEW_ARRIVALS' && t('filterTypes.NEW_ARRIVALS')}
+                     {queryParams.filterType === 'TOP_RATED' && t('filterTypes.TOP_RATED')}
+                     {queryParams.filterType === 'DISCOUNTED' && t('filterTypes.DISCOUNTED')}
+                     {(!queryParams.filterType || queryParams.filterType === 'ALL') && t('filterTypes.ALL')}
                   </h2>
                </div>
 
@@ -235,9 +239,7 @@ export default function Home() {
                               height={120}
                               className='mx-auto mb-4 opacity-50'
                            />
-                           <p className='text-muted-foreground text-lg'>
-                              Không tìm thấy sản phẩm nào phù hợp với bộ lọc.
-                           </p>
+                           <p className='text-muted-foreground text-lg'>{t('noProducts.title')}</p>
                         </div>
                      )}
                   </>
@@ -262,7 +264,9 @@ export default function Home() {
                <div className='container mx-auto flex items-center justify-between'>
                   <div className='flex items-center gap-4'>
                      <Scale className='h-5 w-5 text-primaryColor' />
-                     <span className='font-medium'>So sánh sản phẩm ({selectedProducts.length}/4)</span>
+                     <span className='font-medium'>
+                        {t('compare.title')} ({selectedProducts.length}/4)
+                     </span>
                      <div className='flex items-center gap-5'>
                         {selectedProducts.map((product) => (
                            <div
@@ -289,7 +293,7 @@ export default function Home() {
                   </div>
                   <div className='flex items-center gap-2'>
                      <Button variant='outline' size='sm' onClick={() => setSelectedProducts([])}>
-                        Xóa tất cả
+                        {t('compare.clearAll')}
                      </Button>
                      <Button
                         variant='default'
@@ -297,7 +301,7 @@ export default function Home() {
                         onClick={handleCompareProducts}
                         disabled={selectedProducts.length < 2}
                      >
-                        So sánh ngay
+                        {t('compare.compareNow')}
                      </Button>
                   </div>
                </div>

@@ -16,8 +16,10 @@ import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export default function Cart() {
+   const t = useTranslations('Cart')
    const { userId } = useAppContext()
    const updateSelectedCart = useUpdateSelectedCart()
    const getAllCart = useGetAllCart(userId!)
@@ -137,15 +139,15 @@ export default function Cart() {
                               onChange={(e) => handleCheckAll(e.target.checked)}
                            />
                         </div>
-                        <div className='flex-grow'>sản phẩm</div>
+                        <div className='flex-grow'>{t('product')}</div>
                      </div>
                   </div>
                   <div className='col-span-6'>
                      <div className='grid grid-cols-5 text-center'>
-                        <div className='col-span-2'>đơn giá</div>
-                        <div className='col-span-1'>Số lượng</div>
-                        <div className='col-span-1'>thành tiền</div>
-                        <div className='col-span-1'>thao tác</div>
+                        <div className='col-span-2'>{t('unitPrice')}</div>
+                        <div className='col-span-1'>{t('quantity')}</div>
+                        <div className='col-span-1'>{t('total')}</div>
+                        <div className='col-span-1'>{t('actions')}</div>
                      </div>
                   </div>
                </div>
@@ -216,12 +218,12 @@ export default function Cart() {
                      ))
                   ) : (
                      <div className='text-center py-10'>
-                        <p className='text-lg text-gray-500 mb-4'>Giỏ hàng của bạn đang trống</p>
+                        <p className='text-lg text-gray-500 mb-4'>{t('emptyCart')}</p>
                         <Link
                            href='/'
                            className='px-4 py-2 bg-secondaryColor text-white rounded hover:bg-secondaryColor/90'
                         >
-                           Tiếp tục mua sắm
+                           {t('continueShopping')}
                         </Link>
                      </div>
                   )}
@@ -241,7 +243,7 @@ export default function Cart() {
                      />
                   </div>
                   <label htmlFor='selectAll' className='cursor-pointer'>
-                     Chọn tất cả ({cartData.length})
+                     {t('selectAll', { count: cartData.length })}
                   </label>
                   <button
                      disabled={checkedItems.length === 0}
@@ -252,17 +254,17 @@ export default function Cart() {
                            : 'hover:text-secondaryColor transition-colors'
                      }`}
                   >
-                     Xoá
+                     {t('delete')}
                   </button>
                </div>
                <div className='mt-5 flex flex-col sm:ml-auto sm:mt-0 sm:flex-row sm:items-center'>
                   <div>
                      <div className='flex items-center'>
-                        <div className='text-base'>Tổng thanh toán ({checkedCartItems.length} sản phẩm):</div>
+                        <div className='text-base'>{t('totalPayment', { count: checkedCartItems.length })}</div>
                         <div className='ml-2 text-2xl text-secondaryColor'>{formatCurrency(totalCheckedAmount)}</div>
                      </div>
                      <div className='flex items-center text-sm gap-x-5 sm:justify-end'>
-                        <div>Tiết kiệm:</div>
+                        <div>{t('saved')}</div>
                         <div className='text-secondaryColor'>{formatCurrency(totalSavedAmount)}</div>
                      </div>
                   </div>
@@ -272,22 +274,20 @@ export default function Cart() {
                         checkedItems.length === 0 ? 'cursor-not-allowed opacity-70' : ''
                      }`}
                   >
-                     mua hàng
+                     {t('checkout')}
                   </Link>
                   <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
                      <DialogContent>
                         <DialogHeader>
-                           <DialogTitle>Xác nhận xóa</DialogTitle>
-                           <DialogDescription>
-                              Bạn có chắc chắn muốn xóa tất cả sản phẩm trong giỏ hàng?
-                           </DialogDescription>
+                           <DialogTitle>{t('deleteConfirmation')}</DialogTitle>
+                           <DialogDescription>{t('deleteConfirmationMessage')}</DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
                            <Button variant='outline' onClick={() => setIsOpenDialog(false)}>
-                              Hủy
+                              {t('cancel')}
                            </Button>
                            <Button variant='destructive' onClick={handleClearCart}>
-                              Xóa
+                              {t('confirmDelete')}
                            </Button>
                         </DialogFooter>
                      </DialogContent>

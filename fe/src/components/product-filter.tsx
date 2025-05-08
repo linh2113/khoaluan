@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import { ChevronDown, ChevronUp, Filter, Search, SlidersHorizontal, Tag } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { BrandType, CategoryType } from '@/types/admin.type'
+import { useTranslations } from 'next-intl'
 
 interface ProductFilterProps {
    initialFilters: GetProductQueryParamsType
@@ -30,6 +31,7 @@ export default function ProductFilter({
    const [filters, setFilters] = useState<GetProductQueryParamsType>(initialFilters)
    const [priceRange, setPriceRange] = useState<[number, number]>([0, maxPriceValue])
    const [isOpen, setIsOpen] = useState(true) // Mặc định mở filter
+   const t = useTranslations('ProductFilter')
 
    // Cập nhật filters khi initialFilters thay đổi
    useEffect(() => {
@@ -73,7 +75,7 @@ export default function ProductFilter({
          <div className='flex items-center justify-between p-4 bg-muted/30'>
             <div className='flex items-center gap-2'>
                <SlidersHorizontal className='h-5 w-5 text-primaryColor' />
-               <h3 className='text-lg font-medium'>Bộ lọc sản phẩm</h3>
+               <h3 className='text-lg font-medium'>{t('title')}</h3>
             </div>
             <Button variant='ghost' size='sm' onClick={() => setIsOpen(!isOpen)} className='hover:bg-muted'>
                <Filter className='h-4 w-4 mr-2 text-primaryColor' />
@@ -90,7 +92,7 @@ export default function ProductFilter({
                         <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                         <Input
                            id='keyword'
-                           placeholder='Nhập từ khóa tìm kiếm...'
+                           placeholder={t('keyword.placeholder')}
                            value={filters.keyword || ''}
                            onChange={(e) => handleFilterChange('keyword', e.target.value)}
                            className='bg-background'
@@ -107,10 +109,10 @@ export default function ProductFilter({
                         }
                      >
                         <SelectTrigger id='category' className='bg-background w-full'>
-                           <SelectValue placeholder='Chọn danh mục' />
+                           <SelectValue placeholder={t('category.label')} />
                         </SelectTrigger>
                         <SelectContent>
-                           <SelectItem value='all'>Tất cả danh mục</SelectItem>
+                           <SelectItem value='all'>{t('category.all')}</SelectItem>
                            {categories.map((category) => (
                               <SelectItem key={category.id} value={category.id.toString()}>
                                  {category.categoryName}
@@ -127,10 +129,10 @@ export default function ProductFilter({
                         onValueChange={(value) => handleFilterChange('brand', value === 'all' ? undefined : value)}
                      >
                         <SelectTrigger id='brand' className='bg-background w-full'>
-                           <SelectValue placeholder='Chọn thương hiệu' />
+                           <SelectValue placeholder={t('brand.label')} />
                         </SelectTrigger>
                         <SelectContent>
-                           <SelectItem value='all'>Tất cả thương hiệu</SelectItem>
+                           <SelectItem value='all'>{t('brand.all')}</SelectItem>
                            {brands.map((brand) => (
                               <SelectItem key={brand.id} value={brand.brandName}>
                                  {brand.brandName}
@@ -149,14 +151,14 @@ export default function ProductFilter({
                         }
                      >
                         <SelectTrigger id='filterType' className='bg-background w-full'>
-                           <SelectValue placeholder='Chọn loại sản phẩm' />
+                           <SelectValue placeholder={t('filterType.label')} />
                         </SelectTrigger>
                         <SelectContent>
-                           <SelectItem value='ALL'>Tất cả sản phẩm</SelectItem>
-                           <SelectItem value='TOP_SELLING'>Bán chạy nhất</SelectItem>
-                           <SelectItem value='NEW_ARRIVALS'>Sản phẩm mới</SelectItem>
-                           <SelectItem value='TOP_RATED'>Đánh giá cao</SelectItem>
-                           <SelectItem value='DISCOUNTED'>Đang giảm giá</SelectItem>
+                           <SelectItem value='ALL'>{t('filterType.all')}</SelectItem>
+                           <SelectItem value='TOP_SELLING'>{t('filterType.topSelling')}</SelectItem>
+                           <SelectItem value='NEW_ARRIVALS'>{t('filterType.newArrivals')}</SelectItem>
+                           <SelectItem value='TOP_RATED'>{t('filterType.topRated')}</SelectItem>
+                           <SelectItem value='DISCOUNTED'>{t('filterType.discounted')}</SelectItem>
                         </SelectContent>
                      </Select>
                   </div>
@@ -172,13 +174,13 @@ export default function ProductFilter({
                         }}
                      >
                         <SelectTrigger id='sort' className='bg-background w-full'>
-                           <SelectValue placeholder='Sắp xếp theo' />
+                           <SelectValue placeholder={t('sort.label')} />
                         </SelectTrigger>
                         <SelectContent>
-                           <SelectItem value='id-desc'>Mới nhất</SelectItem>
-                           <SelectItem value='price-asc'>Giá tăng dần</SelectItem>
-                           <SelectItem value='price-desc'>Giá giảm dần</SelectItem>
-                           <SelectItem value='averageRating-desc'>Đánh giá cao nhất</SelectItem>
+                           <SelectItem value='id-desc'>{t('sort.newest')}</SelectItem>
+                           <SelectItem value='price-asc'>{t('sort.priceAsc')}</SelectItem>
+                           <SelectItem value='price-desc'>{t('sort.priceDesc')}</SelectItem>
+                           <SelectItem value='averageRating-desc'>{t('sort.topRated')}</SelectItem>
                         </SelectContent>
                      </Select>
                   </div>
@@ -217,7 +219,7 @@ export default function ProductFilter({
                            className='data-[state=checked]:bg-secondaryColor'
                         />
                         <Label htmlFor='isDiscount' className='cursor-pointer'>
-                           Chỉ hiện sản phẩm giảm giá
+                           {t('options.showDiscounted')}
                         </Label>
                      </div>
                      <div className='flex items-center space-x-2 bg-muted/30 p-3 rounded-lg'>
@@ -228,7 +230,7 @@ export default function ProductFilter({
                            className='data-[state=checked]:bg-secondaryColor'
                         />
                         <Label htmlFor='inStock' className='cursor-pointer'>
-                           Chỉ hiện sản phẩm còn hàng
+                           {t('options.showInStock')}
                         </Label>
                      </div>
                   </div>
@@ -242,10 +244,10 @@ export default function ProductFilter({
                         onClick={resetFilters}
                         className='border-primaryColor text-primaryColor hover:bg-primaryColor/10 flex-1'
                      >
-                        Đặt lại
+                        {t('buttons.reset')}
                      </Button>
                      <Button onClick={applyFilters} className='bg-primaryColor hover:bg-primaryColor/90 flex-1'>
-                        Áp dụng
+                        {t('buttons.apply')}
                      </Button>
                   </div>
                </div>

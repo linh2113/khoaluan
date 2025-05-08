@@ -14,6 +14,7 @@ import { useAddToCart } from '@/queries/useCart'
 import { useAppContext } from '@/context/app.context'
 import { useAddToWishlist, useCheckProductInWishlist, useRemoveFromWishlist } from '@/queries/useWishlist'
 import { toast } from 'react-toastify'
+import { useTranslations } from 'next-intl'
 import {
    FacebookShareButton,
    TwitterShareButton,
@@ -40,6 +41,7 @@ import { Reply } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 export default function ProductDetail({ id }: { id: string }) {
+   const t = useTranslations('ProductDetail')
    const { userId } = useAppContext()
    const [buyCount, setBuyCount] = useState<number>(1)
    const handleBuyCount = (value: number) => {
@@ -249,8 +251,8 @@ export default function ProductDetail({ id }: { id: string }) {
       return (
          <div className='my-5 container'>
             <div className='bg-secondary rounded-lg p-5 text-center py-20'>
-               <h2 className='text-2xl font-medium mb-4'>Không tìm thấy sản phẩm</h2>
-               <p className='text-muted-foreground'>Sản phẩm không tồn tại hoặc đã bị xóa.</p>
+               <h2 className='text-2xl font-medium mb-4'>{t('productNotFound')}</h2>
+               <p className='text-muted-foreground'>{t('productNotFoundDesc')}</p>
             </div>
          </div>
       )
@@ -358,8 +360,8 @@ export default function ProductDetail({ id }: { id: string }) {
                      classNameStar2='w-5 h-5 fill-current text-gray-300'
                      rating={product.averageRating || 0}
                   />
-                  <span>({product.reviewCount || 0} đánh giá)</span>|
-                  <span>{formatNumberToK(product.stock || 0)} đã bán</span>
+                  <span>{t('reviewCount', { count: product.reviewCount || 0 })}</span>|
+                  <span>{t('soldCount', { count: formatNumberToK(product.stock || 0) })}</span>
                </div>
 
                {/* Giá */}
@@ -382,28 +384,28 @@ export default function ProductDetail({ id }: { id: string }) {
                {/* Thông tin cơ bản */}
                <div className='bg-background p-4 rounded space-y-2 text-sm'>
                   <div className='grid grid-cols-12'>
-                     <span className='col-span-3 text-gray-500'>Thương hiệu:</span>
-                     <span className='col-span-9 font-medium'>{product.brandName || 'Đang cập nhật'}</span>
+                     <span className='col-span-3 text-gray-500'>{t('brand')}</span>
+                     <span className='col-span-9 font-medium'>{product.brandName || t('updating')}</span>
                   </div>
                   <div className='grid grid-cols-12'>
-                     <span className='col-span-3 text-gray-500'>Danh mục:</span>
-                     <span className='col-span-9 font-medium'>{product.categoryName || 'Đang cập nhật'}</span>
+                     <span className='col-span-3 text-gray-500'>{t('category')}</span>
+                     <span className='col-span-9 font-medium'>{product.categoryName || t('updating')}</span>
                   </div>
                   <div className='grid grid-cols-12'>
-                     <span className='col-span-3 text-gray-500'>Bảo hành:</span>
-                     <span className='col-span-9 font-medium'>{product.warranty || 'Đang cập nhật'}</span>
+                     <span className='col-span-3 text-gray-500'>{t('warranty')}</span>
+                     <span className='col-span-9 font-medium'>{product.warranty || t('updating')}</span>
                   </div>
                   <div className='grid grid-cols-12'>
-                     <span className='col-span-3 text-gray-500'>Tình trạng:</span>
+                     <span className='col-span-3 text-gray-500'>{t('status')}</span>
                      <span className='col-span-9 font-medium'>
                         {product.stock > 0 ? (
                            product.stock <= 5 ? (
-                              <span className='text-amber-500'>Sắp hết hàng (còn {product.stock} sản phẩm)</span>
+                              <span className='text-amber-500'>{t('lowStock', { stock: product.stock })}</span>
                            ) : (
-                              <span className='text-green-500'>Còn hàng ({product.stock} sản phẩm)</span>
+                              <span className='text-green-500'>{t('inStock', { stock: product.stock })}</span>
                            )
                         ) : (
-                           <span className='text-red-500'>Hết hàng</span>
+                           <span className='text-red-500'>{t('outOfStock')}</span>
                         )}
                      </span>
                   </div>
@@ -411,7 +413,7 @@ export default function ProductDetail({ id }: { id: string }) {
 
                {/* Số lượng */}
                <div className='flex items-center gap-4 text-base'>
-                  <span>Số lượng</span>
+                  <span>{t('quantity')}</span>
                   <QuantityController
                      value={buyCount}
                      max={product.stock}
@@ -419,7 +421,9 @@ export default function ProductDetail({ id }: { id: string }) {
                      onDecrease={handleBuyCount}
                      onType={handleBuyCount}
                   />
-                  <span>{product.stock} sản phẩm có sẵn</span>
+                  <span>
+                     {product.stock} {t('available')}
+                  </span>
                </div>
 
                {/* Nút mua hàng */}
@@ -430,13 +434,13 @@ export default function ProductDetail({ id }: { id: string }) {
                      disabled={product.stock === 0}
                   >
                      <ShoppingBasket />
-                     Thêm vào giỏ hàng
+                     {t('addToCart')}
                   </button>
                   <button
                      className='px-5 py-3 bg-secondaryColor text-white rounded hover:bg-secondaryColor/90'
                      disabled={product.stock === 0}
                   >
-                     Mua ngay
+                     {t('buyNow')}
                   </button>
                   <button
                      onClick={handleWishlistToggle}
@@ -485,51 +489,52 @@ export default function ProductDetail({ id }: { id: string }) {
          {/* Thông số kỹ thuật */}
          {product.productDetail && (
             <div className='bg-secondary rounded-lg p-5 mt-5'>
-               <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>Thông số kỹ thuật</h2>
+               <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>{t('specifications')}</h2>
                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                   {product.productDetail.processor && (
                      <div className='p-3 border rounded-lg bg-background'>
-                        <span className='font-medium'>CPU:</span> {product.productDetail.processor}
+                        <span className='font-medium'>{t('specs.cpu')}</span> {product.productDetail.processor}
                      </div>
                   )}
                   {product.productDetail.ram && (
                      <div className='p-3 border rounded-lg bg-background'>
-                        <span className='font-medium'>RAM:</span> {product.productDetail.ram}
+                        <span className='font-medium'>{t('specs.ram')}</span> {product.productDetail.ram}
                      </div>
                   )}
                   {product.productDetail.storage && (
                      <div className='p-3 border rounded-lg bg-background'>
-                        <span className='font-medium'>Bộ nhớ:</span> {product.productDetail.storage}
+                        <span className='font-medium'>{t('specs.storage')}</span> {product.productDetail.storage}
                      </div>
                   )}
                   {product.productDetail.display && (
                      <div className='p-3 border rounded-lg bg-background'>
-                        <span className='font-medium'>Màn hình:</span> {product.productDetail.display}
+                        <span className='font-medium'>{t('specs.display')}</span> {product.productDetail.display}
                      </div>
                   )}
                   {product.productDetail.graphics && (
                      <div className='p-3 border rounded-lg bg-background'>
-                        <span className='font-medium'>Card đồ họa:</span> {product.productDetail.graphics}
+                        <span className='font-medium'>{t('specs.graphics')}</span> {product.productDetail.graphics}
                      </div>
                   )}
                   {product.productDetail.battery && (
                      <div className='p-3 border rounded-lg bg-background'>
-                        <span className='font-medium'>Pin:</span> {product.productDetail.battery}
+                        <span className='font-medium'>{t('specs.battery')}</span> {product.productDetail.battery}
                      </div>
                   )}
                   {product.productDetail.camera && (
                      <div className='p-3 border rounded-lg bg-background'>
-                        <span className='font-medium'>Camera:</span> {product.productDetail.camera}
+                        <span className='font-medium'>{t('specs.camera')}</span> {product.productDetail.camera}
                      </div>
                   )}
                   {product.productDetail.operatingSystem && (
                      <div className='p-3 border rounded-lg bg-background'>
-                        <span className='font-medium'>Hệ điều hành:</span> {product.productDetail.operatingSystem}
+                        <span className='font-medium'>{t('specs.os')}</span> {product.productDetail.operatingSystem}
                      </div>
                   )}
                   {product.productDetail.connectivity && (
                      <div className='p-3 border rounded-lg bg-background'>
-                        <span className='font-medium'>Kết nối:</span> {product.productDetail.connectivity}
+                        <span className='font-medium'>{t('specs.connectivity')}</span>{' '}
+                        {product.productDetail.connectivity}
                      </div>
                   )}
                </div>
@@ -538,19 +543,19 @@ export default function ProductDetail({ id }: { id: string }) {
 
          {/* Mô tả sản phẩm */}
          <div className='bg-secondary rounded-lg p-5 mt-5'>
-            <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>Mô Tả Sản Phẩm</h2>
+            <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>{t('description')}</h2>
             <div className='prose max-w-none'>
                {product.description ? (
                   <p className='whitespace-pre-line'>{product.description}</p>
                ) : (
-                  <p className='text-muted-foreground italic'>Chưa có mô tả cho sản phẩm này.</p>
+                  <p className='text-muted-foreground italic'>{t('noDescription')}</p>
                )}
             </div>
          </div>
 
          {/* Đánh giá sản phẩm */}
          <div className='bg-secondary rounded-lg p-5 mt-5'>
-            <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>Đánh giá sản phẩm</h2>
+            <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>{t('reviews')}</h2>
 
             {/* Hiển thị danh sách đánh giá */}
             <div className='space-y-4 mb-6'>
@@ -590,7 +595,7 @@ export default function ProductDetail({ id }: { id: string }) {
                                     className='mt-2 text-sm flex items-center gap-1 text-gray-500 hover:text-primaryColor'
                                  >
                                     <Reply className='h-4 w-4' />
-                                    Trả lời
+                                    {t('reply')}
                                  </button>
                               )}
 
@@ -598,7 +603,7 @@ export default function ProductDetail({ id }: { id: string }) {
                               {replyingTo === rating.id && (
                                  <div className='mt-3 space-y-2'>
                                     <Textarea
-                                       placeholder='Nhập phản hồi của bạn'
+                                       placeholder={t('enterReply')}
                                        value={replyText}
                                        onChange={(e) => setReplyText(e.target.value)}
                                        className='min-h-[80px]'
@@ -612,14 +617,14 @@ export default function ProductDetail({ id }: { id: string }) {
                                              setReplyText('')
                                           }}
                                        >
-                                          Hủy
+                                          {t('cancel')}
                                        </Button>
                                        <Button
                                           size='sm'
                                           onClick={() => handleSubmitReply(rating.id!)}
                                           disabled={replyToRating.isPending}
                                        >
-                                          {replyToRating.isPending ? 'Đang gửi...' : 'Gửi phản hồi'}
+                                          {replyToRating.isPending ? t('sending') : t('sendReply')}
                                        </Button>
                                     </div>
                                  </div>
@@ -658,7 +663,7 @@ export default function ProductDetail({ id }: { id: string }) {
                   ))
                ) : (
                   <div className='text-center py-8'>
-                     <p className='text-muted-foreground'>Chưa có đánh giá nào cho sản phẩm này.</p>
+                     <p className='text-muted-foreground'>{t('noReviews')}</p>
                   </div>
                )}
             </div>
@@ -667,20 +672,14 @@ export default function ProductDetail({ id }: { id: string }) {
 
             {/* Form đánh giá */}
             <div className='flex flex-col gap-4 mt-6'>
-               <h3 className='font-medium'>Viết đánh giá của bạn</h3>
+               <h3 className='font-medium'>{t('writeReview')}</h3>
 
                {!userId ? (
-                  <div className='bg-blue-50 text-blue-700 p-4 rounded-md'>
-                     Vui lòng{' '}
-                     <Link href='/login' className='font-medium underline'>
-                        đăng nhập
-                     </Link>{' '}
-                     để đánh giá sản phẩm
-                  </div>
+                  <div className='bg-blue-50 text-blue-700 p-4 rounded-md'>{t('pleaseLogin')}</div>
                ) : (
                   <>
                      <div className='flex items-center gap-2'>
-                        <label>Đánh giá:</label>
+                        <label>{t('rating')}</label>
                         <div className='flex items-center'>
                            {[1, 2, 3, 4, 5].map((star) => (
                               <button
@@ -699,17 +698,17 @@ export default function ProductDetail({ id }: { id: string }) {
                               </button>
                            ))}
                         </div>
-                        <span className='text-sm text-gray-500 ml-2'>({ratingValue}/5)</span>
+                        <span className='text-sm text-gray-500 ml-2'>{t('outOf5', { rating: ratingValue })}</span>
                      </div>
                      <Textarea
-                        placeholder='Nhập đánh giá của bạn về sản phẩm này'
+                        placeholder={t('enterReview')}
                         value={ratingComment}
                         onChange={(e) => setRatingComment(e.target.value)}
                         className='min-h-[120px] border-primary'
                      />
                      <Button onClick={handleSubmitRating} disabled={createRating.isPending} className='self-start'>
                         <SendHorizontal />
-                        {createRating.isPending ? 'Đang gửi...' : 'Gửi đánh giá'}
+                        {createRating.isPending ? t('sending') : t('sendReview')}
                      </Button>
                   </>
                )}
@@ -718,7 +717,7 @@ export default function ProductDetail({ id }: { id: string }) {
 
          {/* Sản phẩm liên quan */}
          <div className='bg-secondary rounded-lg p-5 mt-5'>
-            <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>Có thể bạn cũng thích</h2>
+            <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>{t('relatedProducts')}</h2>
          </div>
       </div>
    )

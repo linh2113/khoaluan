@@ -119,7 +119,6 @@ public class StatisticsServiceImpl implements StatisticsService {
         
         // Get top customers
         List<Map<String, Object>> topCustomers = userRepository.findAll().stream()
-                .filter(user -> !user.getRole()) // Only customers
                 .sorted(Comparator.comparing(user -> orderRepository.countOrdersByUser(user), Comparator.reverseOrder()))
                 .limit(5)
                 .map(user -> {
@@ -127,6 +126,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                     userMap.put("id", user.getId());
                     userMap.put("userName", user.getUserName());
                     userMap.put("email", user.getEmail());
+                    userMap.put("role", user.getRole() ? "Admin" : "Customer"); // Thêm Role
                     userMap.put("orderCount", orderRepository.countOrdersByUser(user));
                     return userMap;
                 })

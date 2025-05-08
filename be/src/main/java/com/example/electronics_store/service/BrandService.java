@@ -24,6 +24,6 @@ public interface BrandService {
     List<BrandDTO> searchBrands(String keyword);
 
     Optional<Brand> getBrandEntityById(Integer id);
-
+    Page<BrandDTO> getBrandsWithSearch(String search, Pageable pageable);
     Optional<Brand> getBrandEntityByName(String brandName);
 }

@@ -4,12 +4,15 @@ import com.example.electronics_store.dto.BrandDTO;
 import com.example.electronics_store.model.Brand;
 import com.example.electronics_store.repository.BrandRepository;
 import com.example.electronics_store.service.BrandService;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -90,6 +93,8 @@ public class BrandServiceImpl implements BrandService {
                 .map(this::mapBrandToDTO);
     }
 
+
+
     @Override
     public List<BrandDTO> getAllActiveBrands() {
         return brandRepository.findAllActiveBrands().stream()
@@ -127,6 +132,41 @@ public class BrandServiceImpl implements BrandService {
     @Override
     public Optional<Brand> getBrandEntityByName(String brandName) {
         return brandRepository.findByBrandName(brandName);
+    }
+    @Override
+    public Page<BrandDTO> getBrandsWithSearch(String search, Pageable pageable) {
+        Specification<Brand> spec = Specification.where(null);
+        if (search != null && !search.trim().isEmpty()) {
+            String searchTerm = "%" + search.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                try {
+                    Integer brandId = Integer.parseInt(search);
+                    predicates.add(cb.equal(root.get("id"), brandId));
+                } catch (NumberFormatException ignored) {
+                }
+                predicates.add(cb.like(cb.lower(root.get("brandName")), searchTerm));
+                predicates.add(cb.like(cb.lower(root.get("description")), searchTerm));
+                if ("true".equalsIgnoreCase(search) || "active".equalsIgnoreCase(search)) {
+                    predicates.add(cb.equal(root.get("status"), true));
+                } else if ("false".equalsIgnoreCase(search) || "inactive".equalsIgnoreCase(search)) {
+                    predicates.add(cb.equal(root.get("status"), false));
+                }
+                if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
+                    predicates.add(cb.like(
+                            cb.function("DATE_FORMAT", String.class, root.get("createdAt"), cb.literal("%Y-%m-%d")),
+                            search + "%"
+                    ));
+                    predicates.add(cb.like(
+                            cb.function("DATE_FORMAT", String.class, root.get("updatedAt"), cb.literal("%Y-%m-%d")),
+                            search + "%"
+                    ));
+                }
+                return cb.or(predicates.toArray(new Predicate[0]));
+            });
+        }
+        Page<Brand> brandPage = brandRepository.findAll(spec, pageable);
+        return brandPage.map(this::mapBrandToDTO);
     }
 
     // Helper method to map Brand entity to BrandDTO

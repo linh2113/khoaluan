@@ -4,10 +4,15 @@ import com.example.electronics_store.dto.CategoryDTO;
 import com.example.electronics_store.model.Category;
 import com.example.electronics_store.repository.CategoryRepository;
 import com.example.electronics_store.service.CategoryService;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -91,6 +96,40 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public Optional<Category> getCategoryEntityById(Integer id) {
         return categoryRepository.findById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<CategoryDTO> getCategoriesWithSearch(String search, Pageable pageable) {
+        Specification<Category> spec = Specification.where(null);
+        if (search != null && !search.trim().isEmpty()) {
+            String searchTerm = "%" + search.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                try {
+                    Integer categoryId = Integer.parseInt(search);
+                    predicates.add(cb.equal(root.get("id"), categoryId));
+                } catch (NumberFormatException ignored) {
+                }
+                predicates.add(cb.like(cb.lower(root.get("categoryName")), searchTerm));
+                try {
+                    Integer status = Integer.parseInt(search);
+                    if (status == 0 || status == 1) {
+                        predicates.add(cb.equal(root.get("status"), status));
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+                if ("active".equalsIgnoreCase(search) || "1".equals(search)) {
+                    predicates.add(cb.equal(root.get("status"), 1));
+                } else if ("inactive".equalsIgnoreCase(search) || "0".equals(search)) {
+                    predicates.add(cb.equal(root.get("status"), 0));
+                }
+                return cb.or(predicates.toArray(new Predicate[0]));
+            });
+        }
+
+        Page<Category> categoryPage = categoryRepository.findAll(spec, pageable);
+        return categoryPage.map(this::mapCategoryToDTO);
     }
 
     // Helper method

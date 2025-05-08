@@ -294,7 +294,7 @@ public class AdminController {
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createAt") String sortBy,
+            @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         try {
             Sort sort = sortDir.equalsIgnoreCase("desc") ?
@@ -325,14 +325,25 @@ public class AdminController {
 
     // Get all categories
     @GetMapping("/categories")
-    public ResponseEntity<ApiResponse<?>> getAllCategories() {
-        try {
-            List<CategoryDTO> categories = categoryService.getAllCategories();
-            return ResponseEntity.ok(ApiResponse.success(categories));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+    public ResponseEntity<ApiResponse<?>> getAllCategories(
+        @RequestParam(required = false) String search,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "id") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir) {
+            try {
+                Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                        Sort.by(sortBy).descending() :
+                        Sort.by(sortBy).ascending();
+
+                Pageable pageable = PageRequest.of(page, size, sort);
+                Page<CategoryDTO> categoryPage = categoryService.getCategoriesWithSearch(search, pageable);
+
+                return ResponseEntity.ok(ApiResponse.success(categoryPage));
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(ApiResponse.error(e.getMessage()));
+            }
     }
 
     // Get all products
@@ -417,19 +428,20 @@ public class AdminController {
     }
     @GetMapping("/brands")
     public ResponseEntity<ApiResponse<?>> getAllBrands(
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir) {
         try {
             Sort sort = sortDir.equalsIgnoreCase("desc") ?
                     Sort.by(sortBy).descending() :
                     Sort.by(sortBy).ascending();
 
             Pageable pageable = PageRequest.of(page, size, sort);
-            Page<BrandDTO> brands = brandService.getAllBrands(pageable);
+            Page<BrandDTO> brandPage = brandService.getBrandsWithSearch(search, pageable);
 
-            return ResponseEntity.ok(ApiResponse.success(brands));
+            return ResponseEntity.ok(ApiResponse.success(brandPage));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(e.getMessage()));

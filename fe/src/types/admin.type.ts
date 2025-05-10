@@ -28,6 +28,7 @@ export interface GetBrandQueryParamsType {
    size?: number
    sortBy?: string | 'id'
    sortDir?: string | 'desc'
+   search?: string
 }
 export type GetAllBrandType = ResponseData<ResponseDataWithPaginate<BrandType[]>>
 
@@ -38,7 +39,7 @@ export interface BrandType {
    logo: string
    createdAt: string
    updatedAt: string
-   status: boolean
+   status: number
    productCount: number
 }
 
@@ -56,6 +57,13 @@ export interface DiscountType {
 }
 
 // Category
+export interface GetCategoryQueryParamsType {
+   page?: number
+   size?: number
+   sortBy?: string | 'id'
+   sortDir?: string | 'desc'
+   search?: string
+}
 export interface CategoryType {
    id: number
    categoryName: string
@@ -88,6 +96,13 @@ export interface CreateProductType {
 }
 
 // order
+export interface GetOrderQueryParamsType {
+   page?: number
+   size?: number
+   sortBy?: string | 'id'
+   sortDir?: string | 'desc'
+   search?: string
+}
 export interface OrderType {
    id: number
    userId: number

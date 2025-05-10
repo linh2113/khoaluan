@@ -1,5 +1,5 @@
 'use client'
-import { useGetAllUser, useUpdateUser } from '@/queries/useAdmin'
+import { useCreateUser, useGetAllUser, useUpdateUser } from '@/queries/useAdmin'
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
-import { Edit, Search } from 'lucide-react'
+import { Edit, Plus, Search } from 'lucide-react'
 import { UserType } from '@/types/admin.type'
 import { toast } from 'react-toastify'
 import { format } from 'date-fns'
@@ -31,9 +31,21 @@ export default function UserManage() {
    const totalPages = getAllUser.data?.data.data.totalPages || 0
 
    const updateUser = useUpdateUser()
+   const createUser = useCreateUser()
 
+   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
    const [editingUser, setEditingUser] = useState<UserType | null>(null)
+   const [newUser, setNewUser] = useState<Partial<UserType & { password: string }>>({
+      surName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      address: '',
+      role: false,
+      active: 1,
+      password: ''
+   })
    const [searchTerm, setSearchTerm] = useState('')
 
    // Cập nhật page trong queryParams khi currentPage thay đổi
@@ -124,6 +136,14 @@ export default function UserManage() {
       }
    }
 
+   const handleNewUserInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target
+      setNewUser({
+         ...newUser,
+         [name]: value
+      })
+   }
+
    const handleRoleChange = (value: string) => {
       if (editingUser) {
          setEditingUser({
@@ -133,6 +153,13 @@ export default function UserManage() {
       }
    }
 
+   const handleNewUserRoleChange = (value: string) => {
+      setNewUser({
+         ...newUser,
+         role: value === 'admin'
+      })
+   }
+
    const handleStatusChange = (checked: boolean) => {
       if (editingUser) {
          setEditingUser({
@@ -140,6 +167,13 @@ export default function UserManage() {
             active: checked ? 1 : 0
          })
       }
+   }
+
+   const handleNewUserStatusChange = (checked: boolean) => {
+      setNewUser({
+         ...newUser,
+         active: checked ? 1 : 0
+      })
    }
 
    const handleSaveUser = () => {
@@ -173,6 +207,55 @@ export default function UserManage() {
       })
    }
 
+   const handleAddUser = () => {
+      // Validate required fields
+      if (
+         !newUser.surName?.trim() ||
+         !newUser.lastName?.trim() ||
+         !newUser.email?.trim() ||
+         !newUser.password?.trim()
+      ) {
+         toast.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+         return
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!newUser.email || !emailRegex.test(newUser.email)) {
+         toast.error('Email không hợp lệ')
+         return
+      }
+
+      // Validate phone format if provided
+      if (newUser.phone && !/^[0-9]{10,11}$/.test(newUser.phone)) {
+         toast.error('Số điện thoại không hợp lệ (10-11 số)')
+         return
+      }
+
+      // Validate password length
+      if (!newUser.password || newUser.password.length < 6) {
+         toast.error('Mật khẩu phải có ít nhất 6 ký tự')
+         return
+      }
+
+      createUser.mutate(newUser as UserType, {
+         onSuccess: () => {
+            setIsAddDialogOpen(false)
+            setNewUser({
+               surName: '',
+               lastName: '',
+               email: '',
+               phone: '',
+               address: '',
+               role: false,
+               active: 1,
+               password: ''
+            })
+            getAllUser.refetch()
+         }
+      })
+   }
+
    const formatDate = (dateString: string) => {
       try {
          return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: vi })
@@ -183,7 +266,12 @@ export default function UserManage() {
 
    return (
       <div className='container mx-auto p-6'>
-         <h1 className='text-2xl font-bold'>Quản lý người dùng</h1>
+         <div className='flex items-center justify-between'>
+            <h1 className='text-2xl font-bold'>Quản lý người dùng</h1>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+               <Plus className='mr-2 h-4 w-4' /> Thêm người dùng
+            </Button>
+         </div>
          <div className='flex items-center flex-wrap gap-4 my-5'>
             <div className='flex items-center gap-2'>
                <Input
@@ -328,6 +416,134 @@ export default function UserManage() {
                />
             </div>
          )}
+
+         {/* Dialog thêm người dùng mới */}
+         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogContent className='max-w-md'>
+               <DialogHeader>
+                  <DialogTitle>Thêm người dùng mới</DialogTitle>
+               </DialogHeader>
+               <div className='grid gap-4 py-4'>
+                  <div className='grid grid-cols-2 gap-4'>
+                     <div>
+                        <Label htmlFor='newSurName' className='text-sm'>
+                           Họ <span className='text-red-500'>*</span>
+                        </Label>
+                        <Input
+                           id='newSurName'
+                           name='surName'
+                           value={newUser.surName || ''}
+                           onChange={handleNewUserInputChange}
+                           className='mt-1'
+                        />
+                     </div>
+                     <div>
+                        <Label htmlFor='newLastName' className='text-sm'>
+                           Tên <span className='text-red-500'>*</span>
+                        </Label>
+                        <Input
+                           id='newLastName'
+                           name='lastName'
+                           value={newUser.lastName || ''}
+                           onChange={handleNewUserInputChange}
+                           className='mt-1'
+                        />
+                     </div>
+                  </div>
+
+                  <div>
+                     <Label htmlFor='newEmail' className='text-sm'>
+                        Email <span className='text-red-500'>*</span>
+                     </Label>
+                     <Input
+                        id='newEmail'
+                        name='email'
+                        type='email'
+                        value={newUser.email || ''}
+                        onChange={handleNewUserInputChange}
+                        className='mt-1'
+                     />
+                  </div>
+
+                  <div>
+                     <Label htmlFor='newPassword' className='text-sm'>
+                        Mật khẩu <span className='text-red-500'>*</span>
+                     </Label>
+                     <Input
+                        id='newPassword'
+                        name='password'
+                        type='password'
+                        isPassword
+                        value={newUser.password || ''}
+                        onChange={handleNewUserInputChange}
+                        className='mt-1'
+                     />
+                     <p className='text-xs text-gray-500 mt-1'>Mật khẩu phải có ít nhất 6 ký tự</p>
+                  </div>
+
+                  <div>
+                     <Label htmlFor='newPhone' className='text-sm'>
+                        Số điện thoại
+                     </Label>
+                     <Input
+                        id='newPhone'
+                        name='phone'
+                        value={newUser.phone || ''}
+                        onChange={handleNewUserInputChange}
+                        className='mt-1'
+                     />
+                  </div>
+
+                  <div>
+                     <Label htmlFor='newAddress' className='text-sm'>
+                        Địa chỉ
+                     </Label>
+                     <Input
+                        id='newAddress'
+                        name='address'
+                        value={newUser.address || ''}
+                        onChange={handleNewUserInputChange}
+                        className='mt-1'
+                     />
+                  </div>
+
+                  <div>
+                     <Label htmlFor='newRole' className='text-sm'>
+                        Vai trò
+                     </Label>
+                     <Select value={newUser.role ? 'admin' : 'user'} onValueChange={handleNewUserRoleChange}>
+                        <SelectTrigger className='mt-1'>
+                           <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                           <SelectItem value='admin'>Admin</SelectItem>
+                           <SelectItem value='user'>Người dùng</SelectItem>
+                        </SelectContent>
+                     </Select>
+                  </div>
+
+                  <div className='flex items-center gap-2'>
+                     <Switch
+                        id='newActive'
+                        checked={newUser.active === 1 ? true : false}
+                        onCheckedChange={handleNewUserStatusChange}
+                     />
+                     <Label htmlFor='newActive' className='text-sm'>
+                        {newUser.active === 1 ? 'Hoạt động' : 'Bị khóa'}
+                     </Label>
+                  </div>
+               </div>
+
+               <DialogFooter>
+                  <Button variant='outline' onClick={() => setIsAddDialogOpen(false)}>
+                     Hủy
+                  </Button>
+                  <Button onClick={handleAddUser} disabled={createUser.isPending}>
+                     {createUser.isPending ? 'Đang xử lý...' : 'Thêm người dùng'}
+                  </Button>
+               </DialogFooter>
+            </DialogContent>
+         </Dialog>
 
          {/* Dialog chỉnh sửa người dùng */}
          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

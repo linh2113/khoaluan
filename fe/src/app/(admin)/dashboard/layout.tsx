@@ -303,7 +303,7 @@ export default function DashboardLayout({
          {isSidebarOpen && <div className='fixed inset-0 bg-gray-900/50 z-30 lg:hidden' onClick={toggleSidebar} />}
 
          {/* Main content */}
-         <main className='flex-1 lg:ml-64 min-h-screen'>
+         <main className='flex-1 lg:ml-64 min-h-screen w-[calc(100%-256px)]'>
             {/* Desktop header */}
             <header className='hidden lg:flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800 sticky top-0 z-10'>
                <div>

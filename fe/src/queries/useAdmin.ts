@@ -4,6 +4,7 @@ import {
    createPaymentMethod,
    createProduct,
    createShippingMethod,
+   createUser,
    deleteProductImage,
    getAllAdminOrder,
    getAllAdminProduct,
@@ -16,6 +17,8 @@ import {
    getDashboardStatistics,
    updateBrand,
    updateCategory,
+   updateOrderPayment,
+   updateOrderStatus,
    updatePaymentMethod,
    updatePrimaryImage,
    updateProduct,
@@ -23,7 +26,12 @@ import {
    updateUser,
    uploadProductImage
 } from '@/apiRequest/admin'
-import { GetBrandQueryParamsType, GetUserQueryParamsType } from '@/types/admin.type'
+import {
+   GetBrandQueryParamsType,
+   GetCategoryQueryParamsType,
+   GetOrderQueryParamsType,
+   GetUserQueryParamsType
+} from '@/types/admin.type'
 import { GetProductQueryParamsType } from '@/types/product.type'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
@@ -151,10 +159,10 @@ export const useGetAllDiscount = () => {
 }
 
 // Category
-export const useGetAllCategories = () => {
+export const useGetAllCategories = (queryParams: GetCategoryQueryParamsType) => {
    return useQuery({
-      queryKey: ['categories'],
-      queryFn: getAllCategories
+      queryKey: ['categories', queryParams],
+      queryFn: () => getAllCategories(queryParams)
    })
 }
 
@@ -274,12 +282,41 @@ export const useUpdatePrimaryImage = () => {
 }
 
 // order
-export const useGetAllAdminOrder = (
-   queryParams: Pick<GetProductQueryParamsType, 'page' | 'size' | 'sortBy' | 'sortDir'>
-) => {
+export const useGetAllAdminOrder = (queryParams: GetOrderQueryParamsType) => {
    return useQuery({
       queryKey: ['order', queryParams],
       queryFn: () => getAllAdminOrder(queryParams)
+   })
+}
+export const useUpdateOrderStatus = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: ({ id, status }: { id: number; status: number }) => updateOrderStatus(id, status),
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['order']
+         })
+         toast.success('Cập nhật trạng thái đơn hàng thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật trạng thái đơn hàng thất bại')
+      }
+   })
+}
+export const useUpdateOrderPayment = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: ({ id, paymentStatus }: { id: number; paymentStatus: string }) =>
+         updateOrderPayment(id, paymentStatus),
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['order']
+         })
+         toast.success('Cập nhật trạng thái thanh toán thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật trạng thái thanh toán thất bại')
+      }
    })
 }
 
@@ -310,6 +347,21 @@ export const useUpdateUser = () => {
       },
       onError: () => {
          toast.error('Cập nhật người dùng thất bại')
+      }
+   })
+}
+export const useCreateUser = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: createUser,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['user']
+         }),
+            toast.success('Thêm người dùng thành công')
+      },
+      onError: () => {
+         toast.error('Thêm người dùng thất bại')
       }
    })
 }

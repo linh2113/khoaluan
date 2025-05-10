@@ -70,11 +70,11 @@ export default function ProductManage() {
    const totalPages = getAllAdminProduct.data?.data.data.totalPages || 0
    const isLoading = getAllAdminProduct.isLoading
 
-   const getAllCategories = useGetAllCategories()
-   const categories = getAllCategories.data?.data.data || []
+   const getAllCategories = useGetAllCategories({})
+   const categories = getAllCategories.data?.data.data.content || []
 
    const getAllDiscount = useGetAllDiscount()
-   const discounts = getAllDiscount.data?.data.data || []
+   const discounts = getAllDiscount.data?.data.data.content || []
 
    const getAllBrand = useGetAllBrand({})
    const brands = getAllBrand.data?.data.data.content || []

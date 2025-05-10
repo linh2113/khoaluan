@@ -6,7 +6,8 @@ import { useAddToCart } from '@/queries/useCart'
 import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { ORDER_STATUS } from '@/types/order.type'
+import { ORDER_STATUS, PAYMENT_STATUS } from '@/types/order.type'
+import { renderOrderStatusBadge, renderPaymentStatusBadge } from '@/lib/order-utils'
 import Image from 'next/image'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -18,7 +19,6 @@ import {
    DialogTitle
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Loader2, ShoppingCart } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { useRouter } from 'next/navigation'
@@ -105,82 +105,6 @@ export default function Purchase() {
       }
 
       addProductsToCart()
-   }
-
-   // Hiển thị trạng thái đơn hàng
-   const renderOrderStatusBadge = (status: number) => {
-      switch (status) {
-         case ORDER_STATUS.PENDING:
-            return (
-               <Badge variant='outline' className='bg-yellow-50 text-yellow-600 border-yellow-300'>
-                  Chờ xác nhận
-               </Badge>
-            )
-         case ORDER_STATUS.PROCESSING:
-            return (
-               <Badge variant='outline' className='bg-blue-50 text-blue-600 border-blue-300'>
-                  Đang xử lý
-               </Badge>
-            )
-         case ORDER_STATUS.SHIPPED:
-            return (
-               <Badge variant='outline' className='bg-indigo-50 text-indigo-600 border-indigo-300'>
-                  Đang giao hàng
-               </Badge>
-            )
-         case ORDER_STATUS.DELIVERED:
-            return (
-               <Badge variant='outline' className='bg-green-50 text-green-600 border-green-300'>
-                  Đã giao hàng
-               </Badge>
-            )
-         case ORDER_STATUS.COMPLETED:
-            return (
-               <Badge variant='outline' className='bg-green-50 text-green-600 border-green-300'>
-                  Hoàn thành
-               </Badge>
-            )
-         case ORDER_STATUS.CANCELLED:
-            return (
-               <Badge variant='outline' className='bg-red-50 text-red-600 border-red-300'>
-                  Đã hủy
-               </Badge>
-            )
-         default:
-            return <Badge variant='outline'>Không xác định</Badge>
-      }
-   }
-
-   // Hiển thị trạng thái thanh toán
-   const renderPaymentStatusBadge = (status: string) => {
-      switch (status) {
-         case 'Pending':
-            return (
-               <Badge variant='outline' className='bg-yellow-50 text-yellow-600 border-yellow-300'>
-                  Chờ thanh toán
-               </Badge>
-            )
-         case 'Paid':
-            return (
-               <Badge variant='outline' className='bg-green-50 text-green-600 border-green-300'>
-                  Đã thanh toán
-               </Badge>
-            )
-         case 'Failed':
-            return (
-               <Badge variant='outline' className='bg-red-50 text-red-600 border-red-300'>
-                  Thanh toán thất bại
-               </Badge>
-            )
-         case 'Refunded':
-            return (
-               <Badge variant='outline' className='bg-blue-50 text-blue-600 border-blue-300'>
-                  Đã hoàn tiền
-               </Badge>
-            )
-         default:
-            return <Badge variant='outline'>Không xác định</Badge>
-      }
    }
 
    // Hiển thị danh sách đơn hàng

@@ -27,7 +27,7 @@ export default function Home() {
 
    // Lấy danh sách danh mục sản phẩm
    const getAllCategories = useGetAllCategories()
-   const categories = getAllCategories.data?.data.data || []
+   const categories = getAllCategories.data?.data.data.content || []
    const [currentPage, setCurrentPage] = useState<number>(1)
    const [queryParams, setQueryParams] = useState<GetProductQueryParamsType>({
       page: currentPage - 1,

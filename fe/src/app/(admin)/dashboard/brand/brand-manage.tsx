@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
-import { Edit, Plus } from 'lucide-react'
-import { BrandType } from '@/types/admin.type'
+import { Edit, Plus, Search } from 'lucide-react'
+import { BrandType, GetBrandQueryParamsType } from '@/types/admin.type'
 import { toast } from 'react-toastify'
 import { Textarea } from '@/components/ui/textarea'
 import { format } from 'date-fns'
@@ -18,11 +18,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 export default function BrandManage() {
    const [currentPage, setCurrentPage] = useState<number>(1)
-   const [queryParams, setQueryParams] = useState({
+   const [searchTerm, setSearchTerm] = useState('')
+   const [queryParams, setQueryParams] = useState<GetBrandQueryParamsType>({
       page: currentPage - 1,
       size: 5,
       sortBy: 'id',
-      sortDir: 'asc'
+      sortDir: 'asc',
+      search: ''
    })
 
    const getAllBrand = useGetAllBrand(queryParams)
@@ -37,7 +39,7 @@ export default function BrandManage() {
    const [newBrand, setNewBrand] = useState<Partial<BrandType>>({
       brandName: '',
       description: '',
-      status: true
+      status: 1
    })
    const [editingBrand, setEditingBrand] = useState<BrandType | null>(null)
 
@@ -76,6 +78,31 @@ export default function BrandManage() {
       })
    }
 
+   const handleSearch = () => {
+      setCurrentPage(1)
+      setQueryParams({
+         ...queryParams,
+         page: 0,
+         search: searchTerm
+      })
+   }
+
+   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+         handleSearch()
+      }
+   }
+
+   const handleClearSearch = () => {
+      setSearchTerm('')
+      setCurrentPage(1)
+      setQueryParams({
+         ...queryParams,
+         page: 0,
+         search: ''
+      })
+   }
+
    const handleAddBrand = () => {
       if (!newBrand.brandName?.trim()) {
          toast.error('Tên thương hiệu không được để trống')
@@ -88,7 +115,7 @@ export default function BrandManage() {
             setNewBrand({
                brandName: '',
                description: '',
-               status: true
+               status: 1
             })
             // Refresh data sau khi thêm thành công
             getAllBrand.refetch()
@@ -127,40 +154,57 @@ export default function BrandManage() {
 
    return (
       <div className='container mx-auto p-6'>
-         <div className='flex justify-between items-center mb-6'>
+         <div className='flex items-center justify-between'>
             <h1 className='text-2xl font-bold'>Quản lý thương hiệu</h1>
-            <div className='flex items-center gap-4'>
-               <div className='flex items-center gap-2'>
-                  <span className='text-sm'>Hiển thị:</span>
-                  <Select value={queryParams.size.toString()} onValueChange={handlePageSizeChange}>
-                     <SelectTrigger className='w-[80px]'>
-                        <SelectValue placeholder='10' />
-                     </SelectTrigger>
-                     <SelectContent>
-                        <SelectItem value='5'>5</SelectItem>
-                        <SelectItem value='10'>10</SelectItem>
-                        <SelectItem value='20'>20</SelectItem>
-                        <SelectItem value='50'>50</SelectItem>
-                     </SelectContent>
-                  </Select>
-               </div>
-               <div className='flex items-center gap-2'>
-                  <span className='text-sm'>Sắp xếp:</span>
-                  <Select value={`${queryParams.sortBy}-${queryParams.sortDir}`} onValueChange={handleSortChange}>
-                     <SelectTrigger className='w-[180px]'>
-                        <SelectValue placeholder='Mới nhất' />
-                     </SelectTrigger>
-                     <SelectContent>
-                        <SelectItem value='id-desc'>Mới nhất</SelectItem>
-                        <SelectItem value='id-asc'>Cũ nhất</SelectItem>
-                        <SelectItem value='brandName-asc'>Tên A-Z</SelectItem>
-                        <SelectItem value='brandName-desc'>Tên Z-A</SelectItem>
-                     </SelectContent>
-                  </Select>
-               </div>
-               <Button onClick={() => setIsAddDialogOpen(true)}>
-                  <Plus className='mr-2 h-4 w-4' /> Thêm thương hiệu
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+               <Plus className='mr-2 h-4 w-4' /> Thêm thương hiệu
+            </Button>
+         </div>
+         <div className='flex items-center gap-4 my-5'>
+            <div className='flex items-center gap-2'>
+               <Input
+                  placeholder='Tìm kiếm thương hiệu...'
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className='w-[250px]'
+               />
+               <Button className='h-10 w-10 flex-shrink-0' onClick={handleSearch} size='icon' variant='outline'>
+                  <Search />
                </Button>
+               {queryParams.search && (
+                  <Button onClick={handleClearSearch} variant='ghost' size='sm'>
+                     Xóa
+                  </Button>
+               )}
+            </div>
+            <div className='flex items-center gap-2'>
+               <span className='text-sm'>Hiển thị:</span>
+               <Select value={(queryParams.size ?? 10).toString()} onValueChange={handlePageSizeChange}>
+                  <SelectTrigger className='w-[80px]'>
+                     <SelectValue placeholder='10' />
+                  </SelectTrigger>
+                  <SelectContent>
+                     <SelectItem value='5'>5</SelectItem>
+                     <SelectItem value='10'>10</SelectItem>
+                     <SelectItem value='20'>20</SelectItem>
+                     <SelectItem value='50'>50</SelectItem>
+                  </SelectContent>
+               </Select>
+            </div>
+            <div className='flex items-center gap-2'>
+               <span className='text-sm'>Sắp xếp:</span>
+               <Select value={`${queryParams.sortBy}-${queryParams.sortDir}`} onValueChange={handleSortChange}>
+                  <SelectTrigger className='w-[180px]'>
+                     <SelectValue placeholder='Mới nhất' />
+                  </SelectTrigger>
+                  <SelectContent>
+                     <SelectItem value='id-desc'>Mới nhất</SelectItem>
+                     <SelectItem value='id-asc'>Cũ nhất</SelectItem>
+                     <SelectItem value='brandName-asc'>Tên A-Z</SelectItem>
+                     <SelectItem value='brandName-desc'>Tên Z-A</SelectItem>
+                  </SelectContent>
+               </Select>
             </div>
          </div>
 
@@ -264,8 +308,8 @@ export default function BrandManage() {
                   <div className='flex items-center gap-2'>
                      <Switch
                         id='status'
-                        checked={newBrand.status}
-                        onCheckedChange={(checked) => setNewBrand({ ...newBrand, status: checked })}
+                        checked={newBrand.status === 1 ? true : false}
+                        onCheckedChange={(checked) => setNewBrand({ ...newBrand, status: checked ? 1 : 0 })}
                      />
                      <Label htmlFor='status'>Kích hoạt</Label>
                   </div>
@@ -311,8 +355,8 @@ export default function BrandManage() {
                      <div className='flex items-center gap-2'>
                         <Switch
                            id='editStatus'
-                           checked={editingBrand.status}
-                           onCheckedChange={(checked) => setEditingBrand({ ...editingBrand, status: checked })}
+                           checked={editingBrand.status === 1 ? true : false}
+                           onCheckedChange={(checked) => setEditingBrand({ ...editingBrand, status: checked ? 1 : 0 })}
                         />
                         <Label htmlFor='editStatus'>Kích hoạt</Label>
                      </div>

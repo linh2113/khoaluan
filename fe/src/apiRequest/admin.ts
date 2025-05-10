@@ -7,6 +7,8 @@ import {
    DiscountType,
    GetAllBrandType,
    GetBrandQueryParamsType,
+   GetCategoryQueryParamsType,
+   GetOrderQueryParamsType,
    GetUserQueryParamsType,
    OrderType,
    PaymentMethodType,
@@ -34,10 +36,13 @@ export const createBrand = (body: BrandType) => http.post(`/admin/brands`, body)
 export const updateBrand = (body: BrandType) => http.put(`/admin/brands/${body.id}`, body)
 
 // Discount
-export const getAllDiscount = () => http.get<ResponseData<DiscountType[]>>(`/admin/discounts`)
+export const getAllDiscount = () => http.get<ResponseData<ResponseDataWithPaginate<DiscountType[]>>>(`/admin/discounts`)
 
 // Category
-export const getAllCategories = () => http.get<ResponseData<CategoryType[]>>('/admin/categories')
+export const getAllCategories = (queryParams: GetCategoryQueryParamsType) =>
+   http.get<ResponseData<ResponseDataWithPaginate<CategoryType[]>>>(
+      '/admin/categories?' + queryString.stringify(queryParams)
+   )
 export const createCategory = (body: CategoryType) => http.post('/admin/categories', body)
 export const updateCategory = (body: CategoryType) => http.put(`/admin/categories/${body.id}`, body)
 
@@ -65,9 +70,11 @@ export const deleteProductImage = (imageId: number) => http.delete(`/admin/produ
 export const updatePrimaryImage = (imageId: number) => http.put(`/admin/products/images/${imageId}/primary`)
 
 // Order
-export const getAllAdminOrder = (
-   queryParams: Pick<GetProductQueryParamsType, 'page' | 'size' | 'sortBy' | 'sortDir'>
-) => http.get<ResponseData<OrderType[]>>(`/admin/orders?` + queryString.stringify(queryParams))
+export const getAllAdminOrder = (queryParams: GetOrderQueryParamsType) =>
+   http.get<ResponseData<ResponseDataWithPaginate<OrderType[]>>>(`/admin/orders?` + queryString.stringify(queryParams))
+export const updateOrderStatus = (id: number, status: number) => http.put(`/admin/orders/${id}/status?status=${status}`)
+export const updateOrderPayment = (id: number, paymentStatus: string) =>
+   http.put(`/admin/orders/${id}/payment?paymentStatus=${paymentStatus}`)
 
 //statistics
 export const getDashboardStatistics = () => http.get<ResponseData<DashboardStatisticsType>>(`/admin/dashboard`)
@@ -76,3 +83,4 @@ export const getDashboardStatistics = () => http.get<ResponseData<DashboardStati
 export const getAllUser = (queryParams: GetUserQueryParamsType) =>
    http.get<ResponseData<ResponseDataWithPaginate<UserType[]>>>(`/admin/users?` + queryString.stringify(queryParams))
 export const updateUser = (body: UserType) => http.put(`/admin/users/${body.id}`, body)
+export const createUser = (body: UserType) => http.post(`/admin/users`, body)

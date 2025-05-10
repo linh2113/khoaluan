@@ -22,7 +22,7 @@ public class RatingDTO {
     private Integer userId;
     private String userName;
     private String userPicture;
-    
+    private List<String> imageUrls;
     @NotNull(message = "Rating is required")
     @Min(value = 1, message = "Rating must be between 1 and 5")
     @Max(value = 5, message = "Rating must be between 1 and 5")
@@ -32,4 +32,5 @@ public class RatingDTO {
     private LocalDateTime createAt;
     private Integer parentId;
     private List<RatingDTO> replies;
+
 }

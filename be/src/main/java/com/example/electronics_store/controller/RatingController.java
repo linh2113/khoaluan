@@ -6,9 +6,15 @@ import com.example.electronics_store.dto.ReplyDTO;
 import com.example.electronics_store.service.RatingService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -25,13 +31,18 @@ public class RatingController {
         this.ratingService = ratingService;
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> createRating(
             @RequestParam Integer userId,
             @RequestParam Integer productId,
-            @Valid @RequestBody RatingDTO ratingDTO) {
+            @RequestParam(required = false) List<MultipartFile> images,
+            @RequestPart("rating") @Valid RatingDTO ratingDTO) {
         try {
             RatingDTO rating = ratingService.createRating(userId, productId, ratingDTO);
+            if (images != null && !images.isEmpty()) {
+                List<String> imageUrls = ratingService.uploadRatingImages(rating.getId(), images);
+                rating.setImageUrls(imageUrls);
+            }
             return ResponseEntity.ok(ApiResponse.success("Rating created successfully", rating));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -64,9 +75,20 @@ public class RatingController {
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<ApiResponse<?>> getRatingsByProductId(@PathVariable Integer productId) {
+    public ResponseEntity<ApiResponse<?>> getRatingsByProductId(
+            @PathVariable Integer productId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
         try {
-            List<RatingDTO> ratings = ratingService.getRatingsByProductId(productId);
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() :
+                    Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<RatingDTO> ratings = ratingService.getRatingsByProductIdWithPagination(productId, pageable);
+
             return ResponseEntity.ok(ApiResponse.success(ratings));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -85,19 +107,49 @@ public class RatingController {
         }
     }
 
-    @PostMapping("/reply")
+    @GetMapping("/star/{starRating}")
+    public ResponseEntity<ApiResponse<?>> getRatingsByStar(
+            @PathVariable Integer starRating,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        try {
+            if (starRating < 1 || starRating > 5) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("Star rating must be between 1 and 5"));
+            }
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() :
+                    Sort.by(sortBy).ascending();
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<RatingDTO> ratings = ratingService.getRatingsByStarWithPagination(starRating, pageable);
+            return ResponseEntity.ok(ApiResponse.success(ratings));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = "/reply", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> replyToRating(
             @RequestParam Integer userId,
             @RequestParam Integer parentRatingId,
-            @Valid @RequestBody ReplyDTO replyDTO) {
+            @RequestParam(required = false) List<MultipartFile> images,
+            @RequestPart("reply") @Valid ReplyDTO replyDTO) {
         try {
             RatingDTO reply = ratingService.replyToRating(userId, parentRatingId, replyDTO.getComment());
+            if (images != null && !images.isEmpty()) {
+                List<String> imageUrls = ratingService.uploadRatingImages(reply.getId(), images);
+                reply.setImageUrls(imageUrls);
+            }
             return ResponseEntity.ok(ApiResponse.success("Reply added successfully", reply));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
+
 
     @GetMapping("/replies/{parentId}")
     public ResponseEntity<ApiResponse<?>> getRepliesByParentId(@PathVariable Integer parentId) {

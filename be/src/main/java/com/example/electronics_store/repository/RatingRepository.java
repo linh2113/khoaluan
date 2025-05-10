@@ -3,6 +3,8 @@ package com.example.electronics_store.repository;
 import com.example.electronics_store.model.Product;
 import com.example.electronics_store.model.Rating;
 import com.example.electronics_store.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -15,7 +17,7 @@ import java.util.Optional;
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, Integer>, JpaSpecificationExecutor<Rating> {
 //    List<Rating> findByProduct(Product product);
-    
+Page<Rating> findByRatingAndParentIsNull(Integer rating, Pageable pageable);
     List<Rating> findByUser(User user);
     Optional<Rating> findByProductAndUserAndParentIsNull(Product product, User user);
 //    Optional<Rating> findByProductAndUser(Product product, User user);
@@ -24,7 +26,7 @@ public interface RatingRepository extends JpaRepository<Rating, Integer>, JpaSpe
 
     @Query("SELECT AVG(r.rating) FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL AND r.rating IS NOT NULL")
     Double getAverageRatingForProduct(@Param("productId") Integer productId);
-
+    Page<Rating> findByProductAndParentIsNull(Product product, Pageable pageable);
     @Query("SELECT COUNT(r) FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL AND r.rating IS NOT NULL")
     Long countRatingsByProduct(@Param("productId") Integer productId);
 

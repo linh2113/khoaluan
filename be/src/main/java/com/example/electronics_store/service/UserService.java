@@ -15,7 +15,7 @@ import java.util.Optional;
 
 public interface UserService {
     UserDTO registerUser(UserRegistrationDTO registrationDTO);
-    
+    UserDTO createUserByAdmin(UserRegistrationDTO registrationDTO);
     LoginResponseDTO login(LoginRequestDTO loginRequest);
     
     UserDTO getUserById(Integer id);

@@ -105,6 +105,42 @@ public class UserServiceImpl implements UserService {
 
         return mapUserToDTO(savedUser);
     }
+    @Override
+    @Transactional
+    public UserDTO createUserByAdmin(UserRegistrationDTO registrationDTO) {
+        // Kiểm tra username, email, hoặc phone đã tồn tại chưa
+        if (userRepository.existsByUserName(registrationDTO.getUserName())) {
+            throw new RuntimeException("Username already exists");
+        }
+        if (userRepository.existsByEmail(registrationDTO.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
+        if (userRepository.existsByPhone(registrationDTO.getPhone())) {
+            throw new RuntimeException("Phone number already exists");
+        }
+
+        // Tạo user mới
+        User user = new User();
+        user.setUserName(registrationDTO.getUserName());
+        user.setPassword(passwordEncoder.encode(registrationDTO.getPassword()));
+        user.setEmail(registrationDTO.getEmail());
+        user.setPhone(registrationDTO.getPhone());
+        user.setSurName(registrationDTO.getSurName());
+        user.setLastName(registrationDTO.getLastName());
+        user.setAddress(registrationDTO.getAddress());
+        user.setDateOfBirth(registrationDTO.getDateOfBirth());
+        user.setGender(registrationDTO.getGender());
+        user.setRole(false);
+        user.setActive(1); // Kích hoạt ngay lập tức
+        user.setLoginTimes(0);
+        user.setLoginBy(0);
+        user.setLockFail(0);
+
+        User savedUser = userRepository.save(user);
+
+        return mapUserToDTO(savedUser);
+    }
+
     @Transactional
     @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {

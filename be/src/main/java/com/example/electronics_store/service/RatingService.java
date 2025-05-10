@@ -4,6 +4,7 @@ import com.example.electronics_store.dto.RatingDTO;
 import com.example.electronics_store.model.Rating;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -17,9 +18,8 @@ public interface RatingService {
     RatingDTO getRatingById(Integer id);
     Page<RatingDTO> getRatingsByProductIdWithPagination(Integer productId, Pageable pageable);
     List<RatingDTO> getRatingsByProductId(Integer productId);
-
     List<RatingDTO> getRatingsByUserId(Integer userId);
-
+    List<String> uploadRatingImages(Integer ratingId, List<MultipartFile> files);
     RatingDTO replyToRating(Integer userId, Integer parentRatingId, String reply);
     
     List<RatingDTO> getRepliesByParentId(Integer parentId);

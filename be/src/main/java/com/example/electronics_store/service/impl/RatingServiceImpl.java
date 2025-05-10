@@ -1,5 +1,7 @@
 package com.example.electronics_store.service.impl;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.electronics_store.dto.RatingDTO;
 import com.example.electronics_store.model.Product;
 import com.example.electronics_store.model.Rating;
@@ -15,7 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,15 +29,16 @@ public class RatingServiceImpl implements RatingService {
     private final RatingRepository ratingRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-
+    private Cloudinary cloudinary;
     @Autowired
     public RatingServiceImpl(
             RatingRepository ratingRepository,
             UserRepository userRepository,
-            ProductRepository productRepository) {
+            ProductRepository productRepository, Cloudinary cloudinary) {
         this.ratingRepository = ratingRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.cloudinary = cloudinary;
     }
 
     @Override
@@ -225,6 +230,43 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional
+    public List<String> uploadRatingImages(Integer ratingId, List<MultipartFile> files) {
+        try {
+            Rating rating = ratingRepository.findById(ratingId)
+                    .orElseThrow(() -> new RuntimeException("Rating not found"));
+
+            List<String> imageUrls = new ArrayList<>();
+
+            for (MultipartFile file : files) {
+                if (file != null && !file.isEmpty()) {
+                    // Upload ảnh lên Cloudinary
+                    Map<String, Object> uploadParams = ObjectUtils.asMap(
+                            "folder", "ratings/" + ratingId,
+                            "resource_type", "auto"
+                    );
+                    Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
+                    String imageUrl = uploadResult.get("secure_url").toString();
+                    imageUrls.add(imageUrl);
+                }
+            }
+
+            // Cập nhật danh sách URL ảnh cho rating
+            if (!imageUrls.isEmpty()) {
+                if (rating.getImageUrls() == null) {
+                    rating.setImageUrls(new ArrayList<>());
+                }
+                rating.getImageUrls().addAll(imageUrls);
+                ratingRepository.save(rating);
+            }
+
+            return imageUrls;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload images: " + e.getMessage());
+        }
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Page<RatingDTO> getRatingsByStarWithPagination(Integer starRating, Pageable pageable) {
         Page<Rating> ratingPage = ratingRepository.findByRatingAndParentIsNull(starRating, pageable);
@@ -235,7 +277,6 @@ public class RatingServiceImpl implements RatingService {
         return ratingRepository.findById(id);
     }
 
-    // Helper method
     private RatingDTO mapRatingToDTO(Rating rating) {
         RatingDTO dto = new RatingDTO();
         dto.setId(rating.getId());
@@ -247,18 +288,19 @@ public class RatingServiceImpl implements RatingService {
         dto.setRating(rating.getRating());
         dto.setComment(rating.getComment());
         dto.setCreateAt(rating.getCreateAt());
-        
+        dto.setImageUrls(rating.getImageUrls());
+
         if (rating.getParent() != null) {
             dto.setParentId(rating.getParent().getId());
         }
-        
+
         // Get replies if any
         if (rating.getReplies() != null && !rating.getReplies().isEmpty()) {
             dto.setReplies(rating.getReplies().stream()
                     .map(this::mapRatingToDTO)
                     .collect(Collectors.toList()));
         }
-        
+
         return dto;
     }
 }

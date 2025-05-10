@@ -213,7 +213,12 @@ public class RatingServiceImpl implements RatingService {
 
         return ratingPage.map(this::mapRatingToDTO);
     }
-
+    @Override
+    @Transactional(readOnly = true)
+    public Page<RatingDTO> getRatingsByStarWithPagination(Integer starRating, Pageable pageable) {
+        Page<Rating> ratingPage = ratingRepository.findByRatingAndParentIsNull(starRating, pageable);
+        return ratingPage.map(this::mapRatingToDTO);
+    }
     @Override
     public Optional<Rating> getRatingEntityById(Integer id) {
         return ratingRepository.findById(id);

@@ -6,6 +6,10 @@ import com.example.electronics_store.dto.ReplyDTO;
 import com.example.electronics_store.service.RatingService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -78,6 +82,30 @@ public class RatingController {
     public ResponseEntity<ApiResponse<?>> getRatingsByUserId(@PathVariable Integer userId) {
         try {
             List<RatingDTO> ratings = ratingService.getRatingsByUserId(userId);
+            return ResponseEntity.ok(ApiResponse.success(ratings));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/star/{starRating}")
+    public ResponseEntity<ApiResponse<?>> getRatingsByStar(
+            @PathVariable Integer starRating,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        try {
+            if (starRating < 1 || starRating > 5) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("Star rating must be between 1 and 5"));
+            }
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() :
+                    Sort.by(sortBy).ascending();
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<RatingDTO> ratings = ratingService.getRatingsByStarWithPagination(starRating, pageable);
             return ResponseEntity.ok(ApiResponse.success(ratings));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

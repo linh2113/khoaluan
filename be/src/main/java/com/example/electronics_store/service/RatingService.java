@@ -13,7 +13,7 @@ public interface RatingService {
     RatingDTO createRating(Integer userId, Integer productId, RatingDTO ratingDTO);
     Page<RatingDTO> getRatingsWithSearch(String search, Pageable pageable);
 //    RatingDTO updateRating(Integer id, RatingDTO ratingDTO);
-    
+    Page<RatingDTO> getRatingsByStarWithPagination(Integer starRating, Pageable pageable);
     RatingDTO getRatingById(Integer id);
     
     List<RatingDTO> getRatingsByProductId(Integer productId);

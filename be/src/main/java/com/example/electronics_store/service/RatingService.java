@@ -15,7 +15,7 @@ public interface RatingService {
 //    RatingDTO updateRating(Integer id, RatingDTO ratingDTO);
     Page<RatingDTO> getRatingsByStarWithPagination(Integer starRating, Pageable pageable);
     RatingDTO getRatingById(Integer id);
-    
+    Page<RatingDTO> getRatingsByProductIdWithPagination(Integer productId, Pageable pageable);
     List<RatingDTO> getRatingsByProductId(Integer productId);
 
     List<RatingDTO> getRatingsByUserId(Integer userId);

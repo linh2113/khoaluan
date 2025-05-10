@@ -68,9 +68,20 @@ public class RatingController {
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<ApiResponse<?>> getRatingsByProductId(@PathVariable Integer productId) {
+    public ResponseEntity<ApiResponse<?>> getRatingsByProductId(
+            @PathVariable Integer productId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
         try {
-            List<RatingDTO> ratings = ratingService.getRatingsByProductId(productId);
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() :
+                    Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<RatingDTO> ratings = ratingService.getRatingsByProductIdWithPagination(productId, pageable);
+
             return ResponseEntity.ok(ApiResponse.success(ratings));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

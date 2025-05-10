@@ -26,7 +26,7 @@ Page<Rating> findByRatingAndParentIsNull(Integer rating, Pageable pageable);
 
     @Query("SELECT AVG(r.rating) FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL AND r.rating IS NOT NULL")
     Double getAverageRatingForProduct(@Param("productId") Integer productId);
-
+    Page<Rating> findByProductAndParentIsNull(Product product, Pageable pageable);
     @Query("SELECT COUNT(r) FROM Rating r WHERE r.product.id = :productId AND r.parent IS NULL AND r.rating IS NOT NULL")
     Long countRatingsByProduct(@Param("productId") Integer productId);
 

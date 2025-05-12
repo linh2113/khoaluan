@@ -12,6 +12,7 @@ import {
    getAllCategories,
    getAllDiscount,
    getAllPaymentMethod,
+   getAllRating,
    getAllShippingMethod,
    getAllUser,
    getDashboardStatistics,
@@ -33,6 +34,7 @@ import {
    GetUserQueryParamsType
 } from '@/types/admin.type'
 import { GetProductQueryParamsType } from '@/types/product.type'
+import { RatingQueryParamsType } from '@/types/rating.type'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
 
@@ -363,5 +365,13 @@ export const useCreateUser = () => {
       onError: () => {
          toast.error('Thêm người dùng thất bại')
       }
+   })
+}
+
+//rating
+export const useGetAllRating = (queryParams: RatingQueryParamsType & { search?: string }) => {
+   return useQuery({
+      queryKey: ['rating', queryParams],
+      queryFn: () => getAllRating(queryParams)
    })
 }

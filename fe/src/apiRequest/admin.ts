@@ -16,6 +16,7 @@ import {
    UserType
 } from '@/types/admin.type'
 import { GetAllProductType, GetProductQueryParamsType } from '@/types/product.type'
+import { RatingDTO, RatingQueryParamsType } from '@/types/rating.type'
 import { ResponseData, ResponseDataWithPaginate } from '@/types/utils.type'
 import queryString from 'query-string'
 
@@ -84,3 +85,7 @@ export const getAllUser = (queryParams: GetUserQueryParamsType) =>
    http.get<ResponseData<ResponseDataWithPaginate<UserType[]>>>(`/admin/users?` + queryString.stringify(queryParams))
 export const updateUser = (body: UserType) => http.put(`/admin/users/${body.id}`, body)
 export const createUser = (body: UserType) => http.post(`/admin/users`, body)
+
+//rating
+export const getAllRating = (queryParams: RatingQueryParamsType & { search?: string }) =>
+   http.get<ResponseData<ResponseDataWithPaginate<RatingDTO[]>>>(`/admin/ratings?` + queryString.stringify(queryParams))

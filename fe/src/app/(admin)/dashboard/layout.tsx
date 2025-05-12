@@ -18,7 +18,8 @@ import {
    User,
    LayoutDashboard,
    WalletCards,
-   BookHeart
+   BookHeart,
+   Star
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -85,6 +86,11 @@ export default function DashboardLayout({
          title: 'Người dùng',
          href: '/dashboard/user',
          icon: <Users className='h-5 w-5' />
+      },
+      {
+         title: 'Đánh giá sản phẩm',
+         href: '/dashboard/rating',
+         icon: <Star className='h-5 w-5' />
       },
       {
          title: 'Phương thức vận chuyển',

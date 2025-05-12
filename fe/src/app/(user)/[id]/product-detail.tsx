@@ -1071,11 +1071,6 @@ export default function ProductDetail({ id }: { id: string }) {
                )}
             </div>
          </div>
-
-         {/* Sản phẩm liên quan */}
-         <div className='bg-secondary rounded-lg p-5 mt-5'>
-            <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>{t('relatedProducts')}</h2>
-         </div>
       </div>
    )
 }

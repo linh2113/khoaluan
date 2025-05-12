@@ -266,7 +266,7 @@ export default function UserManage() {
 
    return (
       <div className='container mx-auto p-6'>
-         <div className='flex items-center justify-between'>
+         <div className='flex items-center justify-between flex-wrap gap-3'>
             <h1 className='text-2xl font-bold'>Quản lý người dùng</h1>
             <Button onClick={() => setIsAddDialogOpen(true)}>
                <Plus className='mr-2 h-4 w-4' /> Thêm người dùng
@@ -279,7 +279,7 @@ export default function UserManage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  className='w-[250px]'
+                  className='sm:w-[250px]'
                />
                <Button className='h-10 w-10 flex-shrink-0' onClick={handleSearch} size='icon' variant='outline'>
                   <Search />
@@ -419,7 +419,7 @@ export default function UserManage() {
 
          {/* Dialog thêm người dùng mới */}
          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogContent className='max-w-md'>
+            <DialogContent className='max-w-md max-h-[90vh] overflow-y-auto p-4 md:p-6'>
                <DialogHeader>
                   <DialogTitle>Thêm người dùng mới</DialogTitle>
                </DialogHeader>
@@ -535,7 +535,7 @@ export default function UserManage() {
                </div>
 
                <DialogFooter>
-                  <Button variant='outline' onClick={() => setIsAddDialogOpen(false)}>
+                  <Button className='sm:mt-0 mt-3' variant='outline' onClick={() => setIsAddDialogOpen(false)}>
                      Hủy
                   </Button>
                   <Button onClick={handleAddUser} disabled={createUser.isPending}>
@@ -547,7 +547,7 @@ export default function UserManage() {
 
          {/* Dialog chỉnh sửa người dùng */}
          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogContent className='max-w-md'>
+            <DialogContent className='max-w-md max-h-[90vh] overflow-auto'>
                <DialogHeader>
                   <DialogTitle>Chỉnh sửa thông tin người dùng</DialogTitle>
                </DialogHeader>
@@ -649,7 +649,7 @@ export default function UserManage() {
                )}
 
                <DialogFooter>
-                  <Button variant='outline' onClick={() => setIsEditDialogOpen(false)}>
+                  <Button className='sm:mt-0 mt-3' variant='outline' onClick={() => setIsEditDialogOpen(false)}>
                      Hủy
                   </Button>
                   <Button onClick={handleSaveUser} disabled={updateUser.isPending}>

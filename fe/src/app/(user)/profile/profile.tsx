@@ -26,6 +26,8 @@ import {
    DialogTitle,
    DialogTrigger
 } from '@/components/ui/dialog'
+import { useIsMobile } from '@/hooks/use-mobile'
+
 export default function Profile() {
    const { userId } = useAppContext()
    const { data } = useGetUserInfo(userId!)
@@ -37,6 +39,7 @@ export default function Profile() {
    const { control, handleSubmit, reset, formState } = useForm<User>({
       defaultValues: userInfo || {}
    })
+   const isMobile = useIsMobile()
 
    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
    const [currentPassword, setCurrentPassword] = useState('')
@@ -108,74 +111,85 @@ export default function Profile() {
    }
 
    return (
-      <div className='container py-10'>
+      <div className='container py-6 md:py-10'>
          <Card>
-            <CardHeader className='flex flex-row items-center justify-between'>
+            <CardHeader className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
                <CardTitle>Thông tin cá nhân</CardTitle>
-               {isEditing ? (
-                  <div className='flex gap-2'>
-                     <Button variant='outline' size='sm' onClick={handleCancelEdit}>
-                        <X size={16} className='mr-2' />
-                        Hủy
-                     </Button>
-                     <Button
-                        size='sm'
-                        onClick={handleSubmit(onSubmit)}
-                        disabled={!isDirty} // Disable button if no changes
-                        className={!isDirty ? 'opacity-50 cursor-not-allowed' : ''}
-                     >
-                        Lưu thay đổi
-                     </Button>
-                  </div>
-               ) : (
-                  <Button variant='outline' size='sm' className='flex items-center gap-2' onClick={handleEditClick}>
-                     <Pencil size={16} />
-                     Chỉnh sửa
-                  </Button>
-               )}
-               <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-                  <DialogTrigger asChild>
-                     <Button variant='outline'>Đổi mật khẩu</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                     <DialogHeader>
-                        <DialogTitle>Đổi mật khẩu</DialogTitle>
-                        <DialogDescription>
-                           Nhập mật khẩu hiện tại của bạn. Chúng tôi sẽ gửi email hướng dẫn đổi mật khẩu mới.
-                        </DialogDescription>
-                     </DialogHeader>
-                     <div className='space-y-4 py-4'>
-                        <div className='space-y-2'>
-                           <Label htmlFor='current-password'>Mật khẩu hiện tại</Label>
-                           <Input
-                              id='current-password'
-                              type='password'
-                              value={currentPassword}
-                              onChange={(e) => setCurrentPassword(e.target.value)}
-                           />
-                        </div>
-                     </div>
-                     <DialogFooter>
-                        <Button
-                           variant='outline'
-                           onClick={() => setIsChangePasswordOpen(false)}
-                           disabled={isChangingPassword}
-                        >
+               <div className='flex flex-wrap gap-2'>
+                  {isEditing ? (
+                     <>
+                        <Button variant='outline' size='sm' onClick={handleCancelEdit}>
+                           <X size={16} className='mr-2' />
                            Hủy
                         </Button>
-                        <Button onClick={handleChangePassword} disabled={isChangingPassword}>
-                           {isChangingPassword ? 'Đang xử lý...' : 'Tiếp tục'}
+                        <Button
+                           size='sm'
+                           onClick={handleSubmit(onSubmit)}
+                           disabled={!isDirty} // Disable button if no changes
+                           className={!isDirty ? 'opacity-50 cursor-not-allowed' : ''}
+                        >
+                           Lưu thay đổi
                         </Button>
-                     </DialogFooter>
-                  </DialogContent>
-               </Dialog>
+                     </>
+                  ) : (
+                     <>
+                        <Button
+                           variant='outline'
+                           size='sm'
+                           className='flex items-center gap-2'
+                           onClick={handleEditClick}
+                        >
+                           <Pencil size={16} />
+                           Chỉnh sửa
+                        </Button>
+                        <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
+                           <DialogTrigger asChild>
+                              <Button variant='outline' size='sm'>
+                                 Đổi mật khẩu
+                              </Button>
+                           </DialogTrigger>
+                           <DialogContent>
+                              <DialogHeader>
+                                 <DialogTitle>Đổi mật khẩu</DialogTitle>
+                                 <DialogDescription>
+                                    Nhập mật khẩu hiện tại của bạn. Chúng tôi sẽ gửi email hướng dẫn đổi mật khẩu mới.
+                                 </DialogDescription>
+                              </DialogHeader>
+                              <div className='space-y-4 py-4'>
+                                 <div className='space-y-2'>
+                                    <Label htmlFor='current-password'>Mật khẩu hiện tại</Label>
+                                    <Input
+                                       id='current-password'
+                                       type='password'
+                                       value={currentPassword}
+                                       onChange={(e) => setCurrentPassword(e.target.value)}
+                                    />
+                                 </div>
+                              </div>
+                              <DialogFooter>
+                                 <Button
+                                    variant='outline'
+                                    onClick={() => setIsChangePasswordOpen(false)}
+                                    disabled={isChangingPassword}
+                                 >
+                                    Hủy
+                                 </Button>
+                                 <Button onClick={handleChangePassword} disabled={isChangingPassword}>
+                                    {isChangingPassword ? 'Đang xử lý...' : 'Tiếp tục'}
+                                 </Button>
+                              </DialogFooter>
+                           </DialogContent>
+                        </Dialog>
+                     </>
+                  )}
+               </div>
             </CardHeader>
             <CardContent>
-               <div className='flex gap-8'>
+               <div className='flex flex-col md:flex-row gap-8'>
                   {/* Avatar và thông tin cơ bản */}
-                  <div className='w-1/3 flex flex-col items-center gap-4'>
+                  <div className='w-full md:w-1/3 flex flex-col items-center gap-4 mb-6 md:mb-0'>
                      <div className='relative group rounded-full overflow-hidden'>
-                        <Avatar className='w-40 h-40'>
+                        <Avatar className='w-32 h-32 md:w-40 md:h-40'>
                            <AvatarImage src={userInfo.picture || 'https://github.com/shadcn.png'} />
                            <AvatarFallback>
                               {userInfo.surName?.[0]?.toUpperCase()}
@@ -205,7 +219,7 @@ export default function Profile() {
                         />
                      </div>
                      <div className='text-center'>
-                        <h2 className='text-2xl font-semibold'>
+                        <h2 className='text-xl md:text-2xl font-semibold'>
                            {userInfo.surName} {userInfo.lastName}
                         </h2>
                         <p className='text-muted-foreground'>{userInfo.email}</p>
@@ -216,8 +230,8 @@ export default function Profile() {
                   </div>
 
                   {/* Chi tiết thông tin */}
-                  <div className='w-2/3'>
-                     <div className='grid grid-cols-2 gap-6'>
+                  <div className='w-full md:w-2/3'>
+                     <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6'>
                         {isEditing ? (
                            <>
                               <div className='space-y-2'>
@@ -333,7 +347,7 @@ export default function Profile() {
 
 function InfoItem({ label, value }: { label: string; value: string }) {
    return (
-      <div className='space-y-1'>
+      <div className='space-y-1 p-3 bg-muted/30 rounded-md'>
          <p className='text-sm text-muted-foreground'>{label}</p>
          <p className='font-medium'>{value}</p>
       </div>

@@ -154,20 +154,20 @@ export default function BrandManage() {
 
    return (
       <div className='container mx-auto p-6'>
-         <div className='flex items-center justify-between'>
+         <div className='flex items-center justify-between flex-wrap gap-3'>
             <h1 className='text-2xl font-bold'>Quản lý thương hiệu</h1>
             <Button onClick={() => setIsAddDialogOpen(true)}>
                <Plus className='mr-2 h-4 w-4' /> Thêm thương hiệu
             </Button>
          </div>
-         <div className='flex items-center gap-4 my-5'>
+         <div className='flex items-center flex-wrap gap-4 my-5'>
             <div className='flex items-center gap-2'>
                <Input
                   placeholder='Tìm kiếm thương hiệu...'
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  className='w-[250px]'
+                  className='sm:w-[250px]'
                />
                <Button className='h-10 w-10 flex-shrink-0' onClick={handleSearch} size='icon' variant='outline'>
                   <Search />

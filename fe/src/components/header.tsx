@@ -1,7 +1,7 @@
 'use client'
 import { ModeToggle } from '@/components/mode-toggle'
 import { Input } from '@/components/ui/input'
-import { Bell, BookHeart, LayoutDashboard, LogOut, Search, ShoppingCart, User, WalletCards } from 'lucide-react'
+import { Bell, BookHeart, LayoutDashboard, LogOut, Search, ShoppingCart, Store, User, WalletCards } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { Fragment } from 'react'
@@ -54,7 +54,7 @@ export default function Header() {
                <ModeToggle />
                <div className='flex items-center text-white gap-1 relative'>
                   <Bell size={20} strokeWidth={1.5} />
-                  {t('notifications')}
+                  <span className='sm:block hidden'>{t('notifications')}</span>
                   <div className='absolute top-[-7px] left-[5px] bg-secondaryColor px-2 text-xs rounded-lg'>0</div>
                </div>
 
@@ -71,13 +71,16 @@ export default function Header() {
                                        {userInfo.lastName?.[0]?.toUpperCase()}
                                     </AvatarFallback>
                                  </Avatar>
-                                 <span>
+                                 <span className='sm:block hidden'>
                                     {userInfo.surName} {userInfo.lastName}
                                  </span>
                               </button>
                            </PopoverTrigger>
                            <PopoverContent className='w-48 p-0'>
                               <div className='flex flex-col'>
+                                 <span className='px-4 py-2 border-b sm:hidden'>
+                                    {userInfo.surName} {userInfo.lastName}
+                                 </span>
                                  <Link
                                     className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2'
                                     href={'/profile'}
@@ -126,8 +129,8 @@ export default function Header() {
                   )}
                </div>
             </div>
-            <div className='container flex items-center'>
-               <Link href={'/'} className='w-1/5'>
+            <div className='container flex items-center gap-2'>
+               <Link href={'/'} className='sm:w-1/5'>
                   <Image
                      src={
                         'https://cdn2.fptshop.com.vn/unsafe/360x0/filters:quality(100)/small/fptshop_logo_c5ac91ae46.png'
@@ -136,10 +139,11 @@ export default function Header() {
                      alt='fptshop'
                      width={150}
                      height={40}
-                     className='w-[150px] h-10 flex-shrink-0'
+                     className='w-[150px] h-10 flex-shrink-0 md:block hidden'
                   />
+                  <Store size={30} className='md:hidden block' />
                </Link>
-               <form className='w-3/5 flex-1 flex items-center'>
+               <form className='sm:w-3/5 flex-1 flex items-center'>
                   <Input
                      placeholder={t('search.placeholder')}
                      required
@@ -147,10 +151,10 @@ export default function Header() {
                   />
                   <button className='flex h-9 items-center gap-1 bg-[#097345] font-medium px-3 text-white whitespace-nowrap rounded-tr-md rounded-br-md'>
                      <Search size={20} strokeWidth={1.5} />
-                     {t('search.button')}
+                     <span className='sm:block hidden'> {t('search.button')}</span>
                   </button>
                </form>
-               <div className='w-1/5 flex items-center justify-center text-white'>
+               <div className='sm:w-1/5 flex items-center justify-center text-white'>
                   <DropdownMenu>
                      <DropdownMenuTrigger asChild>
                         <div className='relative cursor-pointer'>
@@ -160,7 +164,7 @@ export default function Header() {
                            </div>
                         </div>
                      </DropdownMenuTrigger>
-                     <DropdownMenuContent className='w-96'>
+                     <DropdownMenuContent className='w-[300px] sm:w-96'>
                         <DropdownMenuGroup className='p-0'>
                            {cartData?.length === 0 && (
                               <div className='flex flex-col justify-center items-center gap-3 my-5'>

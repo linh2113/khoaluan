@@ -129,7 +129,11 @@
          "phoneRequired": "Vui lòng nhập số điện thoại",
          "invalidPhone": "Số điện thoại không hợp lệ (10-11 số)",
          "selectProducts": "Vui lòng chọn sản phẩm để đặt hàng"
-      }
+      },
+      "image": "Hình ảnh",
+      "name": "Tên sản phẩm",
+      "price": "Đơn giá",
+      "quantity": "Số lượng"
    },
    "Cart": {
       "product": "Sản phẩm",

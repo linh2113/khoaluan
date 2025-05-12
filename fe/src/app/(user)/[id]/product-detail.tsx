@@ -433,7 +433,7 @@ export default function ProductDetail({ id }: { id: string }) {
                <h1 className='font-medium text-2xl'>{product.name}</h1>
 
                {/* Đánh giá và số lượng bán */}
-               <div className='flex items-center gap-3 text-base'>
+               <div className='flex items-center flex-wrap gap-3 text-base'>
                   <ProductRating
                      classNameStar1='w-5 h-5 fill-yellow-300 text-yellow-300'
                      classNameStar2='w-5 h-5 fill-current text-gray-300'
@@ -462,21 +462,21 @@ export default function ProductDetail({ id }: { id: string }) {
 
                {/* Thông tin cơ bản */}
                <div className='bg-background p-4 rounded space-y-2 text-sm'>
-                  <div className='grid grid-cols-12'>
-                     <span className='col-span-3 text-gray-500'>{t('brand')}</span>
-                     <span className='col-span-9 font-medium'>{product.brandName || t('updating')}</span>
+                  <div className='grid grid-cols-2 sm:grid-cols-12'>
+                     <span className='sm:col-span-3 text-gray-500'>{t('brand')}</span>
+                     <span className='sm:col-span-9 font-medium'>{product.brandName || t('updating')}</span>
                   </div>
-                  <div className='grid grid-cols-12'>
-                     <span className='col-span-3 text-gray-500'>{t('category')}</span>
-                     <span className='col-span-9 font-medium'>{product.categoryName || t('updating')}</span>
+                  <div className='grid grid-cols-2 sm:grid-cols-12'>
+                     <span className='sm:col-span-3 text-gray-500'>{t('category')}</span>
+                     <span className='sm:col-span-9 font-medium'>{product.categoryName || t('updating')}</span>
                   </div>
-                  <div className='grid grid-cols-12'>
-                     <span className='col-span-3 text-gray-500'>{t('warranty')}</span>
-                     <span className='col-span-9 font-medium'>{product.warranty || t('updating')}</span>
+                  <div className='grid grid-cols-2 sm:grid-cols-12'>
+                     <span className='sm:col-span-3 text-gray-500'>{t('warranty')}</span>
+                     <span className='sm:col-span-9 font-medium'>{product.warranty || t('updating')}</span>
                   </div>
-                  <div className='grid grid-cols-12'>
-                     <span className='col-span-3 text-gray-500'>{t('status')}</span>
-                     <span className='col-span-9 font-medium'>
+                  <div className='grid grid-cols-2 sm:grid-cols-12'>
+                     <span className='sm:col-span-3 text-gray-500'>{t('status')}</span>
+                     <span className='sm:col-span-9 font-medium'>
                         {product.stock > 0 ? (
                            product.stock <= 5 ? (
                               <span className='text-amber-500'>{t('lowStock', { stock: product.stock })}</span>
@@ -491,7 +491,7 @@ export default function ProductDetail({ id }: { id: string }) {
                </div>
 
                {/* Số lượng */}
-               <div className='flex items-center gap-4 text-base'>
+               <div className='flex items-center flex-wrap gap-4 text-base'>
                   <span>{t('quantity')}</span>
                   <QuantityController
                      value={buyCount}
@@ -506,7 +506,7 @@ export default function ProductDetail({ id }: { id: string }) {
                </div>
 
                {/* Nút mua hàng */}
-               <div className='flex items-center gap-4 text-base'>
+               <div className='flex items-center flex-wrap gap-4 text-base'>
                   <button
                      onClick={() =>
                         addToCart.mutate(
@@ -658,7 +658,7 @@ export default function ProductDetail({ id }: { id: string }) {
                ) : ratings.length > 0 ? (
                   <>
                      {/* Bộ lọc và sắp xếp */}
-                     <div className='flex justify-between items-center mb-4'>
+                     <div className='flex justify-between flex-wrap gap-3 items-center mb-4'>
                         <div className='text-sm'>
                            {t('totalReviews', { count: ratingsData?.data.data.totalElements || 0 })}
                         </div>

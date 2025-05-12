@@ -129,7 +129,11 @@
          "phoneRequired": "Please enter phone number",
          "invalidPhone": "Invalid phone number (10-11 digits)",
          "selectProducts": "Please select products to order"
-      }
+      },
+      "image": "Image",
+      "name": "Name",
+      "price": "Price",
+      "quantity": "Quantity"
    },
    "Cart": {
       "product": "Product",

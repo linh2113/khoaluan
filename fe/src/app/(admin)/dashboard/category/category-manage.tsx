@@ -131,7 +131,7 @@ export default function CategoryManage() {
 
    return (
       <div className='container mx-auto p-6'>
-         <div className='flex items-center justify-between'>
+         <div className='flex items-center justify-between flex-wrap gap-3'>
             <h1 className='text-2xl font-bold'>Quản lý danh mục</h1>
             <Button onClick={() => setIsAddDialogOpen(true)}>
                <Plus className='mr-2 h-4 w-4' /> Thêm danh mục
@@ -144,7 +144,7 @@ export default function CategoryManage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  className='w-[250px]'
+                  className='sm:w-[250px]'
                />
                <Button className='h-10 w-10 flex-shrink-0' onClick={handleSearch} size='icon' variant='outline'>
                   <Search />

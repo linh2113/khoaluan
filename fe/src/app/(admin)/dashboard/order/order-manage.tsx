@@ -13,6 +13,7 @@ import { format } from 'date-fns'
 import { GetOrderQueryParamsType, OrderType } from '@/types/admin.type'
 import { ORDER_STATUS, PAYMENT_STATUS } from '@/types/order.type'
 import { renderOrderStatusBadge, renderPaymentStatusBadge } from '@/lib/order-utils'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function OrderManage() {
    const [currentPage, setCurrentPage] = useState<number>(1)
@@ -26,6 +27,7 @@ export default function OrderManage() {
    const [searchTerm, setSearchTerm] = useState('')
    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
    const [selectedOrder, setSelectedOrder] = useState<OrderType | null>(null)
+   const [isMobile, setIsMobile] = useState(false)
 
    const getAllAdminOrder = useGetAllAdminOrder(queryParams)
    const orders = getAllAdminOrder.data?.data.data.content || []
@@ -33,6 +35,23 @@ export default function OrderManage() {
 
    const updateOrderStatus = useUpdateOrderStatus()
    const updateOrderPayment = useUpdateOrderPayment()
+
+   useEffect(() => {
+      const checkIfMobile = () => {
+         setIsMobile(window.innerWidth < 640)
+      }
+
+      // Kiểm tra khi component mount
+      checkIfMobile()
+
+      // Thêm event listener
+      window.addEventListener('resize', checkIfMobile)
+
+      // Cleanup
+      return () => {
+         window.removeEventListener('resize', checkIfMobile)
+      }
+   }, [])
 
    // Update page in queryParams when currentPage changes
    useEffect(() => {
@@ -182,17 +201,17 @@ export default function OrderManage() {
 
    return (
       <div className='container mx-auto p-6'>
-         <div className='flex items-center justify-between'>
+         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5'>
             <h1 className='text-2xl font-bold'>Quản lý đơn hàng</h1>
          </div>
-         <div className='flex items-center flex-wrap gap-4 my-5'>
-            <div className='flex items-center gap-2'>
+         <div className='flex flex-wrap items-center gap-3 md:gap-4 mb-5'>
+            <div className='flex items-center gap-2 w-full sm:w-auto'>
                <Input
                   placeholder='Tìm kiếm đơn hàng...'
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  className='w-[250px]'
+                  className='w-full sm:w-[250px]'
                />
                <Button className='h-10 w-10 flex-shrink-0' onClick={handleSearch} size='icon' variant='outline'>
                   <Search />
@@ -203,84 +222,148 @@ export default function OrderManage() {
                   </Button>
                )}
             </div>
-            <div className='flex items-center gap-2'>
-               <span className='text-sm'>Hiển thị:</span>
-               <Select value={(queryParams.size ?? 10).toString()} onValueChange={handlePageSizeChange}>
-                  <SelectTrigger className='w-[80px]'>
-                     <SelectValue placeholder='10' />
-                  </SelectTrigger>
-                  <SelectContent>
-                     <SelectItem value='5'>5</SelectItem>
-                     <SelectItem value='10'>10</SelectItem>
-                     <SelectItem value='20'>20</SelectItem>
-                     <SelectItem value='50'>50</SelectItem>
-                  </SelectContent>
-               </Select>
-            </div>
-            <div className='flex items-center gap-2'>
-               <span className='text-sm'>Sắp xếp:</span>
-               <Select value={`${queryParams.sortBy}-${queryParams.sortDir}`} onValueChange={handleSortChange}>
-                  <SelectTrigger className='w-[180px]'>
-                     <SelectValue placeholder='Mới nhất' />
-                  </SelectTrigger>
-                  <SelectContent>
-                     <SelectItem value='id-desc'>Mới nhất</SelectItem>
-                     <SelectItem value='id-asc'>Cũ nhất</SelectItem>
-                     <SelectItem value='totalPrice-desc'>Giá cao đến thấp</SelectItem>
-                     <SelectItem value='totalPrice-asc'>Giá thấp đến cao</SelectItem>
-                  </SelectContent>
-               </Select>
+            <div className='flex flex-wrap items-center gap-3 md:gap-4'>
+               <div className='flex items-center gap-2'>
+                  <span className='text-sm whitespace-nowrap'>Hiển thị:</span>
+                  <Select value={(queryParams.size ?? 10).toString()} onValueChange={handlePageSizeChange}>
+                     <SelectTrigger className='w-[80px]'>
+                        <SelectValue placeholder='10' />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value='5'>5</SelectItem>
+                        <SelectItem value='10'>10</SelectItem>
+                        <SelectItem value='20'>20</SelectItem>
+                        <SelectItem value='50'>50</SelectItem>
+                     </SelectContent>
+                  </Select>
+               </div>
+               <div className='flex items-center gap-2'>
+                  <span className='text-sm whitespace-nowrap'>Sắp xếp:</span>
+                  <Select value={`${queryParams.sortBy}-${queryParams.sortDir}`} onValueChange={handleSortChange}>
+                     <SelectTrigger className='w-[180px]'>
+                        <SelectValue placeholder='Mới nhất' />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value='id-desc'>Mới nhất</SelectItem>
+                        <SelectItem value='id-asc'>Cũ nhất</SelectItem>
+                        <SelectItem value='totalPrice-desc'>Giá cao đến thấp</SelectItem>
+                        <SelectItem value='totalPrice-asc'>Giá thấp đến cao</SelectItem>
+                     </SelectContent>
+                  </Select>
+               </div>
             </div>
          </div>
 
          {getAllAdminOrder.isLoading ? (
-            <div className='text-center py-4'>Đang tải...</div>
-         ) : (
-            <Table>
-               <TableHeader>
-                  <TableRow>
-                     <TableHead className='w-[80px]'>ID</TableHead>
-                     <TableHead>Khách hàng</TableHead>
-                     <TableHead>Ngày tạo</TableHead>
-                     <TableHead>Tổng tiền</TableHead>
-                     <TableHead>Phương thức thanh toán</TableHead>
-                     <TableHead>Trạng thái thanh toán</TableHead>
-                     <TableHead>Trạng thái đơn hàng</TableHead>
-                     <TableHead className='text-right'>Thao tác</TableHead>
-                  </TableRow>
-               </TableHeader>
-               <TableBody>
-                  {orders.length === 0 ? (
+            <div className='overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0'>
+               <Table className='min-w-full'>
+                  <TableHeader>
                      <TableRow>
-                        <TableCell colSpan={8} className='text-center'>
-                           Không có đơn hàng nào
-                        </TableCell>
+                        <TableHead className='w-[60px]'>ID</TableHead>
+                        <TableHead>Khách hàng</TableHead>
+                        <TableHead className='hidden md:table-cell'>Ngày tạo</TableHead>
+                        <TableHead className='text-right'>Tổng tiền</TableHead>
+                        <TableHead className='hidden md:table-cell'>Phương thức thanh toán</TableHead>
+                        <TableHead className='hidden sm:table-cell'>Trạng thái thanh toán</TableHead>
+                        <TableHead>Trạng thái đơn hàng</TableHead>
+                        <TableHead className='text-right'>Thao tác</TableHead>
                      </TableRow>
-                  ) : (
-                     orders.map((order) => (
-                        <TableRow key={order.id}>
-                           <TableCell>{order.id}</TableCell>
-                           <TableCell>{order.userName}</TableCell>
-                           <TableCell>{formatDate(order.createAt)}</TableCell>
-                           <TableCell>{formatCurrency(order.totalPrice)}</TableCell>
-                           <TableCell>{order.paymentMethodName}</TableCell>
-                           <TableCell>{renderPaymentStatusBadge(order.paymentStatus)}</TableCell>
-                           <TableCell>{renderOrderStatusBadge(order.orderStatus)}</TableCell>
-                           <TableCell className='text-right'>
-                              <Button
-                                 variant='outline'
-                                 size='icon'
-                                 onClick={() => openViewDialog(order)}
-                                 className='mr-2'
-                              >
-                                 <Eye className='h-4 w-4' />
-                              </Button>
+                  </TableHeader>
+                  <TableBody>
+                     {Array(5)
+                        .fill(0)
+                        .map((_, index) => (
+                           <TableRow key={index}>
+                              <TableCell>
+                                 <Skeleton className='h-4 w-8' />
+                              </TableCell>
+                              <TableCell>
+                                 <div className='space-y-2'>
+                                    <Skeleton className='h-4 w-32' />
+                                    <Skeleton className='h-3 w-24 md:hidden' />
+                                 </div>
+                              </TableCell>
+                              <TableCell className='hidden md:table-cell'>
+                                 <Skeleton className='h-4 w-28' />
+                              </TableCell>
+                              <TableCell className='text-right'>
+                                 <Skeleton className='h-4 w-20 ml-auto' />
+                              </TableCell>
+                              <TableCell className='hidden md:table-cell'>
+                                 <Skeleton className='h-4 w-24' />
+                              </TableCell>
+                              <TableCell className='hidden sm:table-cell'>
+                                 <Skeleton className='h-6 w-24 rounded-full' />
+                              </TableCell>
+                              <TableCell>
+                                 <Skeleton className='h-6 w-24 rounded-full' />
+                              </TableCell>
+                              <TableCell className='text-right'>
+                                 <Skeleton className='h-8 w-8 rounded-md ml-auto' />
+                              </TableCell>
+                           </TableRow>
+                        ))}
+                  </TableBody>
+               </Table>
+            </div>
+         ) : (
+            <div className='overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0'>
+               <Table className='min-w-full'>
+                  <TableHeader>
+                     <TableRow>
+                        <TableHead className='w-[60px]'>ID</TableHead>
+                        <TableHead>Khách hàng</TableHead>
+                        <TableHead className='hidden md:table-cell'>Ngày tạo</TableHead>
+                        <TableHead className='text-right'>Tổng tiền</TableHead>
+                        <TableHead className='hidden md:table-cell'>Phương thức thanh toán</TableHead>
+                        <TableHead className='hidden sm:table-cell'>Trạng thái thanh toán</TableHead>
+                        <TableHead>Trạng thái đơn hàng</TableHead>
+                        <TableHead className='text-right'>Thao tác</TableHead>
+                     </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                     {orders.length === 0 ? (
+                        <TableRow>
+                           <TableCell colSpan={8} className='text-center'>
+                              Không có đơn hàng nào
                            </TableCell>
                         </TableRow>
-                     ))
-                  )}
-               </TableBody>
-            </Table>
+                     ) : (
+                        orders.map((order) => (
+                           <TableRow key={order.id}>
+                              <TableCell>{order.id}</TableCell>
+                              <TableCell>
+                                 <div>
+                                    <p className='font-medium'>{order.userName}</p>
+                                    <p className='text-xs text-gray-500 md:hidden'>{formatDate(order.createAt)}</p>
+                                    <p className='text-xs text-gray-500 md:hidden'>{order.paymentMethodName}</p>
+                                 </div>
+                              </TableCell>
+                              <TableCell className='hidden md:table-cell'>{formatDate(order.createAt)}</TableCell>
+                              <TableCell className='text-right font-medium'>
+                                 {formatCurrency(order.totalPrice)}
+                              </TableCell>
+                              <TableCell className='hidden md:table-cell'>{order.paymentMethodName}</TableCell>
+                              <TableCell className='hidden sm:table-cell'>
+                                 {renderPaymentStatusBadge(order.paymentStatus)}
+                              </TableCell>
+                              <TableCell>{renderOrderStatusBadge(order.orderStatus)}</TableCell>
+                              <TableCell className='text-right'>
+                                 <Button
+                                    variant='outline'
+                                    size='icon'
+                                    onClick={() => openViewDialog(order)}
+                                    className='h-8 w-8'
+                                 >
+                                    <Eye className='h-4 w-4' />
+                                 </Button>
+                              </TableCell>
+                           </TableRow>
+                        ))
+                     )}
+                  </TableBody>
+               </Table>
+            </div>
          )}
 
          {totalPages > 1 && (
@@ -296,23 +379,25 @@ export default function OrderManage() {
 
          {/* Chi tiết đơn hàng */}
          <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-            <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
+            <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto p-4 md:p-6'>
                <DialogHeader>
                   <DialogTitle>Chi tiết đơn hàng #{selectedOrder?.id}</DialogTitle>
                </DialogHeader>
                {selectedOrder && (
-                  <div className='space-y-4'>
-                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                        <div>
+                  <div className='space-y-4 md:space-y-6'>
+                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6'>
+                        <div className='space-y-3'>
                            <h3 className='font-semibold mb-2'>Thông tin đơn hàng</h3>
-                           <p>Mã đơn hàng: #{selectedOrder.id}</p>
-                           <p>Ngày đặt: {formatDate(selectedOrder.createAt)}</p>
-                           <p>Tổng tiền: {formatCurrency(selectedOrder.totalPrice)}</p>
-                           <p>Phí vận chuyển: {formatCurrency(selectedOrder.shippingFee)}</p>
-                           <p>Phương thức vận chuyển: {selectedOrder.shippingMethodName}</p>
-                           <p>Phương thức thanh toán: {selectedOrder.paymentMethodName}</p>
+                           <div className='space-y-1 text-sm md:text-base'>
+                              <p>Mã đơn hàng: #{selectedOrder.id}</p>
+                              <p>Ngày đặt: {formatDate(selectedOrder.createAt)}</p>
+                              <p>Tổng tiền: {formatCurrency(selectedOrder.totalPrice)}</p>
+                              <p>Phí vận chuyển: {formatCurrency(selectedOrder.shippingFee)}</p>
+                              <p>Phương thức vận chuyển: {selectedOrder.shippingMethodName}</p>
+                              <p>Phương thức thanh toán: {selectedOrder.paymentMethodName}</p>
+                           </div>
 
-                           <div className='mt-4'>
+                           <div className='mt-4 pt-4 border-t'>
                               <h4 className='font-semibold mb-2'>Trạng thái thanh toán:</h4>
                               <div className='flex flex-wrap gap-2 mb-2'>
                                  {renderPaymentStatusBadge(selectedOrder.paymentStatus)}
@@ -334,13 +419,15 @@ export default function OrderManage() {
                               </Select>
                            </div>
                         </div>
-                        <div>
+                        <div className='space-y-3'>
                            <h3 className='font-semibold mb-2'>Thông tin khách hàng</h3>
-                           <p>Tên khách hàng: {selectedOrder.userName}</p>
-                           <p>Địa chỉ: {selectedOrder.address}</p>
-                           <p>Số điện thoại: {selectedOrder.phoneNumber}</p>
+                           <div className='space-y-1 text-sm md:text-base'>
+                              <p>Tên khách hàng: {selectedOrder.userName}</p>
+                              <p>Địa chỉ: {selectedOrder.address}</p>
+                              <p>Số điện thoại: {selectedOrder.phoneNumber}</p>
+                           </div>
 
-                           <div className='mt-4'>
+                           <div className='mt-4 pt-4 border-t'>
                               <h4 className='font-semibold mb-2'>Trạng thái đơn hàng:</h4>
                               <div className='flex flex-wrap gap-2 mb-2'>
                                  {renderOrderStatusBadge(selectedOrder.orderStatus)}
@@ -366,44 +453,74 @@ export default function OrderManage() {
                         </div>
                      </div>
 
-                     <div>
-                        <h3 className='font-semibold mb-2'>Chi tiết sản phẩm</h3>
-                        <Table>
-                           <TableHeader>
-                              <TableRow>
-                                 <TableHead>Sản phẩm</TableHead>
-                                 <TableHead className='text-right'>Đơn giá</TableHead>
-                                 <TableHead className='text-right'>Số lượng</TableHead>
-                                 <TableHead className='text-right'>Thành tiền</TableHead>
-                              </TableRow>
-                           </TableHeader>
-                           <TableBody>
-                              {selectedOrder.orderDetails.map((detail) => (
-                                 <TableRow key={detail.id}>
-                                    <TableCell>
-                                       <div className='flex items-center gap-2'>
-                                          {detail.productImage && (
-                                             <img
-                                                src={detail.productImage}
-                                                alt={detail.productName}
-                                                className='w-12 h-12 object-cover rounded'
-                                             />
-                                          )}
-                                          <span>{detail.productName}</span>
-                                       </div>
-                                    </TableCell>
-                                    <TableCell className='text-right'>{formatCurrency(detail.price)}</TableCell>
-                                    <TableCell className='text-right'>{detail.quantity}</TableCell>
-                                    <TableCell className='text-right'>{formatCurrency(detail.totalPrice)}</TableCell>
+                     <div className='pt-4 border-t'>
+                        <h3 className='font-semibold mb-3'>Chi tiết sản phẩm</h3>
+                        <div className='overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0'>
+                           <Table className='min-w-full'>
+                              <TableHeader>
+                                 <TableRow>
+                                    <TableHead>Sản phẩm</TableHead>
+                                    <TableHead className='text-right'>Đơn giá</TableHead>
+                                    <TableHead className='text-right'>Số lượng</TableHead>
+                                    <TableHead className='text-right'>Thành tiền</TableHead>
                                  </TableRow>
-                              ))}
-                           </TableBody>
-                        </Table>
+                              </TableHeader>
+                              <TableBody>
+                                 {selectedOrder.orderDetails.map((detail) => (
+                                    <TableRow key={detail.id}>
+                                       <TableCell>
+                                          <div className='flex items-center gap-2'>
+                                             {detail.productImage && (
+                                                <div className='w-12 h-12 rounded overflow-hidden flex-shrink-0'>
+                                                   <img
+                                                      src={detail.productImage}
+                                                      alt={detail.productName}
+                                                      className='w-full h-full object-cover'
+                                                   />
+                                                </div>
+                                             )}
+                                             <span className='line-clamp-2'>{detail.productName}</span>
+                                          </div>
+                                       </TableCell>
+                                       <TableCell className='text-right'>{formatCurrency(detail.price)}</TableCell>
+                                       <TableCell className='text-right'>{detail.quantity}</TableCell>
+                                       <TableCell className='text-right font-medium'>
+                                          {formatCurrency(detail.totalPrice)}
+                                       </TableCell>
+                                    </TableRow>
+                                 ))}
+                                 <TableRow>
+                                    <TableCell colSpan={3} className='text-right font-medium'>
+                                       Tổng tiền sản phẩm:
+                                    </TableCell>
+                                    <TableCell className='text-right font-medium'>
+                                       {formatCurrency(selectedOrder.totalPrice)}
+                                    </TableCell>
+                                 </TableRow>
+                                 <TableRow>
+                                    <TableCell colSpan={3} className='text-right font-medium'>
+                                       Phí vận chuyển:
+                                    </TableCell>
+                                    <TableCell className='text-right font-medium'>
+                                       {formatCurrency(selectedOrder.shippingFee)}
+                                    </TableCell>
+                                 </TableRow>
+                                 <TableRow>
+                                    <TableCell colSpan={3} className='text-right font-bold'>
+                                       Tổng thanh toán:
+                                    </TableCell>
+                                    <TableCell className='text-right font-bold text-primary'>
+                                       {formatCurrency(selectedOrder.totalPrice + selectedOrder.shippingFee)}
+                                    </TableCell>
+                                 </TableRow>
+                              </TableBody>
+                           </Table>
+                        </div>
                      </div>
                   </div>
                )}
-               <DialogFooter>
-                  <Button variant='outline' onClick={() => setIsViewDialogOpen(false)}>
+               <DialogFooter className='mt-6 flex-col sm:flex-row gap-2'>
+                  <Button variant='outline' onClick={() => setIsViewDialogOpen(false)} className='w-full sm:w-auto'>
                      Đóng
                   </Button>
                </DialogFooter>

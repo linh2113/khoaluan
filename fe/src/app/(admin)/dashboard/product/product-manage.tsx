@@ -367,422 +367,416 @@ export default function ProductManage() {
 
    return (
       <div className='container p-6'>
-         <div className='flex justify-between items-center mb-6'>
+         <div className='flex justify-between flex-wrap gap-3 items-center'>
             <h1 className='text-2xl font-bold'>Quản lý sản phẩm</h1>
-            <div className='flex items-center gap-4'>
-               <div className='flex items-center gap-2'>
-                  <span className='text-sm'>Hiển thị:</span>
-                  <Select value={queryParams.size.toString()} onValueChange={handlePageSizeChange}>
-                     <SelectTrigger className='w-[80px]'>
-                        <SelectValue placeholder='10' />
-                     </SelectTrigger>
-                     <SelectContent>
-                        <SelectItem value='5'>5</SelectItem>
-                        <SelectItem value='10'>10</SelectItem>
-                        <SelectItem value='20'>20</SelectItem>
-                        <SelectItem value='50'>50</SelectItem>
-                     </SelectContent>
-                  </Select>
-               </div>
-               <div className='flex items-center gap-2'>
-                  <span className='text-sm'>Sắp xếp:</span>
-                  <Select value={`${queryParams.sortBy}-${queryParams.sortDir}`} onValueChange={handleSortChange}>
-                     <SelectTrigger className='w-[180px]'>
-                        <SelectValue placeholder='Mới nhất' />
-                     </SelectTrigger>
-                     <SelectContent>
-                        <SelectItem value='id-desc'>Mới nhất</SelectItem>
-                        <SelectItem value='id-asc'>Cũ nhất</SelectItem>
-                        <SelectItem value='price-asc'>Giá tăng dần</SelectItem>
-                        <SelectItem value='price-desc'>Giá giảm dần</SelectItem>
-                        <SelectItem value='name-asc'>Tên A-Z</SelectItem>
-                        <SelectItem value='name-desc'>Tên Z-A</SelectItem>
-                     </SelectContent>
-                  </Select>
-               </div>
-               <Dialog
-                  open={isAddDialogOpen}
-                  onOpenChange={(open) => {
-                     setIsAddDialogOpen(open)
-                     if (!open) {
-                        // Cleanup khi đóng dialog
-                        setSelectedFiles([])
-                        previewUrls.forEach((url) => URL.revokeObjectURL(url))
-                        setPreviewUrls([])
-                        setPrimaryImageIndex(0)
-                     }
-                  }}
-               >
-                  <DialogTrigger asChild>
-                     <Button>
-                        <Plus className='h-4 w-4 mr-2' />
-                        Thêm sản phẩm
-                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
-                     <DialogHeader>
-                        <DialogTitle>Thêm sản phẩm mới</DialogTitle>
-                        <DialogDescription>Điền đầy đủ thông tin sản phẩm bên dưới</DialogDescription>
-                     </DialogHeader>
-                     <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
-                        <div className='grid grid-cols-2 gap-4'>
-                           <div className='space-y-2'>
-                              <Label htmlFor='name'>
-                                 Tên sản phẩm <span className='text-red-500'>*</span>
-                              </Label>
-                              <Input
-                                 id='name'
-                                 {...register('name', { required: 'Tên sản phẩm là bắt buộc' })}
-                                 placeholder='Nhập tên sản phẩm'
-                              />
-                              {errors.name && <p className='text-red-500 text-xs'>{errors.name.message}</p>}
-                           </div>
-                           <div className='space-y-2'>
-                              <Label htmlFor='price'>
-                                 Giá <span className='text-red-500'>*</span>
-                              </Label>
-                              <Input
-                                 id='price'
-                                 type='number'
-                                 {...register('price', {
-                                    required: 'Giá là bắt buộc',
-                                    min: { value: 0, message: 'Giá không được âm' }
-                                 })}
-                                 placeholder='Nhập giá sản phẩm'
-                              />
-                              {errors.price && <p className='text-red-500 text-xs'>{errors.price.message}</p>}
-                           </div>
-                           <div className='space-y-2'>
-                              <Label htmlFor='categoryId'>
-                                 Danh mục <span className='text-red-500'>*</span>
-                              </Label>
-                              <Controller
-                                 control={control}
-                                 name='categoryId'
-                                 rules={{ required: 'Danh mục là bắt buộc' }}
-                                 render={({ field }) => (
-                                    <Select
-                                       value={field.value?.toString()}
-                                       onValueChange={(value) => field.onChange(Number(value))}
-                                    >
-                                       <SelectTrigger>
-                                          <SelectValue placeholder='Chọn danh mục' />
-                                       </SelectTrigger>
-                                       <SelectContent>
-                                          {categories.map((category) => (
-                                             <SelectItem key={category.id} value={category.id.toString()}>
-                                                {category.categoryName}
-                                             </SelectItem>
-                                          ))}
-                                       </SelectContent>
-                                    </Select>
-                                 )}
-                              />
-                              {errors.categoryId && <p className='text-red-500 text-xs'>{errors.categoryId.message}</p>}
-                           </div>
-                           <div className='space-y-2'>
-                              <Label htmlFor='brandId'>Thương hiệu</Label>
-                              <Controller
-                                 control={control}
-                                 name='brandId'
-                                 render={({ field }) => (
-                                    <Select
-                                       value={field.value?.toString()}
-                                       onValueChange={(value) => field.onChange(Number(value))}
-                                    >
-                                       <SelectTrigger>
-                                          <SelectValue placeholder='Chọn thương hiệu' />
-                                       </SelectTrigger>
-                                       <SelectContent>
-                                          {brands.map((brand) => (
-                                             <SelectItem key={brand.id} value={brand.id.toString()}>
-                                                {brand.brandName}
-                                             </SelectItem>
-                                          ))}
-                                       </SelectContent>
-                                    </Select>
-                                 )}
-                              />
-                           </div>
-                           <div className='space-y-2'>
-                              <Label htmlFor='discountId'>Khuyến mãi</Label>
-                              <Controller
-                                 control={control}
-                                 name='discountId'
-                                 render={({ field }) => (
-                                    <Select
-                                       value={field.value?.toString()}
-                                       onValueChange={(value) => field.onChange(Number(value))}
-                                    >
-                                       <SelectTrigger>
-                                          <SelectValue placeholder='Chọn khuyến mãi' />
-                                       </SelectTrigger>
-                                       <SelectContent>
-                                          {discounts.map((discount) => (
-                                             <SelectItem key={discount.id} value={discount.id.toString()}>
-                                                {discount.discountName} ({discount.value}%)
-                                             </SelectItem>
-                                          ))}
-                                       </SelectContent>
-                                    </Select>
-                                 )}
-                              />
-                           </div>
-                           <div className='space-y-2'>
-                              <Label htmlFor='stock'>
-                                 Số lượng tồn kho <span className='text-red-500'>*</span>
-                              </Label>
-                              <Input
-                                 id='stock'
-                                 type='number'
-                                 {...register('stock', {
-                                    required: 'Số lượng tồn kho là bắt buộc',
-                                    min: { value: 0, message: 'Số lượng không được âm' }
-                                 })}
-                                 placeholder='Nhập số lượng tồn kho'
-                              />
-                              {errors.stock && <p className='text-red-500 text-xs'>{errors.stock.message}</p>}
-                           </div>
-                        </div>
-
+            <Dialog
+               open={isAddDialogOpen}
+               onOpenChange={(open) => {
+                  setIsAddDialogOpen(open)
+                  if (!open) {
+                     // Cleanup khi đóng dialog
+                     setSelectedFiles([])
+                     previewUrls.forEach((url) => URL.revokeObjectURL(url))
+                     setPreviewUrls([])
+                     setPrimaryImageIndex(0)
+                  }
+               }}
+            >
+               <DialogTrigger asChild>
+                  <Button>
+                     <Plus className='h-4 w-4 mr-2' />
+                     Thêm sản phẩm
+                  </Button>
+               </DialogTrigger>
+               <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
+                  <DialogHeader>
+                     <DialogTitle>Thêm sản phẩm mới</DialogTitle>
+                     <DialogDescription>Điền đầy đủ thông tin sản phẩm bên dưới</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
+                     <div className='grid sm:grid-cols-2 gap-4'>
                         <div className='space-y-2'>
-                           <Label htmlFor='description'>Mô tả sản phẩm</Label>
-                           <Textarea
-                              id='description'
-                              {...register('description')}
-                              placeholder='Nhập mô tả sản phẩm'
-                              className='min-h-[100px]'
+                           <Label htmlFor='name'>
+                              Tên sản phẩm <span className='text-red-500'>*</span>
+                           </Label>
+                           <Input
+                              id='name'
+                              {...register('name', { required: 'Tên sản phẩm là bắt buộc' })}
+                              placeholder='Nhập tên sản phẩm'
                            />
+                           {errors.name && <p className='text-red-500 text-xs'>{errors.name.message}</p>}
                         </div>
-
-                        <div className='grid grid-cols-2 gap-4'>
-                           <div className='space-y-2'>
-                              <Label htmlFor='warranty'>Bảo hành</Label>
-                              <Input id='warranty' {...register('warranty')} placeholder='Ví dụ: 12 tháng' />
-                           </div>
-                           <div className='space-y-2'>
-                              <Label htmlFor='weight'>Trọng lượng (gram)</Label>
-                              <Input
-                                 id='weight'
-                                 type='number'
-                                 {...register('weight', { min: 0 })}
-                                 placeholder='Nhập trọng lượng'
-                              />
-                           </div>
-                           <div className='space-y-2'>
-                              <Label htmlFor='dimensions'>Kích thước</Label>
-                              <Input id='dimensions' {...register('dimensions')} placeholder='Ví dụ: 150 x 75 x 8 mm' />
-                           </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='price'>
+                              Giá <span className='text-red-500'>*</span>
+                           </Label>
+                           <Input
+                              id='price'
+                              type='number'
+                              {...register('price', {
+                                 required: 'Giá là bắt buộc',
+                                 min: { value: 0, message: 'Giá không được âm' }
+                              })}
+                              placeholder='Nhập giá sản phẩm'
+                           />
+                           {errors.price && <p className='text-red-500 text-xs'>{errors.price.message}</p>}
                         </div>
-
-                        <div className='border p-4 rounded-md space-y-4'>
-                           <h3 className='font-medium'>Thông số kỹ thuật</h3>
-                           <div className='grid grid-cols-2 gap-4'>
-                              <div className='space-y-2'>
-                                 <Label htmlFor='processor'>Vi xử lý</Label>
-                                 <Input
-                                    id='processor'
-                                    {...register('processor')}
-                                    placeholder='Ví dụ: Apple A15 Bionic'
-                                 />
-                              </div>
-                              <div className='space-y-2'>
-                                 <Label htmlFor='ram'>RAM</Label>
-                                 <Input id='ram' {...register('ram')} placeholder='Ví dụ: 8GB LPDDR5' />
-                              </div>
-                              <div className='space-y-2'>
-                                 <Label htmlFor='storage'>Bộ nhớ trong</Label>
-                                 <Input id='storage' {...register('storage')} placeholder='Ví dụ: 256GB' />
-                              </div>
-                              <div className='space-y-2'>
-                                 <Label htmlFor='display'>Màn hình</Label>
-                                 <Input
-                                    id='display'
-                                    {...register('display')}
-                                    placeholder='Ví dụ: 6.1 inch Super Retina XDR'
-                                 />
-                              </div>
-                              <div className='space-y-2'>
-                                 <Label htmlFor='graphics'>Card đồ họa</Label>
-                                 <Input id='graphics' {...register('graphics')} placeholder='Ví dụ: Apple GPU' />
-                              </div>
-                              <div className='space-y-2'>
-                                 <Label htmlFor='battery'>Pin</Label>
-                                 <Input id='battery' {...register('battery')} placeholder='Ví dụ: 3240 mAh' />
-                              </div>
-                              <div className='space-y-2'>
-                                 <Label htmlFor='camera'>Camera</Label>
-                                 <Input id='camera' {...register('camera')} placeholder='Ví dụ: 12MP + 12MP' />
-                              </div>
-                              <div className='space-y-2'>
-                                 <Label htmlFor='operatingSystem'>Hệ điều hành</Label>
-                                 <Input
-                                    id='operatingSystem'
-                                    {...register('operatingSystem')}
-                                    placeholder='Ví dụ: iOS 16'
-                                 />
-                              </div>
-                              <div className='space-y-2'>
-                                 <Label htmlFor='connectivity'>Kết nối</Label>
-                                 <Input
-                                    id='connectivity'
-                                    {...register('connectivity')}
-                                    placeholder='Ví dụ: 5G, Wi-Fi 6, Bluetooth 5.0'
-                                 />
-                              </div>
-                              <div className='space-y-2'>
-                                 <Label htmlFor='otherFeatures'>Tính năng khác</Label>
-                                 <Input
-                                    id='otherFeatures'
-                                    {...register('otherFeatures')}
-                                    placeholder='Ví dụ: Face ID, chống nước IP68'
-                                 />
-                              </div>
-                           </div>
-                        </div>
-
-                        <div className='flex items-center space-x-2'>
+                        <div className='space-y-2'>
+                           <Label htmlFor='categoryId'>
+                              Danh mục <span className='text-red-500'>*</span>
+                           </Label>
                            <Controller
                               control={control}
-                              name='status'
+                              name='categoryId'
+                              rules={{ required: 'Danh mục là bắt buộc' }}
                               render={({ field }) => (
-                                 <Switch
-                                    className='data-[state=checked]:bg-secondaryColor'
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    id='status'
-                                 />
+                                 <Select
+                                    value={field.value?.toString()}
+                                    onValueChange={(value) => field.onChange(Number(value))}
+                                 >
+                                    <SelectTrigger>
+                                       <SelectValue placeholder='Chọn danh mục' />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                       {categories.map((category) => (
+                                          <SelectItem key={category.id} value={category.id.toString()}>
+                                             {category.categoryName}
+                                          </SelectItem>
+                                       ))}
+                                    </SelectContent>
+                                 </Select>
                               )}
                            />
-                           <Label htmlFor='status'>Hiển thị sản phẩm</Label>
+                           {errors.categoryId && <p className='text-red-500 text-xs'>{errors.categoryId.message}</p>}
                         </div>
-
                         <div className='space-y-2'>
-                           <Label htmlFor='productImage'>Hình ảnh sản phẩm</Label>
-                           <div
-                              className='mt-2 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 transition-colors hover:border-primaryColor'
-                              onDragOver={(e) => {
-                                 e.preventDefault()
-                                 e.stopPropagation()
-                              }}
-                              onDrop={(e) => {
-                                 e.preventDefault()
-                                 e.stopPropagation()
-                                 if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                                    const newFiles = Array.from(e.dataTransfer.files)
-                                    const imageFiles = newFiles.filter((file) => file.type.startsWith('image/'))
-
-                                    if (imageFiles.length > 0) {
-                                       // Tạo preview URLs cho các file mới
-                                       const newPreviewUrls = imageFiles.map((file) => URL.createObjectURL(file))
-
-                                       setSelectedFiles((prev) => [...prev, ...imageFiles])
-                                       setPreviewUrls((prev) => [...prev, ...newPreviewUrls])
-                                    }
-                                 }
-                              }}
-                           >
-                              <input
-                                 id='editProductImage'
-                                 type='file'
-                                 ref={fileInputRef}
-                                 accept='image/*'
-                                 multiple
-                                 onChange={handleFileChange}
-                                 className='hidden'
-                              />
-                              <div className='flex flex-col items-center text-center'>
-                                 <svg
-                                    className='w-12 h-12 text-gray-400 mb-3'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    viewBox='0 0 24 24'
-                                    xmlns='http://www.w3.org/2000/svg'
+                           <Label htmlFor='brandId'>Thương hiệu</Label>
+                           <Controller
+                              control={control}
+                              name='brandId'
+                              render={({ field }) => (
+                                 <Select
+                                    value={field.value?.toString()}
+                                    onValueChange={(value) => field.onChange(Number(value))}
                                  >
-                                    <path
-                                       strokeLinecap='round'
-                                       strokeLinejoin='round'
-                                       strokeWidth='2'
-                                       d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'
-                                    ></path>
-                                 </svg>
-                                 <p className='mb-2 text-sm text-gray-500'>
-                                    <span className='font-semibold'>Nhấp để tải lên</span> hoặc kéo và thả
-                                 </p>
-                                 <p className='text-xs text-gray-500'>PNG, JPG, GIF (Tối đa 10MB)</p>
-                              </div>
-                              <Button
-                                 type='button'
-                                 variant='outline'
-                                 onClick={() => fileInputRef.current?.click()}
-                                 className='mt-4'
-                              >
-                                 Chọn ảnh
-                              </Button>
-                           </div>
-                           {/* Hiển thị preview ảnh */}
-                           {previewUrls.length > 0 && (
-                              <div className='mt-4'>
-                                 <p className='text-sm font-medium mb-2'>Đã chọn {selectedFiles.length} ảnh</p>
-                                 <div className='grid grid-cols-5 gap-4'>
-                                    {previewUrls.map((url, index) => (
-                                       <div
-                                          key={index}
-                                          className={`relative aspect-square border rounded-md overflow-hidden cursor-pointer ${
-                                             index === primaryImageIndex ? 'ring-2 ring-primaryColor' : ''
-                                          }`}
-                                          // onClick={() => handleSetPrimary(index)}
-                                       >
-                                          <Image src={url} alt={`Preview ${index + 1}`} fill className='object-cover' />
-                                          {index === primaryImageIndex && (
-                                             <div className='absolute top-1 left-1 bg-primaryColor text-white text-xs px-1 rounded'>
-                                                Chính
-                                             </div>
-                                          )}
-                                          <button
-                                             type='button'
-                                             className='absolute top-1 right-1 bg-red-500 text-white rounded-full p-1'
-                                             onClick={(e) => {
-                                                e.stopPropagation()
-                                                handleRemoveFile(index)
-                                             }}
-                                          >
-                                             <X className='h-3 w-3' />
-                                          </button>
-                                       </div>
-                                    ))}
-                                 </div>
-                              </div>
-                           )}
-
-                           <p className='text-xs text-gray-500'>
-                              Hình ảnh sẽ được tự động upload sau khi tạo sản phẩm thành công. Ảnh đầu tiên sẽ được đặt
-                              làm ảnh chính.
-                           </p>
+                                    <SelectTrigger>
+                                       <SelectValue placeholder='Chọn thương hiệu' />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                       {brands.map((brand) => (
+                                          <SelectItem key={brand.id} value={brand.id.toString()}>
+                                             {brand.brandName}
+                                          </SelectItem>
+                                       ))}
+                                    </SelectContent>
+                                 </Select>
+                              )}
+                           />
                         </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='discountId'>Khuyến mãi</Label>
+                           <Controller
+                              control={control}
+                              name='discountId'
+                              render={({ field }) => (
+                                 <Select
+                                    value={field.value?.toString()}
+                                    onValueChange={(value) => field.onChange(Number(value))}
+                                 >
+                                    <SelectTrigger>
+                                       <SelectValue placeholder='Chọn khuyến mãi' />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                       {discounts.map((discount) => (
+                                          <SelectItem key={discount.id} value={discount.id.toString()}>
+                                             {discount.discountName} ({discount.value}%)
+                                          </SelectItem>
+                                       ))}
+                                    </SelectContent>
+                                 </Select>
+                              )}
+                           />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='stock'>
+                              Số lượng tồn kho <span className='text-red-500'>*</span>
+                           </Label>
+                           <Input
+                              id='stock'
+                              type='number'
+                              {...register('stock', {
+                                 required: 'Số lượng tồn kho là bắt buộc',
+                                 min: { value: 0, message: 'Số lượng không được âm' }
+                              })}
+                              placeholder='Nhập số lượng tồn kho'
+                           />
+                           {errors.stock && <p className='text-red-500 text-xs'>{errors.stock.message}</p>}
+                        </div>
+                     </div>
 
-                        <div className='flex justify-end gap-2'>
+                     <div className='space-y-2'>
+                        <Label htmlFor='description'>Mô tả sản phẩm</Label>
+                        <Textarea
+                           id='description'
+                           {...register('description')}
+                           placeholder='Nhập mô tả sản phẩm'
+                           className='min-h-[100px]'
+                        />
+                     </div>
+
+                     <div className='grid sm:grid-cols-2 gap-4'>
+                        <div className='space-y-2'>
+                           <Label htmlFor='warranty'>Bảo hành</Label>
+                           <Input id='warranty' {...register('warranty')} placeholder='Ví dụ: 12 tháng' />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='weight'>Trọng lượng (gram)</Label>
+                           <Input
+                              id='weight'
+                              type='number'
+                              {...register('weight', { min: 0 })}
+                              placeholder='Nhập trọng lượng'
+                           />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label htmlFor='dimensions'>Kích thước</Label>
+                           <Input id='dimensions' {...register('dimensions')} placeholder='Ví dụ: 150 x 75 x 8 mm' />
+                        </div>
+                     </div>
+
+                     <div className='border p-4 rounded-md space-y-4'>
+                        <h3 className='font-medium'>Thông số kỹ thuật</h3>
+                        <div className='grid sm:grid-cols-2 gap-4'>
+                           <div className='space-y-2'>
+                              <Label htmlFor='processor'>Vi xử lý</Label>
+                              <Input id='processor' {...register('processor')} placeholder='Ví dụ: Apple A15 Bionic' />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='ram'>RAM</Label>
+                              <Input id='ram' {...register('ram')} placeholder='Ví dụ: 8GB LPDDR5' />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='storage'>Bộ nhớ trong</Label>
+                              <Input id='storage' {...register('storage')} placeholder='Ví dụ: 256GB' />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='display'>Màn hình</Label>
+                              <Input
+                                 id='display'
+                                 {...register('display')}
+                                 placeholder='Ví dụ: 6.1 inch Super Retina XDR'
+                              />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='graphics'>Card đồ họa</Label>
+                              <Input id='graphics' {...register('graphics')} placeholder='Ví dụ: Apple GPU' />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='battery'>Pin</Label>
+                              <Input id='battery' {...register('battery')} placeholder='Ví dụ: 3240 mAh' />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='camera'>Camera</Label>
+                              <Input id='camera' {...register('camera')} placeholder='Ví dụ: 12MP + 12MP' />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='operatingSystem'>Hệ điều hành</Label>
+                              <Input
+                                 id='operatingSystem'
+                                 {...register('operatingSystem')}
+                                 placeholder='Ví dụ: iOS 16'
+                              />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='connectivity'>Kết nối</Label>
+                              <Input
+                                 id='connectivity'
+                                 {...register('connectivity')}
+                                 placeholder='Ví dụ: 5G, Wi-Fi 6, Bluetooth 5.0'
+                              />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label htmlFor='otherFeatures'>Tính năng khác</Label>
+                              <Input
+                                 id='otherFeatures'
+                                 {...register('otherFeatures')}
+                                 placeholder='Ví dụ: Face ID, chống nước IP68'
+                              />
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className='flex items-center space-x-2'>
+                        <Controller
+                           control={control}
+                           name='status'
+                           render={({ field }) => (
+                              <Switch
+                                 className='data-[state=checked]:bg-secondaryColor'
+                                 checked={field.value}
+                                 onCheckedChange={field.onChange}
+                                 id='status'
+                              />
+                           )}
+                        />
+                        <Label htmlFor='status'>Hiển thị sản phẩm</Label>
+                     </div>
+
+                     <div className='space-y-2'>
+                        <Label htmlFor='productImage'>Hình ảnh sản phẩm</Label>
+                        <div
+                           className='mt-2 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 transition-colors hover:border-primaryColor'
+                           onDragOver={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                           }}
+                           onDrop={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                 const newFiles = Array.from(e.dataTransfer.files)
+                                 const imageFiles = newFiles.filter((file) => file.type.startsWith('image/'))
+
+                                 if (imageFiles.length > 0) {
+                                    // Tạo preview URLs cho các file mới
+                                    const newPreviewUrls = imageFiles.map((file) => URL.createObjectURL(file))
+
+                                    setSelectedFiles((prev) => [...prev, ...imageFiles])
+                                    setPreviewUrls((prev) => [...prev, ...newPreviewUrls])
+                                 }
+                              }
+                           }}
+                        >
+                           <input
+                              id='editProductImage'
+                              type='file'
+                              ref={fileInputRef}
+                              accept='image/*'
+                              multiple
+                              onChange={handleFileChange}
+                              className='hidden'
+                           />
+                           <div className='flex flex-col items-center text-center'>
+                              <svg
+                                 className='w-12 h-12 text-gray-400 mb-3'
+                                 fill='none'
+                                 stroke='currentColor'
+                                 viewBox='0 0 24 24'
+                                 xmlns='http://www.w3.org/2000/svg'
+                              >
+                                 <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth='2'
+                                    d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'
+                                 ></path>
+                              </svg>
+                              <p className='mb-2 text-sm text-gray-500'>
+                                 <span className='font-semibold'>Nhấp để tải lên</span> hoặc kéo và thả
+                              </p>
+                              <p className='text-xs text-gray-500'>PNG, JPG, GIF (Tối đa 10MB)</p>
+                           </div>
                            <Button
                               type='button'
                               variant='outline'
-                              onClick={() => {
-                                 setIsAddDialogOpen(false)
-                                 setSelectedFiles([])
-                                 previewUrls.forEach((url) => URL.revokeObjectURL(url))
-                                 setPreviewUrls([])
-                              }}
+                              onClick={() => fileInputRef.current?.click()}
+                              className='mt-4'
                            >
-                              Hủy
-                           </Button>
-                           <Button type='submit' disabled={createProduct.isPending || uploadProductImage.isPending}>
-                              {createProduct.isPending || uploadProductImage.isPending
-                                 ? 'Đang xử lý...'
-                                 : 'Thêm sản phẩm'}
+                              Chọn ảnh
                            </Button>
                         </div>
-                     </form>
-                  </DialogContent>
-               </Dialog>
+                        {/* Hiển thị preview ảnh */}
+                        {previewUrls.length > 0 && (
+                           <div className='mt-4'>
+                              <p className='text-sm font-medium mb-2'>Đã chọn {selectedFiles.length} ảnh</p>
+                              <div className='grid grid-cols-5 gap-4'>
+                                 {previewUrls.map((url, index) => (
+                                    <div
+                                       key={index}
+                                       className={`relative aspect-square border rounded-md overflow-hidden cursor-pointer ${
+                                          index === primaryImageIndex ? 'ring-2 ring-primaryColor' : ''
+                                       }`}
+                                       // onClick={() => handleSetPrimary(index)}
+                                    >
+                                       <Image src={url} alt={`Preview ${index + 1}`} fill className='object-cover' />
+                                       {index === primaryImageIndex && (
+                                          <div className='absolute top-1 left-1 bg-primaryColor text-white text-xs px-1 rounded'>
+                                             Chính
+                                          </div>
+                                       )}
+                                       <button
+                                          type='button'
+                                          className='absolute top-1 right-1 bg-red-500 text-white rounded-full p-1'
+                                          onClick={(e) => {
+                                             e.stopPropagation()
+                                             handleRemoveFile(index)
+                                          }}
+                                       >
+                                          <X className='h-3 w-3' />
+                                       </button>
+                                    </div>
+                                 ))}
+                              </div>
+                           </div>
+                        )}
+
+                        <p className='text-xs text-gray-500'>
+                           Hình ảnh sẽ được tự động upload sau khi tạo sản phẩm thành công. Ảnh đầu tiên sẽ được đặt làm
+                           ảnh chính.
+                        </p>
+                     </div>
+
+                     <div className='flex justify-end gap-2'>
+                        <Button
+                           type='button'
+                           variant='outline'
+                           onClick={() => {
+                              setIsAddDialogOpen(false)
+                              setSelectedFiles([])
+                              previewUrls.forEach((url) => URL.revokeObjectURL(url))
+                              setPreviewUrls([])
+                           }}
+                        >
+                           Hủy
+                        </Button>
+                        <Button type='submit' disabled={createProduct.isPending || uploadProductImage.isPending}>
+                           {createProduct.isPending || uploadProductImage.isPending ? 'Đang xử lý...' : 'Thêm sản phẩm'}
+                        </Button>
+                     </div>
+                  </form>
+               </DialogContent>
+            </Dialog>
+         </div>
+         <div className='flex items-center flex-wrap gap-4 my-5'>
+            <div className='flex items-center gap-2'>
+               <span className='text-sm'>Hiển thị:</span>
+               <Select value={queryParams.size.toString()} onValueChange={handlePageSizeChange}>
+                  <SelectTrigger className='w-[80px]'>
+                     <SelectValue placeholder='10' />
+                  </SelectTrigger>
+                  <SelectContent>
+                     <SelectItem value='5'>5</SelectItem>
+                     <SelectItem value='10'>10</SelectItem>
+                     <SelectItem value='20'>20</SelectItem>
+                     <SelectItem value='50'>50</SelectItem>
+                  </SelectContent>
+               </Select>
+            </div>
+            <div className='flex items-center gap-2'>
+               <span className='text-sm'>Sắp xếp:</span>
+               <Select value={`${queryParams.sortBy}-${queryParams.sortDir}`} onValueChange={handleSortChange}>
+                  <SelectTrigger className='w-[180px]'>
+                     <SelectValue placeholder='Mới nhất' />
+                  </SelectTrigger>
+                  <SelectContent>
+                     <SelectItem value='id-desc'>Mới nhất</SelectItem>
+                     <SelectItem value='id-asc'>Cũ nhất</SelectItem>
+                     <SelectItem value='price-asc'>Giá tăng dần</SelectItem>
+                     <SelectItem value='price-desc'>Giá giảm dần</SelectItem>
+                     <SelectItem value='name-asc'>Tên A-Z</SelectItem>
+                     <SelectItem value='name-desc'>Tên Z-A</SelectItem>
+                  </SelectContent>
+               </Select>
             </div>
          </div>
 

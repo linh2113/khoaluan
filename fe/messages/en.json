@@ -15,7 +15,9 @@
       "logout": "Logout",
       "search": {
          "placeholder": "What are you looking for...",
-         "button": "Search"
+         "button": "Search",
+         "startVoice": "Search with voice",
+         "stopVoice": "Stop voice search"
       },
       "cart": {
          "title": "Recently added products",

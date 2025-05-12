@@ -107,7 +107,7 @@ export default function Compare() {
 
    return (
       <div className='container my-8'>
-         <div className='flex items-center justify-between mb-6'>
+         <div className='flex items-center flex-wrap gap-3 justify-between mb-6'>
             <h1 className='text-2xl font-bold'>So sánh sản phẩm</h1>
             <Button asChild variant='outline'>
                <Link href='/'>
@@ -129,8 +129,8 @@ export default function Compare() {
                                  <Image
                                     src={product.image || '/placeholder.svg'}
                                     alt={product.name}
-                                    width={100}
-                                    height={100}
+                                    width={500}
+                                    height={500}
                                     className='mb-2'
                                  />
                               </div>

@@ -86,20 +86,6 @@ export default function ProductFilter({
          <Collapsible open={isOpen} onOpenChange={setIsOpen}>
             <CollapsibleContent>
                <div className='p-4 pt-2 space-y-3'>
-                  {/* Tìm kiếm theo từ khóa */}
-                  <div>
-                     <div className='relative'>
-                        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-                        <Input
-                           id='keyword'
-                           placeholder={t('keyword.placeholder')}
-                           value={filters.keyword || ''}
-                           onChange={(e) => handleFilterChange('keyword', e.target.value)}
-                           className='bg-background'
-                        />
-                     </div>
-                  </div>
-
                   {/* Lọc theo danh mục */}
                   <div>
                      <Select

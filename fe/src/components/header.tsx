@@ -1,10 +1,21 @@
 'use client'
 import { ModeToggle } from '@/components/mode-toggle'
 import { Input } from '@/components/ui/input'
-import { Bell, BookHeart, LayoutDashboard, LogOut, Search, ShoppingCart, Store, User, WalletCards } from 'lucide-react'
+import {
+   Bell,
+   BookHeart,
+   LayoutDashboard,
+   LogOut,
+   Mic,
+   MicOff,
+   Search,
+   ShoppingCart,
+   User,
+   WalletCards
+} from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import React, { Fragment } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
    Dialog,
    DialogContent,
@@ -30,15 +41,78 @@ import { toast } from 'react-toastify'
 import { useGetAllCart } from '@/queries/useCart'
 import SwitchLanguage from '@/components/switch-language'
 import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
+
+// Thêm kiểu cho window để hỗ trợ SpeechRecognition
+declare global {
+   interface Window {
+      SpeechRecognition: any
+      webkitSpeechRecognition: any
+   }
+}
 
 export default function Header() {
-   const { userId, logout } = useAppContext()
+   const { userId, logout, setSearchProduct } = useAppContext()
+   const router = useRouter()
+   const [searchValue, setSearchValue] = useState<string>()
    const { data } = useGetUserInfo(userId!)
    const userInfo = data?.data.data
    const [showLogoutDialog, setShowLogoutDialog] = React.useState(false)
    const getAllCart = useGetAllCart(userId!)
    const cartData = getAllCart.data?.data.data.items || []
    const t = useTranslations('Header')
+
+   // Voice search states
+   const [isListening, setIsListening] = useState(false)
+   const [speechSupported, setSpeechSupported] = useState(false)
+   const recognitionRef = useRef<any>(null)
+
+   // Check if speech recognition is supported
+   useEffect(() => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      if (SpeechRecognition) {
+         setSpeechSupported(true)
+         recognitionRef.current = new SpeechRecognition()
+         recognitionRef.current.continuous = false
+         recognitionRef.current.interimResults = false
+         recognitionRef.current.lang = 'vi-VN' // Set language to Vietnamese by default
+
+         recognitionRef.current.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript
+            setSearchValue(transcript)
+            setIsListening(false)
+         }
+
+         recognitionRef.current.onerror = (event: any) => {
+            console.error('Speech recognition error', event.error)
+            setIsListening(false)
+         }
+
+         recognitionRef.current.onend = () => {
+            setIsListening(false)
+         }
+      }
+
+      return () => {
+         if (recognitionRef.current) {
+            recognitionRef.current.abort()
+         }
+      }
+   }, [])
+
+   const toggleListening = () => {
+      if (isListening) {
+         recognitionRef.current.abort()
+         setIsListening(false)
+      } else {
+         try {
+            recognitionRef.current.start()
+            setIsListening(true)
+         } catch (error) {
+            console.error('Speech recognition error:', error)
+         }
+      }
+   }
 
    const handleLogout = () => {
       logout()
@@ -130,26 +204,42 @@ export default function Header() {
                </div>
             </div>
             <div className='container flex items-center gap-2'>
-               <Link href={'/'} className='sm:w-1/5'>
-                  <Image
-                     src={
-                        'https://cdn2.fptshop.com.vn/unsafe/360x0/filters:quality(100)/small/fptshop_logo_c5ac91ae46.png'
-                     }
-                     priority
-                     alt='fptshop'
-                     width={150}
-                     height={40}
-                     className='w-[150px] h-10 flex-shrink-0 md:block hidden'
-                  />
-                  <Store size={30} className='md:hidden block' />
+               <Link href={'/'} className='sm:w-1/5 flex items-center'>
+                  <Image src={'/logo.png'} alt='logo' width={50} height={50} className='w-[50px] h-[50px]' />
+                  <span className='font-semibold text-lg sm:block hidden text-white'>TechShop</span>
                </Link>
-               <form className='sm:w-3/5 flex-1 flex items-center'>
+               <form
+                  onSubmit={(e) => {
+                     e.preventDefault()
+                     setSearchProduct(searchValue)
+                     router.push('/')
+                  }}
+                  className='sm:w-3/5 flex-1 flex items-center'
+               >
                   <Input
+                     id='keyword'
                      placeholder={t('search.placeholder')}
-                     required
+                     value={searchValue}
+                     onChange={(e) => setSearchValue(e.target.value)}
                      className='bg-white text-black rounded-tr-none rounded-br-none border-none outline-none ring-offset-0'
                   />
-                  <button className='flex h-9 items-center gap-1 bg-[#097345] font-medium px-3 text-white whitespace-nowrap rounded-tr-md rounded-br-md'>
+                  {speechSupported && (
+                     <button
+                        type='button'
+                        onClick={toggleListening}
+                        className={`flex h-9 items-center justify-center px-2 ${
+                           isListening ? 'bg-red-500' : 'bg-white'
+                        } text-black border-r border-gray-200`}
+                        aria-label={isListening ? t('search.stopVoice') : t('search.startVoice')}
+                        title={isListening ? t('search.stopVoice') : t('search.startVoice')}
+                     >
+                        {isListening ? <MicOff size={18} strokeWidth={1.5} /> : <Mic size={18} strokeWidth={1.5} />}
+                     </button>
+                  )}
+                  <button
+                     type='submit'
+                     className='flex h-9 items-center gap-1 bg-[#097345] font-medium px-3 text-white whitespace-nowrap rounded-tr-md rounded-br-md'
+                  >
                      <Search size={20} strokeWidth={1.5} />
                      <span className='sm:block hidden'> {t('search.button')}</span>
                   </button>

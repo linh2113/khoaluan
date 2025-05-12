@@ -14,8 +14,10 @@
       "wishlist": "Sản phẩm yêu thích",
       "logout": "Đăng xuất",
       "search": {
-         "placeholder": "Bạn muốn tìm gì...",
-         "button": "Tìm kiếm"
+         "placeholder": "Bạn tìm gì hôm nay...",
+         "button": "Tìm kiếm",
+         "startVoice": "Tìm kiếm bằng giọng nói",
+         "stopVoice": "Dừng tìm kiếm"
       },
       "cart": {
          "title": "Sản phẩm mới thêm",

@@ -1,7 +1,7 @@
 'use client'
 import useLocalStorage from '@/hooks/use-localstorage'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { http } from '@/lib/http'
 
 const queryClient = new QueryClient({
@@ -17,6 +17,8 @@ interface AppContextProps {
    userId: number | undefined
    setUserId: React.Dispatch<React.SetStateAction<number | undefined>>
    logout: () => void
+   searchProduct: string | undefined
+   setSearchProduct: React.Dispatch<React.SetStateAction<string | undefined>>
 }
 
 const AppContext = createContext<AppContextProps | undefined>(undefined)
@@ -31,7 +33,7 @@ export const useAppContext = () => {
 
 export default function AppProvider({ children }: { children: React.ReactNode }) {
    const [userId, setUserId] = useLocalStorage<number | undefined>('userId', undefined)
-
+   const [searchProduct, setSearchProduct] = useState<string | undefined>(undefined)
    const logout = () => {
       setUserId(undefined)
       // Xóa token
@@ -39,7 +41,7 @@ export default function AppProvider({ children }: { children: React.ReactNode })
    }
 
    return (
-      <AppContext.Provider value={{ userId, setUserId, logout }}>
+      <AppContext.Provider value={{ userId, setUserId, logout, searchProduct, setSearchProduct }}>
          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
       </AppContext.Provider>
    )

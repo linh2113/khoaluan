@@ -16,10 +16,12 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { useGetAllBrand, useGetAllCategories } from '@/queries/useAdmin'
 import { useTranslations } from 'next-intl'
+import { useAppContext } from '@/context/app.context'
 
 export default function Home() {
    const router = useRouter()
    const t = useTranslations('Home')
+   const { searchProduct } = useAppContext()
 
    // Lấy danh sách thương hiệu sản phẩm
    const getAllBrand = useGetAllBrand({})
@@ -112,6 +114,14 @@ export default function Home() {
       const productIds = selectedProducts.map((p) => p.id).join(',')
       router.push(`/compare?ids=${productIds}`)
    }
+
+   useEffect(() => {
+      setQueryParams((prev) => ({
+         ...prev,
+         keyword: searchProduct,
+         page: 0
+      }))
+   }, [searchProduct])
 
    return (
       <div className='container py-6'>
@@ -277,8 +287,8 @@ export default function Home() {
                               <Image
                                  src={product.image || '/placeholder.svg'}
                                  alt={product.name}
-                                 width={40}
-                                 height={40}
+                                 width={100}
+                                 height={100}
                                  className='rounded border'
                               />
                               <button

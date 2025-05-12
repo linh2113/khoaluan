@@ -31,12 +31,12 @@ import { useCreateRating, useGetRatingsByProductId, useReplyToRating } from '@/q
 import { RatingQueryParamsType } from '@/types/rating.type'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { format } from 'date-fns'
-import { vi } from 'date-fns/locale'
+import { ro, vi } from 'date-fns/locale'
 import { Reply } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import Link from 'next/link'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { useRouter } from 'next/navigation'
 export default function ProductDetail({ id }: { id: string }) {
    const t = useTranslations('ProductDetail')
    const { userId } = useAppContext()
@@ -44,6 +44,7 @@ export default function ProductDetail({ id }: { id: string }) {
    const handleBuyCount = (value: number) => {
       setBuyCount(value)
    }
+   const router = useRouter()
    const addToCart = useAddToCart()
    const addToWishlist = useAddToWishlist()
    const removeFromWishlist = useRemoveFromWishlist()
@@ -507,7 +508,16 @@ export default function ProductDetail({ id }: { id: string }) {
                {/* Nút mua hàng */}
                <div className='flex items-center gap-4 text-base'>
                   <button
-                     onClick={() => addToCart.mutate({ userId: userId!, productId: product.id, quantity: buyCount })}
+                     onClick={() =>
+                        addToCart.mutate(
+                           { userId: userId!, productId: product.id, quantity: buyCount },
+                           {
+                              onSuccess: () => {
+                                 toast.success('Thêm sản phẩm thành công')
+                              }
+                           }
+                        )
+                     }
                      className='px-5 py-3 flex items-center gap-2 rounded border border-secondaryColor bg-secondaryColor/10 hover:bg-secondaryColor/0 text-secondaryColor'
                      disabled={product.stock === 0}
                   >
@@ -515,6 +525,10 @@ export default function ProductDetail({ id }: { id: string }) {
                      {t('addToCart')}
                   </button>
                   <button
+                     onClick={() => {
+                        addToCart.mutate({ userId: userId!, productId: product.id, quantity: buyCount })
+                        router.push(`/cart?purchaseId=${product.id}`)
+                     }}
                      className='px-5 py-3 bg-secondaryColor text-white rounded hover:bg-secondaryColor/90'
                      disabled={product.stock === 0}
                   >

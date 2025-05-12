@@ -45,7 +45,6 @@ export const useAddToCart = () => {
          queryClient.invalidateQueries({
             queryKey: ['cart']
          })
-         toast.success('Thêm sản phẩm thành công')
       },
       onError: () => {
          toast.error('Thêm sản phẩm thất bại')

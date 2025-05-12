@@ -194,6 +194,13 @@
          "camera": "Camera:",
          "os": "Hệ điều hành:",
          "connectivity": "Kết nối:"
-      }
+      },
+      "totalReviews": "Tổng số đánh giá: {count}",
+      "sortBy": "Sắp xếp theo",
+      "newest": "Mới nhất",
+      "oldest": "Cũ nhất",
+      "highestRating": "Đánh giá cao nhất",
+      "lowestRating": "Đánh giá thấp nhất",
+      "addImage": "Thêm hình ảnh"
    }
 }

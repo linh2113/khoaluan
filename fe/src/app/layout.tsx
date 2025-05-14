@@ -13,7 +13,7 @@ export const metadata: Metadata = {
    title: 'TechShop | Cửa hàng điện tử chính hãng',
    description: 'Mua sắm điện thoại, laptop và các thiết bị điện tử chính hãng với giá tốt nhất tại TechShop',
    icons: {
-      icon: '/logo.png'
+      icon: '/favicon.png'
    }
 }
 

@@ -108,36 +108,46 @@ class Http {
       this.accessToken = response.data.token
       this.refreshToken = response.data.refreshToken
 
-      // Lưu token vào cookie để middleware có thể đọc được
-      // HttpOnly: true để tránh XSS
-      // Secure: true nếu dùng HTTPS
-      document.cookie = `access_token=${this.accessToken}; path=/; max-age=86400; SameSite=Strict`
-      document.cookie = `refresh_token=${this.refreshToken}; path=/; max-age=604800; SameSite=Strict`
+      // Chỉ lưu cookie khi ở môi trường client
+      if (typeof window !== 'undefined') {
+         document.cookie = `access_token=${this.accessToken}; path=/; max-age=86400; SameSite=Strict`
+         document.cookie = `refresh_token=${this.refreshToken}; path=/; max-age=604800; SameSite=Strict`
+      }
    }
 
    public clearTokens() {
       this.accessToken = ''
       this.refreshToken = ''
-      // Xóa cookie
-      document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
-      document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
+      // Chỉ xóa cookie khi ở môi trường client
+      if (typeof window !== 'undefined') {
+         document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
+         document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
+      }
    }
 
    // Khởi tạo token từ cookie khi reload trang
    public setTokenFromCookie() {
-      const cookies = document.cookie.split(';')
-      const accessToken = cookies.find((cookie) => cookie.trim().startsWith('access_token='))?.split('=')[1]
-      const refreshToken = cookies.find((cookie) => cookie.trim().startsWith('refresh_token='))?.split('=')[1]
+      // Chỉ đọc cookie khi ở môi trường client
+      if (typeof window !== 'undefined') {
+         const cookies = document.cookie.split(';')
+         const accessToken = cookies.find((cookie) => cookie.trim().startsWith('access_token='))?.split('=')[1]
+         const refreshToken = cookies.find((cookie) => cookie.trim().startsWith('refresh_token='))?.split('=')[1]
 
-      if (accessToken && refreshToken) {
-         this.accessToken = accessToken
-         this.refreshToken = refreshToken
+         if (accessToken && refreshToken) {
+            this.accessToken = accessToken
+            this.refreshToken = refreshToken
+         }
       }
    }
 }
 
 const http = new Http()
-http.setTokenFromCookie()
+
+// Chỉ gọi setTokenFromCookie khi ở môi trường client
+if (typeof window !== 'undefined') {
+   http.setTokenFromCookie()
+}
+
 export default http.instance
 // Export instance của Http class để có thể gọi clearTokens
 export { http }

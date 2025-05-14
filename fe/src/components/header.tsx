@@ -187,7 +187,7 @@ export default function Header() {
                                  </Link>
                                  <button
                                     onClick={() => setShowLogoutDialog(true)}
-                                    className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2 text-red-500'
+                                    className='flex border-t items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2 text-red-500'
                                  >
                                     <LogOut size={20} />
                                     {t('logout')}

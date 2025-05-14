@@ -196,7 +196,7 @@ export default function ProductFilter({
                   </div>
 
                   {/* Các tùy chọn bổ sung */}
-                  <div className='space-y-2'>
+                  <div>
                      <div className='flex items-center space-x-2 bg-muted/30 p-3 rounded-lg'>
                         <Switch
                            id='isDiscount'

@@ -88,8 +88,9 @@ export default function RatingManage() {
       <div className='container mx-auto p-4'>
          <Card>
             <CardHeader>
-               <CardTitle>Quản lý đánh giá</CardTitle>
-               <CardDescription>Xem và quản lý tất cả đánh giá từ người dùng</CardDescription>
+               <CardTitle>
+                  <h1 className='text-2xl font-bold'>Quản lý đánh giá</h1>
+               </CardTitle>
             </CardHeader>
             <CardContent>
                {/* Thanh công cụ */}

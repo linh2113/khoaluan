@@ -54,7 +54,7 @@ declare global {
 export default function Header() {
    const { userId, logout, setSearchProduct } = useAppContext()
    const router = useRouter()
-   const [searchValue, setSearchValue] = useState<string>()
+   const [searchValue, setSearchValue] = useState<string>('')
    const { data } = useGetUserInfo(userId!)
    const userInfo = data?.data.data
    const [showLogoutDialog, setShowLogoutDialog] = React.useState(false)

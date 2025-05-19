@@ -36,6 +36,7 @@ import {
    DialogTitle
 } from '@/components/ui/dialog'
 import { useGetUserInfo } from '@/queries/useUser'
+import Image from 'next/image'
 
 interface NavItem {
    title: string
@@ -122,8 +123,9 @@ export default function DashboardLayout({
             <Button variant='ghost' size='icon' onClick={toggleSidebar}>
                <Menu className='h-6 w-6' />
             </Button>
-            <Link href='/' className='flex items-center gap-2'>
-               <span className='font-bold text-xl'>Admin Dashboard</span>
+            <Link href={'/'} className='sm:w-1/5 flex items-center'>
+               <Image src={'/logo.png'} alt='logo' width={50} height={50} className='w-[50px] h-[50px]' />
+               <span className='font-semibold text-lg sm:block hidden text-white'>TechShop</span>
             </Link>
             {userInfo ? (
                <Popover>
@@ -197,8 +199,9 @@ export default function DashboardLayout({
             <div className='flex flex-col h-full'>
                {/* Sidebar header */}
                <div className='flex items-center justify-between p-4 border-b'>
-                  <Link href='/' className='flex items-center gap-2'>
-                     <span className='font-bold text-xl'>Admin Dashboard</span>
+                  <Link href={'/'} className='sm:w-1/5 flex items-center gap-1'>
+                     <Image src={'/logo.png'} alt='logo' width={50} height={50} className='w-[50px] h-[50px]' />
+                     <span className='font-semibold text-lg sm:block hidden text-white'>TechShop</span>
                   </Link>
                   <Button variant='ghost' size='icon' onClick={toggleSidebar} className='lg:hidden'>
                      <X className='h-5 w-5' />

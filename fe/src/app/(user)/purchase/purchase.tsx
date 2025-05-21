@@ -254,31 +254,29 @@ export default function Purchase() {
          <h1 className='text-xl md:text-2xl font-bold mb-4 md:mb-6'>Đơn hàng của tôi</h1>
 
          <Tabs defaultValue='all'>
-            <div className='overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0'>
-               <TabsList className='mb-4 md:mb-6 flex flex-nowrap w-max md:w-auto'>
-                  <TabsTrigger value='all' className='text-xs md:text-sm'>
-                     Tất cả ({orders.length})
-                  </TabsTrigger>
-                  <TabsTrigger value='pending' className='text-xs md:text-sm'>
-                     Chờ xác nhận ({pendingOrders.length})
-                  </TabsTrigger>
-                  <TabsTrigger value='processing' className='text-xs md:text-sm'>
-                     Đang xử lý ({processingOrders.length})
-                  </TabsTrigger>
-                  <TabsTrigger value='shipping' className='text-xs md:text-sm'>
-                     Đang giao ({shippingOrders.length})
-                  </TabsTrigger>
-                  <TabsTrigger value='delivered' className='text-xs md:text-sm'>
-                     Đã giao ({deliveredOrders.length})
-                  </TabsTrigger>
-                  <TabsTrigger value='completed' className='text-xs md:text-sm'>
-                     Hoàn thành ({completedOrders.length})
-                  </TabsTrigger>
-                  <TabsTrigger value='cancelled' className='text-xs md:text-sm'>
-                     Đã hủy ({cancelledOrders.length})
-                  </TabsTrigger>
-               </TabsList>
-            </div>
+            <TabsList className='mb-4 md:mb-6 flex flex-wrap h-full gap-1'>
+               <TabsTrigger value='all' className='text-xs md:text-sm'>
+                  Tất cả ({orders.length})
+               </TabsTrigger>
+               <TabsTrigger value='pending' className='text-xs md:text-sm'>
+                  Chờ xác nhận ({pendingOrders.length})
+               </TabsTrigger>
+               <TabsTrigger value='processing' className='text-xs md:text-sm'>
+                  Đang xử lý ({processingOrders.length})
+               </TabsTrigger>
+               <TabsTrigger value='shipping' className='text-xs md:text-sm'>
+                  Đang giao ({shippingOrders.length})
+               </TabsTrigger>
+               <TabsTrigger value='delivered' className='text-xs md:text-sm'>
+                  Đã giao ({deliveredOrders.length})
+               </TabsTrigger>
+               <TabsTrigger value='completed' className='text-xs md:text-sm'>
+                  Hoàn thành ({completedOrders.length})
+               </TabsTrigger>
+               <TabsTrigger value='cancelled' className='text-xs md:text-sm'>
+                  Đã hủy ({cancelledOrders.length})
+               </TabsTrigger>
+            </TabsList>
 
             <TabsContent value='all'>{renderOrderList(orders)}</TabsContent>
             <TabsContent value='pending'>{renderOrderList(pendingOrders)}</TabsContent>

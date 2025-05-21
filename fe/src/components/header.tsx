@@ -75,7 +75,7 @@ export default function Header() {
          recognitionRef.current = new SpeechRecognition()
          recognitionRef.current.continuous = false
          recognitionRef.current.interimResults = false
-         recognitionRef.current.lang = 'vi-VN' // Set language to Vietnamese by default
+         recognitionRef.current.lang = 'vi-VN'
 
          recognitionRef.current.onresult = (event: any) => {
             const transcript = event.results[0][0].transcript
@@ -84,6 +84,7 @@ export default function Header() {
          }
 
          recognitionRef.current.onerror = (event: any) => {
+            if (event.error === 'aborted') return // 🛠 ignore harmless abort error
             console.error('Speech recognition error', event.error)
             setIsListening(false)
          }

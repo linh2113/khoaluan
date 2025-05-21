@@ -11,7 +11,7 @@ export const renderOrderStatusBadge = (status: number) => {
    switch (status) {
       case ORDER_STATUS.PENDING:
          return (
-            <Badge variant='outline' className='bg-yellow-50 text-yellow-600 border-yellow-300'>
+            <Badge variant='outline' className='bg-amber-50 text-amber-600 border-amber-300'>
                Chờ xác nhận
             </Badge>
          )
@@ -59,7 +59,7 @@ export const renderPaymentStatusBadge = (status: string) => {
    switch (status) {
       case PAYMENT_STATUS.PENDING:
          return (
-            <Badge variant='outline' className='bg-yellow-50 text-yellow-600 border-yellow-300'>
+            <Badge variant='outline' className='bg-amber-50 text-amber-600 border-amber-300'>
                Chờ thanh toán
             </Badge>
          )

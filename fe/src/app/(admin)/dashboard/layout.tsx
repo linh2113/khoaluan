@@ -19,7 +19,8 @@ import {
    LayoutDashboard,
    WalletCards,
    BookHeart,
-   Star
+   Star,
+   Archive
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -37,6 +38,7 @@ import {
 } from '@/components/ui/dialog'
 import { useGetUserInfo } from '@/queries/useUser'
 import Image from 'next/image'
+import { ModeToggle } from '@/components/mode-toggle'
 
 interface NavItem {
    title: string
@@ -81,7 +83,7 @@ export default function DashboardLayout({
       {
          title: 'Thương hiệu',
          href: '/dashboard/brand',
-         icon: <Tag className='h-5 w-5' />
+         icon: <Archive className='h-5 w-5' />
       },
       {
          title: 'Người dùng',
@@ -326,6 +328,9 @@ export default function DashboardLayout({
                         Về trang chủ
                      </Button>
                   </Link>
+                  <div className='bg-primaryColor w-8 h-8 flex items-center justify-center rounded'>
+                     <ModeToggle />
+                  </div>
                   {userInfo ? (
                      <Popover>
                         <PopoverTrigger asChild>

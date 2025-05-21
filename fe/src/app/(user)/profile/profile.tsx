@@ -26,7 +26,6 @@ import {
    DialogTitle,
    DialogTrigger
 } from '@/components/ui/dialog'
-import { useIsMobile } from '@/hooks/use-mobile'
 
 export default function Profile() {
    const { userId } = useAppContext()
@@ -39,7 +38,6 @@ export default function Profile() {
    const { control, handleSubmit, reset, formState } = useForm<User>({
       defaultValues: userInfo || {}
    })
-   const isMobile = useIsMobile()
 
    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
    const [currentPassword, setCurrentPassword] = useState('')

@@ -16,7 +16,7 @@ import ProductRating from '@/components/product-rating'
 export default function Compare() {
    const { userId } = useAppContext()
    const searchParams = useSearchParams()
-   const idsParam = searchParams.get('ids')
+   const idsParam = searchParams?.get('ids')
    const [productIds, setProductIds] = useState<number[]>([])
    const addToCart = useAddToCart()
 
@@ -36,18 +36,11 @@ export default function Compare() {
          return
       }
 
-      addToCart.mutate(
-         {
-            userId,
-            productId,
-            quantity: 1
-         },
-         {
-            onSuccess: () => {
-               toast.success('Đã thêm sản phẩm vào giỏ hàng')
-            }
-         }
-      )
+      addToCart.mutate({
+         userId,
+         productId,
+         quantity: 1
+      })
    }
 
    if (isLoading) {

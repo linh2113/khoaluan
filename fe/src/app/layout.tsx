@@ -32,7 +32,7 @@ export default async function RootLayout({
                      <NextTopLoader color='#ff424e' showSpinner={false} />
                      <main>{children}</main>
                   </AppProvider>
-                  <ToastContainer autoClose={2000} />
+                  <ToastContainer position='top-center' autoClose={2000} />
                </ThemeProvider>
             </NextIntlClientProvider>
          </body>

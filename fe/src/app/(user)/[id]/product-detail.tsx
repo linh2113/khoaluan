@@ -508,16 +508,7 @@ export default function ProductDetail({ id }: { id: string }) {
                {/* Nút mua hàng */}
                <div className='flex items-center flex-wrap gap-4 text-base'>
                   <button
-                     onClick={() =>
-                        addToCart.mutate(
-                           { userId: userId!, productId: product.id, quantity: buyCount },
-                           {
-                              onSuccess: () => {
-                                 toast.success('Thêm sản phẩm thành công')
-                              }
-                           }
-                        )
-                     }
+                     onClick={() => addToCart.mutate({ userId: userId!, productId: product.id, quantity: buyCount })}
                      className='px-5 py-3 flex items-center gap-2 rounded border border-secondaryColor bg-secondaryColor/10 hover:bg-secondaryColor/0 text-secondaryColor'
                      disabled={product.stock === 0}
                   >

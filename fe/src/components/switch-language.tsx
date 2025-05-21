@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { Locale, locales } from '@/i18n/config'
 import { setUserLocale } from '@/services/locale'
-import { Check, Globe } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -30,7 +30,7 @@ export default function SwitchLanguage() {
                className={cn('gap-2 hover:bg-primary/10 focus-visible:ring-0 focus-visible:ring-offset-0 px-3')}
             >
                <>
-                  <span className='font-medium flex items-center gap-2 text-white'>
+                  <span className='font-medium flex items-center gap-1 text-white'>
                      <Image
                         src={currentLocale.flagSrc}
                         alt={currentLocale.name}
@@ -38,7 +38,7 @@ export default function SwitchLanguage() {
                         height={20}
                         className='rounded-full h-5 w-5 flex-shrink-0'
                      />
-                     <span className='sm:block hidden'>{currentLocale.name}</span>
+                     <span>{currentLocale.name}</span>
                   </span>
                </>
             </Button>

@@ -125,13 +125,8 @@ export default function Header() {
       <>
          <header className='bg-primaryColor py-3'>
             <div className='container flex justify-end gap-4 items-center mb-2'>
-               <SwitchLanguage />
                <ModeToggle />
-               <div className='flex items-center text-white gap-1 relative'>
-                  <Bell size={20} strokeWidth={1.5} />
-                  <span className='sm:block hidden'>{t('notifications')}</span>
-                  <div className='absolute top-[-7px] left-[5px] bg-secondaryColor px-2 text-xs rounded-lg'>0</div>
-               </div>
+               <SwitchLanguage />
 
                <div className='flex items-center gap-1 text-white'>
                   {userInfo ? (
@@ -146,16 +141,13 @@ export default function Header() {
                                        {userInfo.lastName?.[0]?.toUpperCase()}
                                     </AvatarFallback>
                                  </Avatar>
-                                 <span className='sm:block hidden'>
+                                 <span>
                                     {userInfo.surName} {userInfo.lastName}
                                  </span>
                               </button>
                            </PopoverTrigger>
                            <PopoverContent className='w-48 p-0'>
                               <div className='flex flex-col'>
-                                 <span className='px-4 py-2 border-b sm:hidden'>
-                                    {userInfo.surName} {userInfo.lastName}
-                                 </span>
                                  <Link
                                     className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2'
                                     href={'/profile'}

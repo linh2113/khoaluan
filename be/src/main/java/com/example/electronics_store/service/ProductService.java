@@ -40,7 +40,6 @@ public interface ProductService {
 
     List<ProductDTO> getNewArrivals();
 
-    List<ProductDTO> getDiscountedProducts();
     
     List<ProductDTO> getLowStockProducts();
 
@@ -60,4 +59,5 @@ public interface ProductService {
     Optional<Product> getProductEntityById(Integer id);
     
     List<ProductDTO> compareProducts(List<Integer> productIds);
+
 }

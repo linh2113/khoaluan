@@ -19,11 +19,8 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "id_category")
     private Category category;
-    
-    @ManyToOne
-    @JoinColumn(name = "id_discount")
-    private Discount discount;
-    
+
+
     private String name;
 
     @ManyToOne

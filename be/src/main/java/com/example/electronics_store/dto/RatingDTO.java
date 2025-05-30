@@ -22,6 +22,7 @@ public class RatingDTO {
     private Integer userId;
     private String userName;
     private String userPicture;
+    private String productPicture;
     private List<String> imageUrls;
     @NotNull(message = "Rating is required")
     @Min(value = 1, message = "Rating must be between 1 and 5")

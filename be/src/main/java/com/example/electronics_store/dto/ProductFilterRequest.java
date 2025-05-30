@@ -28,8 +28,9 @@ public class ProductFilterRequest {
         NEW_ARRIVALS,      // Sản phẩm mới
         TOP_RATED,         // Sản phẩm đánh giá cao
         RELATED,           // Sản phẩm liên quan
-        DISCOUNTED         // Sản phẩm giảm giá
-    }
+        DISCOUNTED,  // Sản phẩm giảm giá
+        FLASH_SALE
+        }
     public Pageable getPageable() {
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("desc") ?
                 Sort.Direction.DESC : Sort.Direction.ASC, sortBy);

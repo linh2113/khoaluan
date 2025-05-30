@@ -14,9 +14,8 @@ import java.util.Optional;
 
 @Repository
 public interface DiscountRepository extends JpaRepository<Discount, Integer>, JpaSpecificationExecutor<Discount> {
-    Optional<Discount> findByCode(String code);
-    
-    @Query("SELECT d FROM Discount d WHERE d.startDate <= :now AND d.endDate >= :now AND d.quantity > 0")
+
+    @Query("SELECT d FROM Discount d WHERE d.startDate <= :now AND d.endDate >= :now AND d.isActive = true")
     List<Discount> findAllActiveDiscounts(@Param("now") LocalDateTime now);
     
     @Query("SELECT d FROM Discount d WHERE d.endDate < :now")

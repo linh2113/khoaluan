@@ -5,7 +5,12 @@ import com.cloudinary.utils.ObjectUtils;
 import com.example.electronics_store.dto.*;
 import com.example.electronics_store.model.*;
 import com.example.electronics_store.repository.*;
+import com.example.electronics_store.service.DiscountService;
 import com.example.electronics_store.service.ProductService;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -21,8 +26,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Predicate;
+import jakarta.persistence.criteria.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,31 +36,31 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
-    private final DiscountRepository discountRepository;
     private final ProductDetailRepository productDetailRepository;
     private final ProductImageRepository productImageRepository;
     private final RatingRepository ratingRepository;
     private final BrandRepository brandRepository;
+    private final DiscountService discountService;
     @Autowired
     private Cloudinary cloudinary;
     @Value("${app.upload.dir:${user.home}/techstore/uploads}")
     private String uploadDir;
-    
+
     @Autowired
     public ProductServiceImpl(
             ProductRepository productRepository,
             CategoryRepository categoryRepository,
-            DiscountRepository discountRepository,
             ProductDetailRepository productDetailRepository,
             ProductImageRepository productImageRepository,
-            RatingRepository ratingRepository, BrandRepository brandRepository) {
+            RatingRepository ratingRepository, BrandRepository brandRepository, DiscountService discountService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
-        this.discountRepository = discountRepository;
         this.productDetailRepository = productDetailRepository;
         this.productImageRepository = productImageRepository;
         this.ratingRepository = ratingRepository;
         this.brandRepository = brandRepository;
+        this.discountService = discountService;
+
     }
 
     @Override
@@ -64,22 +70,16 @@ public class ProductServiceImpl implements ProductService {
         Category category = categoryRepository.findById(productCreateDTO.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
-        // Get discount if provided
-        Discount discount = null;
-        if (productCreateDTO.getDiscountId() != null) {
-            discount = discountRepository.findById(productCreateDTO.getDiscountId())
-                    .orElseThrow(() -> new RuntimeException("Discount not found"));
-        }
         // Get brand if provided
         Brand brand = null;
         if (productCreateDTO.getBrandId() != null) {
             brand = brandRepository.findById(productCreateDTO.getBrandId())
                     .orElseThrow(() -> new RuntimeException("Brand not found"));
         }
+
         // Create product
         Product product = new Product();
         product.setCategory(category);
-        product.setDiscount(discount);
         product.setName(productCreateDTO.getName());
         product.setBrand(brand);
         product.setPrice(productCreateDTO.getPrice());
@@ -93,13 +93,8 @@ public class ProductServiceImpl implements ProductService {
 
         Product savedProduct = productRepository.save(product);
 
-        // Create product detail if provided
-        if (productCreateDTO.getProcessor() != null || productCreateDTO.getRam() != null ||
-                productCreateDTO.getStorage() != null || productCreateDTO.getDisplay() != null ||
-                productCreateDTO.getGraphics() != null || productCreateDTO.getBattery() != null ||
-                productCreateDTO.getCamera() != null || productCreateDTO.getOperatingSystem() != null ||
-                productCreateDTO.getConnectivity() != null || productCreateDTO.getOtherFeatures() != null) {
-
+        // Xử lý product detail nếu có
+        if (productCreateDTO.getProcessor() != null || productCreateDTO.getRam() != null) {
             ProductDetail productDetail = new ProductDetail();
             productDetail.setProduct(savedProduct);
             productDetail.setProcessor(productCreateDTO.getProcessor());
@@ -130,13 +125,6 @@ public class ProductServiceImpl implements ProductService {
             Category category = categoryRepository.findById(productUpdateDTO.getCategoryId())
                     .orElseThrow(() -> new RuntimeException("Category not found"));
             product.setCategory(category);
-        }
-
-        // Update discount - set null if discountId is null, update if provided
-        if (productUpdateDTO.getDiscountId() != null) {
-            Discount discount = discountRepository.findById(productUpdateDTO.getDiscountId())
-                    .orElseThrow(() -> new RuntimeException("Discount not found"));
-            product.setDiscount(discount);
         }
 
         // Update other fields only if they are not null
@@ -175,7 +163,7 @@ public class ProductServiceImpl implements ProductService {
 
         Product updatedProduct = productRepository.save(product);
 
-        // Update product detail if any technical specifications are provided
+        // Update product details if needed
         if (productUpdateDTO.getProcessor() != null || productUpdateDTO.getRam() != null ||
                 productUpdateDTO.getStorage() != null || productUpdateDTO.getDisplay() != null ||
                 productUpdateDTO.getGraphics() != null || productUpdateDTO.getBattery() != null ||
@@ -249,6 +237,7 @@ public class ProductServiceImpl implements ProductService {
             case NEW_ARRIVALS -> handleNewArrivals(pageable);
             case TOP_RATED -> handleTopRated(pageable);
             case DISCOUNTED -> handleDiscountedProducts(pageable);
+            case FLASH_SALE -> handleFlashSaleProducts(pageable);
             case ALL -> handleDefaultFilter(filter, pageable);
             default -> handleDefaultFilter(filter, pageable);
         };
@@ -322,10 +311,62 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Page<ProductDTO> handleDiscountedProducts(Pageable pageable) {
-        return productRepository.findDiscountedProducts(pageable)
+        LocalDateTime now = LocalDateTime.now();
+        // Sử dụng Specification để xây dựng query động
+        Specification<Product> spec = (root, query, cb) -> {
+            // Join với các bảng liên quan
+            Join<Product, ProductDiscount> productDiscountJoin = root.join("productDiscounts", JoinType.LEFT);
+            Join<ProductDiscount, Discount> discountJoin = productDiscountJoin.join("discount", JoinType.LEFT);
+
+            Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
+            Join<Category, CategoryDiscount> categoryDiscountJoin = categoryJoin.join("categoryDiscounts", JoinType.LEFT);
+            Join<CategoryDiscount, Discount> categoryDiscountJoin2 = categoryDiscountJoin.join("discount", JoinType.LEFT);
+
+            // Điều kiện cho product discount
+            Predicate productDiscountActive = cb.and(
+                    cb.isTrue(discountJoin.get("isActive")),
+                    cb.lessThanOrEqualTo(discountJoin.get("startDate"), now),
+                    cb.greaterThanOrEqualTo(discountJoin.get("endDate"), now)
+            );
+
+            // Điều kiện cho category discount
+            Predicate categoryDiscountActive = cb.and(
+                    cb.isTrue(categoryDiscountJoin2.get("isActive")),
+                    cb.lessThanOrEqualTo(categoryDiscountJoin2.get("startDate"), now),
+                    cb.greaterThanOrEqualTo(categoryDiscountJoin2.get("endDate"), now)
+            );
+
+            // Sản phẩm phải có ít nhất một loại discount (product hoặc category)
+            Predicate hasDiscount = cb.or(productDiscountActive, categoryDiscountActive);
+
+            // Sản phẩm không được nằm trong flash sale
+            Subquery<Integer> flashSaleSubquery = query.subquery(Integer.class);
+            Root<FlashSaleItem> flashSaleItemRoot = flashSaleSubquery.from(FlashSaleItem.class);
+            Join<FlashSaleItem, FlashSale> flashSaleJoin = flashSaleItemRoot.join("flashSale");
+
+            flashSaleSubquery.select(flashSaleItemRoot.get("product").get("id"))
+                    .where(
+                            cb.equal(flashSaleItemRoot.get("product").get("id"), root.get("id")),
+                            cb.lessThanOrEqualTo(flashSaleJoin.get("startTime"), now),
+                            cb.greaterThanOrEqualTo(flashSaleJoin.get("endTime"), now)
+                    );
+
+            Predicate notInFlashSale = cb.not(cb.exists(flashSaleSubquery));
+
+            // Sản phẩm phải active
+            Predicate isActive = cb.isTrue(root.get("status"));
+
+            // Kết hợp tất cả điều kiện
+            return cb.and(isActive, hasDiscount, notInFlashSale);
+        };
+
+        return productRepository.findAll(spec, pageable).map(this::mapProductToDTO);
+    }
+    private Page<ProductDTO> handleFlashSaleProducts(Pageable pageable) {
+        LocalDateTime now = LocalDateTime.now();
+        return productRepository.findActiveFlashSaleProducts(now, pageable)
                 .map(this::mapProductToDTO);
     }
-
     @Override
     public Page<ProductDTO> getAllProducts(Pageable pageable) {
         return productRepository.findAll(pageable)
@@ -405,14 +446,7 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<ProductDTO> getDiscountedProducts() {
-        // Get products with discounts
-        return productRepository.findAll().stream()
-                .filter(p -> p.getDiscount() != null)
-                .map(this::mapProductToDTO)
-                .collect(Collectors.toList());
-    }
+
 
     @Override
     public List<ProductDTO> getLowStockProducts() {
@@ -427,7 +461,7 @@ public class ProductServiceImpl implements ProductService {
     public void updateProductStock(Integer id, Integer quantity) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        
+
         product.setStock(quantity);
         productRepository.save(product);
     }
@@ -513,14 +547,14 @@ public class ProductServiceImpl implements ProductService {
         ProductImage newPrimaryImage = productImageRepository.findById(imageId)
                 .orElseThrow(() -> new RuntimeException("Image not found"));
         Product product = newPrimaryImage.getProduct();
-        
+
         // Set all other images as non-primary
         List<ProductImage> allProductImages = productImageRepository.findByProduct(product);
         for (ProductImage img : allProductImages) {
             img.setIsPrimary(false);
         }
         productImageRepository.saveAll(allProductImages);
-        
+
         // Set the selected image as primary
         newPrimaryImage.setIsPrimary(true);
         productImageRepository.save(newPrimaryImage);
@@ -534,10 +568,10 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailDTO getProductDetail(Integer productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        
+
         ProductDetail productDetail = productDetailRepository.findByProduct(product)
                 .orElseThrow(() -> new RuntimeException("Product detail not found"));
-        
+
         return mapProductDetailToDTO(productDetail);
     }
 
@@ -546,10 +580,10 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailDTO updateProductDetail(Integer productId, ProductDetailDTO productDetailDTO) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        
+
         ProductDetail productDetail = productDetailRepository.findByProduct(product)
                 .orElse(new ProductDetail());
-        
+
         productDetail.setProduct(product);
         productDetail.setProcessor(productDetailDTO.getProcessor());
         productDetail.setRam(productDetailDTO.getRam());
@@ -561,7 +595,7 @@ public class ProductServiceImpl implements ProductService {
         productDetail.setOperatingSystem(productDetailDTO.getOperatingSystem());
         productDetail.setConnectivity(productDetailDTO.getConnectivity());
         productDetail.setOtherFeatures(productDetailDTO.getOtherFeatures());
-        
+
         ProductDetail savedProductDetail = productDetailRepository.save(productDetail);
         return mapProductDetailToDTO(savedProductDetail);
     }
@@ -583,36 +617,37 @@ public class ProductServiceImpl implements ProductService {
         if (productIds.size() < 2 || productIds.size() > 4) {
             throw new RuntimeException("You can compare between 2 and 4 products");
         }
-        
+
         return productIds.stream()
                 .map(id -> productRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Product not found: " + id)))
                 .map(this::mapProductToDTO)
                 .collect(Collectors.toList());
     }
-    
-    // Helper methods
+
+
+
     private ProductDTO mapProductToDTO(Product product) {
         ProductDTO dto = new ProductDTO();
         dto.setId(product.getId());
         dto.setCategoryId(product.getCategory() != null ? product.getCategory().getId() : null);
         dto.setCategoryName(product.getCategory() != null ? product.getCategory().getCategoryName() : null);
-        dto.setDiscountId(product.getDiscount() != null ? product.getDiscount().getId() : null);
-        dto.setDiscountName(product.getDiscount() != null ? product.getDiscount().getDiscountName() : null);
         dto.setBrandId(product.getBrand() != null ? product.getBrand().getId() : null);
         dto.setBrandName(product.getBrand() != null ? product.getBrand().getBrandName() : null);
         dto.setName(product.getName());
         dto.setImage(product.getImage());
         dto.setPrice(product.getPrice());
-        
-        // Calculate discounted price if discount exists
-        if (product.getDiscount() != null) {
-            double discountValue = product.getDiscount().getValue();
-            dto.setDiscountedPrice((int) (product.getPrice() * (1 - discountValue / 100)));
-        } else {
-            dto.setDiscountedPrice(product.getPrice());
-        }
-        
+
+        Map<String, Object> discountInfo = discountService.getProductDiscountInfo(product.getId());
+        dto.setDiscountedPrice((Integer) discountInfo.get("discountedPrice"));
+        dto.setDiscountPercentage((Double) discountInfo.get("discountPercentage"));
+        dto.setDiscountType((String) discountInfo.get("discountType"));
+        dto.setDiscountId((Integer) discountInfo.get("discountId"));
+        dto.setDiscountStartDate((LocalDateTime) discountInfo.get("discountStartDate"));
+        dto.setDiscountEndDate((LocalDateTime) discountInfo.get("discountEndDate"));
+        dto.setIsDiscountActive((Boolean) discountInfo.get("isDiscountActive"));
+
+
         dto.setDescription(product.getDescription());
         dto.setWarranty(product.getWarranty());
         dto.setWeight(product.getWeight());
@@ -623,15 +658,15 @@ public class ProductServiceImpl implements ProductService {
         dto.setUpdateAt(product.getUpdateAt());
         dto.setUpdateBy(product.getUpdateBy());
         dto.setStock(product.getStock());
-        
+
         // Get average rating
         Double avgRating = ratingRepository.getAverageRatingForProduct(product.getId());
         dto.setAverageRating(avgRating != null ? avgRating : 0.0);
-        
+
         // Get review count
         Long reviewCount = ratingRepository.countRatingsByProduct(product.getId());
         dto.setReviewCount(reviewCount != null ? reviewCount : 0L);
-        
+
         // Get all images
         List<ProductImageDTO> imageList = productImageRepository.findByProductOrderByDisplayOrder(product).stream()
                 .map(image -> ProductImageDTO.builder()
@@ -642,15 +677,15 @@ public class ProductServiceImpl implements ProductService {
                         .build())
                 .collect(Collectors.toList());
         dto.setProductImages(imageList);
-        
+
         // Get product detail
         productDetailRepository.findByProduct(product).ifPresent(detail -> {
             dto.setProductDetail(mapProductDetailToDTO(detail));
         });
-        
+
         return dto;
     }
-    
+
     private ProductDetailDTO mapProductDetailToDTO(ProductDetail productDetail) {
         ProductDetailDTO dto = new ProductDetailDTO();
         dto.setId(productDetail.getId());

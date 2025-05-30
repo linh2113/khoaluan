@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -67,8 +68,25 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             nativeQuery = true)
     Page<Product> findTopRatedProducts(Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.discount IS NOT NULL AND p.status = true")
-    Page<Product> findDiscountedProducts(Pageable pageable);
+    @Query(value = """
+    SELECT p.* FROM products p 
+    JOIN flash_sale_item fsi ON p.id = fsi.product_id
+    JOIN flash_sale fs ON fsi.flash_sale_id = fs.id
+    WHERE p.status = true 
+    AND fs.start_time <= :now 
+    AND fs.end_time >= :now
+    """,
+            countQuery = """
+    SELECT COUNT(p.id) FROM products p 
+    JOIN flash_sale_item fsi ON p.id = fsi.product_id
+    JOIN flash_sale fs ON fsi.flash_sale_id = fs.id
+    WHERE p.status = true 
+    AND fs.start_time <= :now 
+    AND fs.end_time >= :now
+    """,
+            nativeQuery = true)
+    Page<Product> findActiveFlashSaleProducts(@Param("now") LocalDateTime now, Pageable pageable);
+
     @Query("SELECT p FROM Product p WHERE p.status = true ORDER BY p.createAt DESC")
     Page<Product> findByOrderByCreateAtDesc(Pageable pageable);
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);

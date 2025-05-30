@@ -1,7 +1,9 @@
 package com.example.electronics_store.controller;
 
 import com.example.electronics_store.dto.*;
+import com.example.electronics_store.model.Discount;
 import com.example.electronics_store.service.*;
+import com.example.electronics_store.service.domain.DiscountEligibilityService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +35,7 @@ public class AdminController {
     private final BrandService brandService;
     private final ShippingMethodService shippingMethodService;
     private final PaymentMethodService paymentMethodService;
+    private final DiscountEligibilityService discountEligibilityService;
     @Autowired
     public AdminController(
             UserService userService,
@@ -40,7 +44,7 @@ public class AdminController {
             OrderService orderService,
             DiscountService discountService,
             RatingService ratingService,
-            StatisticsService statisticsService, BrandService brandService, ShippingMethodService shippingMethodService, PaymentMethodService paymentMethodService) {
+            StatisticsService statisticsService, BrandService brandService, ShippingMethodService shippingMethodService, PaymentMethodService paymentMethodService,DiscountEligibilityService discountEligibilityService) {
         this.userService = userService;
         this.productService = productService;
         this.categoryService = categoryService;
@@ -51,6 +55,7 @@ public class AdminController {
         this.brandService = brandService;
         this.shippingMethodService = shippingMethodService;
         this.paymentMethodService = paymentMethodService;
+        this.discountEligibilityService = discountEligibilityService;
     }
 
     // User Management - Unified API with filtering and pagination
@@ -240,24 +245,13 @@ public class AdminController {
         }
     }
 
-    // Discount Management
-    @PostMapping("/discounts")
-    public ResponseEntity<ApiResponse<?>> createDiscount(@Valid @RequestBody DiscountDTO discountDTO) {
-        try {
-            DiscountDTO discount = discountService.createDiscount(discountDTO);
-            return ResponseEntity.ok(ApiResponse.success("Discount created successfully", discount));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
 
     @PutMapping("/discounts/{id}")
     public ResponseEntity<ApiResponse<?>> updateDiscount(
             @PathVariable Integer id,
-            @Valid @RequestBody DiscountDTO discountDTO) {
+            @Valid @RequestBody DiscountUpdateDTO discountUpdateDTO) {
         try {
-            DiscountDTO discount = discountService.updateDiscount(id, discountDTO);
+            DiscountDTO discount = discountService.updateDiscount(id, discountUpdateDTO);
             return ResponseEntity.ok(ApiResponse.success("Discount updated successfully", discount));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -280,7 +274,7 @@ public class AdminController {
                     Sort.by(sortBy).ascending();
 
             Pageable pageable = PageRequest.of(page, size, sort);
-            Page<DiscountDTO> discounts = discountService.getDiscountsWithSearch(search, pageable);
+            Page<DiscountDTO> discounts = discountService.getAllDiscounts(search, pageable);
 
             return ResponseEntity.ok(ApiResponse.success(discounts));
         } catch (Exception e) {
@@ -595,5 +589,85 @@ public class AdminController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
+    @PostMapping("/discounts")
+    public ResponseEntity<ApiResponse<?>> createDiscount(@Valid @RequestBody DiscountDTO discountDTO) {
+        try {
+            DiscountDTO discount = discountService.createDiscount(discountDTO);
+            return ResponseEntity.ok(ApiResponse.success("Discount created successfully", discount));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
 
+
+
+    // Gắn discount với nhiều sản phẩm
+    @PostMapping("/discounts/{discountId}/products")
+    public ResponseEntity<ApiResponse<?>> assignDiscountToProducts(
+            @PathVariable Integer discountId,
+            @RequestBody BatchAssignRequest request) {
+        try {
+            Integer successCount = discountService.assignDiscountToProducts(
+                    discountId,
+                    request.getProductIds(),
+                    request.getDiscountedPrices()
+            );
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("successCount", successCount);
+            response.put("totalCount", request.getProductIds().size());
+
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Successfully assigned " + successCount + " out of " + request.getProductIds().size() + " products",
+                    response
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Gắn discount với nhiều danh mục
+    @PostMapping("/discounts/{discountId}/categories")
+    public ResponseEntity<ApiResponse<?>> assignDiscountToCategories(
+            @PathVariable Integer discountId,
+            @RequestBody List<Integer> categoryIds) {
+        try {
+            Integer successCount = discountService.assignDiscountToCategories(discountId, categoryIds);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("successCount", successCount);
+            response.put("totalCount", categoryIds.size());
+
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Successfully assigned " + successCount + " out of " + categoryIds.size() + " categories",
+                    response
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }// Lấy danh sách sản phẩm đủ điều kiện để áp dụng discount, khi mở admin
+    @GetMapping("/products/eligible-for-discount")
+    public ResponseEntity<ApiResponse<?>> getProductsEligibleForDiscount(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        try {
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() :
+                    Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<ProductDTO> products = discountEligibilityService.getEligibleProducts(search, pageable);
+
+            return ResponseEntity.ok(ApiResponse.success(products));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
 }

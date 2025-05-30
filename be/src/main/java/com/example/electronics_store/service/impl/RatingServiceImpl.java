@@ -281,6 +281,7 @@ public class RatingServiceImpl implements RatingService {
         RatingDTO dto = new RatingDTO();
         dto.setId(rating.getId());
         dto.setProductId(rating.getProduct().getId());
+        dto.setProductPicture(rating.getProduct().getImage());
         dto.setProductName(rating.getProduct().getName());
         dto.setUserId(rating.getUser().getId());
         dto.setUserName(rating.getUser().getUserName());

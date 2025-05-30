@@ -2,14 +2,8 @@ package com.example.electronics_store.service.impl;
 
 import com.example.electronics_store.dto.CartDTO;
 import com.example.electronics_store.dto.CartItemDTO;
-import com.example.electronics_store.model.Cart;
-import com.example.electronics_store.model.CartItem;
-import com.example.electronics_store.model.Product;
-import com.example.electronics_store.model.User;
-import com.example.electronics_store.repository.CartItemRepository;
-import com.example.electronics_store.repository.CartRepository;
-import com.example.electronics_store.repository.ProductRepository;
-import com.example.electronics_store.repository.UserRepository;
+import com.example.electronics_store.model.*;
+import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.CartService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -17,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,6 +22,9 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final ProductDiscountRepository productDiscountRepository;
+    private final CategoryDiscountRepository categoryDiscountRepository;
+    private final FlashSaleItemRepository flashSaleItemRepository;
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
@@ -34,11 +32,14 @@ public class CartServiceImpl implements CartService {
             CartRepository cartRepository,
             CartItemRepository cartItemRepository,
             UserRepository userRepository,
-            ProductRepository productRepository) {
+            ProductRepository productRepository, ProductDiscountRepository productDiscountRepository, CategoryDiscountRepository categoryDiscountRepository, FlashSaleItemRepository flashSaleItemRepository) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.productDiscountRepository = productDiscountRepository;
+        this.categoryDiscountRepository = categoryDiscountRepository;
+        this.flashSaleItemRepository = flashSaleItemRepository;
     }
 
     @Override
@@ -92,9 +93,7 @@ public class CartServiceImpl implements CartService {
             cartItem.setProduct(product);
             cartItem.setQuantity(quantity);
             cartItem.setSelected(false);
-            Float price = product.getDiscount() != null
-                    ? (float) (product.getPrice() * (1 - product.getDiscount().getValue() / 100))
-                    : product.getPrice().floatValue();
+            Float price = calculateDiscountedPrice(product);
             cartItem.setPrice(price);
             cart.getCartItems().add(cartItem);
         }
@@ -106,7 +105,36 @@ public class CartServiceImpl implements CartService {
 
         return mapCartToDTO(cart);
     }
-
+    private Float calculateDiscountedPrice(Product product) {
+        LocalDateTime now = LocalDateTime.now();
+        // Kiểm tra flash sale trước
+        Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(product.getId(), now);
+        if (flashSaleItem.isPresent()) {
+            return flashSaleItem.get().getFlashPrice().floatValue();
+        }
+        // Kiểm tra product discount
+        List<ProductDiscount> productDiscounts = productDiscountRepository.findActiveDiscountsByProduct(product, now);
+        if (!productDiscounts.isEmpty()) {
+            // Lấy discount có priority cao nhất (đã sắp xếp trong query)
+            ProductDiscount highestPriorityDiscount = productDiscounts.get(0);
+            if (highestPriorityDiscount.getDiscountedPrice() != null) {
+                return highestPriorityDiscount.getDiscountedPrice().floatValue();
+            } else {
+                // Tính giá giảm dựa trên phần trăm
+                double discountValue = highestPriorityDiscount.getDiscount().getValue();
+                return (float) (product.getPrice() * (1 - discountValue / 100));
+            }
+        }
+        // Kiểm tra category discount
+        List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findActiveDiscountsByCategory(product.getCategory(), now);
+        if (!categoryDiscounts.isEmpty()) {
+            // Lấy discount có priority cao nhất
+            CategoryDiscount highestPriorityDiscount = categoryDiscounts.get(0);
+            double discountValue = highestPriorityDiscount.getDiscount().getValue();
+            return (float) (product.getPrice() * (1 - discountValue / 100));
+        }
+        return product.getPrice().floatValue();
+    }
     @Override
     @Transactional
     public CartDTO updateCartItemQuantity(Integer userId, Integer cartItemId, Integer quantity) {
@@ -229,6 +257,9 @@ public class CartServiceImpl implements CartService {
         // Refresh các cartItems
         for (CartItem item : cart.getCartItems()) {
             entityManager.refresh(item);
+            Float newPrice = calculateDiscountedPrice(item.getProduct());
+            item.setPrice(newPrice);
+            cartItemRepository.save(item);
         }
 
         return mapCartToDTO(cart);
@@ -236,36 +267,30 @@ public class CartServiceImpl implements CartService {
 
     // Helper methods
     private CartDTO mapCartToDTO(Cart cart) {
-        // Đảm bảo cartItems không null
         List<CartItem> cartItems = cart.getCartItems() != null ? cart.getCartItems() : new ArrayList<>();
-
-        // Map sang DTOs
+    
         List<CartItemDTO> cartItemDTOs = cartItems.stream()
                 .map(this::mapCartItemToDTO)
                 .collect(Collectors.toList());
-
-        // Tính tổng số lượng sản phẩm
+    
         Integer totalItems = cartItems.stream()
                 .mapToInt(CartItem::getQuantity)
                 .sum();
-
-        // Tính tổng tiền
+    
         Float totalPrice = cartItems.stream()
-                .map(item -> item.getPrice() * item.getQuantity())
+                .map(item -> calculateDiscountedPrice(item.getProduct()) * item.getQuantity())
                 .reduce(0f, Float::sum);
-
-        // Tính tổng số lượng sản phẩm đã chọn
+    
         Integer selectedTotalItems = cartItems.stream()
                 .filter(CartItem::getSelected)
                 .mapToInt(CartItem::getQuantity)
                 .sum();
-
-        // Tính tổng tiền của các sản phẩm đã chọn
+    
         Float selectedTotalPrice = cartItems.stream()
                 .filter(CartItem::getSelected)
-                .map(item -> item.getPrice() * item.getQuantity())
+                .map(item -> calculateDiscountedPrice(item.getProduct()) * item.getQuantity())
                 .reduce(0f, Float::sum);
-
+    
         return CartDTO.builder()
                 .id(cart.getId())
                 .userId(cart.getUser().getId())
@@ -280,16 +305,16 @@ public class CartServiceImpl implements CartService {
 
 
     private CartItemDTO mapCartItemToDTO(CartItem cartItem) {
-        // Tính totalPrice cho từng item
-        Float totalPrice = cartItem.getPrice() * cartItem.getQuantity();
-
+        Float price = calculateDiscountedPrice(cartItem.getProduct());
+        Float totalPrice = price * cartItem.getQuantity();
+    
         return CartItemDTO.builder()
                 .id(cartItem.getId())
                 .productId(cartItem.getProduct().getId())
                 .productName(cartItem.getProduct().getName())
                 .productImage(cartItem.getProduct().getImage())
                 .quantity(cartItem.getQuantity())
-                .price(cartItem.getPrice())
+                .price(price)
                 .totalPrice(totalPrice)
                 .createAt(cartItem.getCreateAt())
                 .stock(cartItem.getProduct().getStock())

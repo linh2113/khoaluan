@@ -76,11 +76,25 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("No items selected for checkout");
         }
 
-        // Check if all products are in stock
+        // Check if all products are in stock and validate flash sale items
+        LocalDateTime orderTime = LocalDateTime.now();
         for (CartItem cartItem : selectedCartItems) {
             Product product = cartItem.getProduct();
             if (product.getStock() < cartItem.getQuantity()) {
                 throw new RuntimeException("Not enough stock for product: " + product.getName());
+            }
+
+            // Kiểm tra flash sale stock limit
+            Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(
+                    product.getId(), orderTime);
+            if (flashSaleItem.isPresent()) {
+                FlashSaleItem item = flashSaleItem.get();
+                if (item.getStockLimit() != null) {
+                    int availableFlashSaleStock = item.getStockLimit() - item.getSoldCount();
+                    if (availableFlashSaleStock < cartItem.getQuantity()) {
+                        throw new RuntimeException("Not enough flash sale stock for product: " + product.getName());
+                    }
+                }
             }
         }
 
@@ -130,6 +144,13 @@ public class OrderServiceImpl implements OrderService {
             product.setStock(product.getStock() - cartItem.getQuantity());
             productRepository.save(product);
 
+            // Update flash sale sold count if product is in flash sale
+            Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(
+                    product.getId(), orderTime);
+            if (flashSaleItem.isPresent()) {
+                flashSaleItemRepository.updateSoldCount(flashSaleItem.get().getId(), cartItem.getQuantity());
+            }
+
             cartItemIds.add(cartItem.getId());
         }
         orderDetailRepository.saveAll(orderDetails);
@@ -148,7 +169,7 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getOrdersByUserId(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         return orderRepository.findByUser(user).stream()
                 .map(this::mapOrderToDTO)
                 .collect(Collectors.toList());
@@ -259,12 +280,12 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO updateOrderStatus(Integer id, Integer status) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-        
+
         // Validate status
         if (status < 0 || status > 5) {
             throw new RuntimeException("Invalid order status");
         }
-        
+
         // If cancelling order, restore product stock
         if (status == 5 && order.getOrderStatus() != 5) {
             List<OrderDetail> orderDetails = orderDetailRepository.findByOrder(order);
@@ -274,10 +295,10 @@ public class OrderServiceImpl implements OrderService {
                 productRepository.save(product);
             }
         }
-        
+
         order.setOrderStatus(status);
         Order updatedOrder = orderRepository.save(order);
-        
+
         return mapOrderToDTO(updatedOrder);
     }
 
@@ -286,15 +307,15 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO updatePaymentStatus(Integer id, String paymentStatus) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-        
+
         // Validate payment status
         if (!Arrays.asList("Pending", "Paid", "Failed", "Refunded").contains(paymentStatus)) {
             throw new RuntimeException("Invalid payment status");
         }
-        
+
         order.setPaymentStatus(paymentStatus);
         Order updatedOrder = orderRepository.save(order);
-        
+
         return mapOrderToDTO(updatedOrder);
     }
 
@@ -303,10 +324,10 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO updateTrackingNumber(Integer id, String trackingNumber) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-        
+
         order.setTrackingNumber(trackingNumber);
         Order updatedOrder = orderRepository.save(order);
-        
+
         return mapOrderToDTO(updatedOrder);
     }
 
@@ -329,7 +350,7 @@ public class OrderServiceImpl implements OrderService {
     public Long countOrdersByUser(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         return orderRepository.countOrdersByUser(user);
     }
 
@@ -338,28 +359,28 @@ public class OrderServiceImpl implements OrderService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String startDateStr = startDate.format(formatter);
         String endDateStr = endDate.format(formatter);
-        
+
         List<Object[]> orderCountByDay = orderRepository.getOrderCountByDay(startDateStr, endDateStr);
         List<Object[]> salesByDay = orderRepository.getSalesByDay(startDateStr, endDateStr);
-        
+
         Map<String, Long> orderCountMap = new LinkedHashMap<>();
         for (Object[] row : orderCountByDay) {
             String date = row[0].toString();
             Long count = ((Number) row[1]).longValue();
             orderCountMap.put(date, count);
         }
-        
+
         Map<String, Float> salesMap = new LinkedHashMap<>();
         for (Object[] row : salesByDay) {
             String date = row[0].toString();
             Float sales = ((Number) row[1]).floatValue();
             salesMap.put(date, sales);
         }
-        
+
         Map<String, Object> result = new HashMap<>();
         result.put("orderCountByDay", orderCountMap);
         result.put("salesByDay", salesMap);
-        
+
         return result;
     }
 
@@ -367,14 +388,14 @@ public class OrderServiceImpl implements OrderService {
     public Optional<Order> getOrderEntityById(Integer id) {
         return orderRepository.findById(id);
     }
-    
+
     // Helper methods
     private OrderDTO mapOrderToDTO(Order order) {
         List<OrderDetail> orderDetails = orderDetailRepository.findByOrder(order);
         List<OrderDetailDTO> orderDetailDTOs = orderDetails.stream()
                 .map(this::mapOrderDetailToDTO)
                 .collect(Collectors.toList());
-        
+
         String orderStatusText;
         switch (order.getOrderStatus()) {
             case 0:
@@ -398,7 +419,7 @@ public class OrderServiceImpl implements OrderService {
             default:
                 orderStatusText = "Unknown";
         }
-        
+
         return OrderDTO.builder()
                 .id(order.getId())
                 .userId(order.getUser().getId())
@@ -419,14 +440,14 @@ public class OrderServiceImpl implements OrderService {
                 .orderDetails(orderDetailDTOs)
                 .build();
     }
-    
+
     private OrderDetailDTO mapOrderDetailToDTO(OrderDetail orderDetail) {
         Float price = orderDetail.getOrder().getCreateAt() != null
                 ? calculateDiscountedPriceAtTime(orderDetail.getProduct(), orderDetail.getOrder().getCreateAt())
                 : orderDetail.getProduct().getPrice().floatValue();
 
         Float totalPrice = price * orderDetail.getQuantity();
-        
+
         return OrderDetailDTO.builder()
                 .id(orderDetail.getId())
                 .orderId(orderDetail.getOrder().getId())

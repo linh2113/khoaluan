@@ -1,6 +1,15 @@
-# Flash Sale API Documentation
+# Flash Sale & Discount API Documentation
 
 ## Tổng quan
+Tài liệu này mô tả các API cho hai hệ thống chính:
+1. **Flash Sale**: Quản lý các đợt giảm giá đặc biệt trong thời gian giới hạn với số lượng sản phẩm có hạn
+2. **Discount**: Quản lý các chương trình giảm giá cho sản phẩm và danh mục
+
+---
+
+# FLASH SALE API
+
+## Tổng quan Flash Sale
 Chức năng Flash Sale cho phép admin tạo và quản lý các đợt giảm giá đặc biệt trong thời gian giới hạn với số lượng sản phẩm có hạn.
 
 ## Entities
@@ -227,6 +236,253 @@ CREATE TABLE flash_sale_items (
     "productId": 1,
     "flashPrice": 100000,
     "stockLimit": 50
+  }
+}
+```
+
+---
+
+# DISCOUNT API
+
+## Tổng quan Discount
+Hệ thống Discount cho phép admin tạo và quản lý các chương trình giảm giá cho sản phẩm và danh mục sản phẩm.
+
+## Entities
+
+### Discount
+- `id`: ID duy nhất
+- `type`: Loại discount (PRODUCT/CATEGORY)
+- `value`: Giá trị giảm giá (%)
+- `startDate`: Thời gian bắt đầu
+- `endDate`: Thời gian kết thúc
+- `isActive`: Trạng thái hoạt động
+- `priority`: Độ ưu tiên
+- `createdAt`: Thời gian tạo
+- `updatedAt`: Thời gian cập nhật
+
+### ProductDiscount
+- `id`: ID duy nhất
+- `discountId`: ID discount
+- `productId`: ID sản phẩm
+- `discountedPrice`: Giá sau khi giảm
+- `createdAt`: Thời gian tạo
+
+### CategoryDiscount
+- `id`: ID duy nhất
+- `discountId`: ID discount
+- `categoryId`: ID danh mục
+- `createdAt`: Thời gian tạo
+
+## API Endpoints
+
+### Admin Endpoints
+
+#### 1. Tạo Discount
+```
+POST /api/v1/admin/discounts
+```
+**Request Body:**
+```json
+{
+  "type": "PRODUCT",
+  "value": 25.0,
+  "startDate": "2024-01-01T00:00:00",
+  "endDate": "2024-01-31T23:59:59",
+  "isActive": true,
+  "priority": 3
+}
+```
+
+#### 2. Cập nhật Discount
+```
+PUT /api/v1/admin/discounts/{id}
+```
+
+#### 3. Xóa Discount
+```
+DELETE /api/v1/admin/discounts/{id}
+```
+
+#### 4. Lấy tất cả Discounts
+```
+GET /api/v1/admin/discounts?page=0&size=10&sortBy=id&sortDir=desc
+```
+
+#### 5. Lấy Active Discounts
+```
+GET /api/v1/admin/discounts/active
+```
+
+#### 6. Lấy Expired Discounts
+```
+GET /api/v1/admin/discounts/expired
+```
+
+#### 7. Lấy Upcoming Discounts
+```
+GET /api/v1/admin/discounts/upcoming
+```
+
+#### 8. Lấy Product Discounts
+```
+GET /api/v1/admin/discounts/product-discounts
+```
+
+#### 9. Lấy Category Discounts
+```
+GET /api/v1/admin/discounts/category-discounts
+```
+
+#### 10. Gán Discount cho Products
+```
+POST /api/v1/admin/discounts/{discountId}/assign-products
+```
+**Request Body:**
+```json
+{
+  "productIds": [1, 2, 3],
+  "discountedPrices": {
+    "1": 800000,
+    "2": 900000,
+    "3": 1000000
+  }
+}
+```
+
+#### 11. Gán Discount cho Categories
+```
+POST /api/v1/admin/discounts/{discountId}/assign-categories
+```
+**Request Body:**
+```json
+{
+  "categoryIds": [1, 2, 3]
+}
+```
+
+## Business Rules
+
+### 1. Validation Rules
+- Thời gian bắt đầu phải trước thời gian kết thúc
+- Giá trị discount phải từ 0-100%
+- Product discount chỉ áp dụng cho sản phẩm
+- Category discount chỉ áp dụng cho danh mục
+- Không thể gán product cho category discount và ngược lại
+
+### 2. Priority System
+- Discount có priority cao hơn sẽ được áp dụng trước
+- Flash sale có ưu tiên cao nhất
+- Product discount có ưu tiên cao hơn category discount
+
+### 3. Status Management
+- Active: Discount đang hoạt động (trong khoảng thời gian)
+- Expired: Discount đã hết hạn
+- Upcoming: Discount chưa bắt đầu
+
+## Error Handling
+
+### Common Error Codes
+- `400 Bad Request`: Dữ liệu không hợp lệ
+- `404 Not Found`: Discount không tồn tại
+- `422 Unprocessable Entity`: Vi phạm business rules
+
+### Error Messages
+- "Discount not found"
+- "This discount is not applicable to products"
+- "This discount is not applicable to categories"
+- "Product ID {id} already has this discount"
+- "Category ID {id} already has this discount"
+
+## Database Schema
+
+### discounts table
+```sql
+CREATE TABLE discounts (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('PRODUCT', 'CATEGORY')),
+    value DECIMAL(5,2) NOT NULL CHECK (value >= 0 AND value <= 100),
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    priority INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### product_discounts table
+```sql
+CREATE TABLE product_discounts (
+    id SERIAL PRIMARY KEY,
+    id_discount INTEGER NOT NULL REFERENCES discounts(id),
+    id_product INTEGER NOT NULL REFERENCES products(id),
+    discounted_price DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(id_discount, id_product)
+);
+```
+
+### category_discounts table
+```sql
+CREATE TABLE category_discounts (
+    id SERIAL PRIMARY KEY,
+    id_discount INTEGER NOT NULL REFERENCES discounts(id),
+    id_category INTEGER NOT NULL REFERENCES categories(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(id_discount, id_category)
+);
+```
+
+## Integration Points
+
+### 1. Product Service
+- Hiển thị giá đã giảm trong danh sách sản phẩm
+- Tính toán giá cuối cùng với discount
+
+### 2. Category Service
+- Áp dụng discount cho tất cả sản phẩm trong danh mục
+- Hiển thị thông tin discount của danh mục
+
+### 3. Cart Service
+- Tính toán giá discount trong giỏ hàng
+- Hiển thị thông tin tiết kiệm
+
+### 4. Order Service
+- Áp dụng discount khi tạo đơn hàng
+- Lưu thông tin discount đã áp dụng
+
+## Testing
+
+### Unit Tests
+- DiscountServiceImpl methods
+- Validation logic
+- Business rules
+- Assignment operations
+
+### Integration Tests
+- API endpoints
+- Database operations
+- Service integrations
+- Bulk operations
+
+### Test Data
+```json
+{
+  "productDiscount": {
+    "type": "PRODUCT",
+    "value": 25.0,
+    "startDate": "2024-01-01T00:00:00",
+    "endDate": "2024-01-31T23:59:59",
+    "isActive": true,
+    "priority": 3
+  },
+  "categoryDiscount": {
+    "type": "CATEGORY",
+    "value": 15.0,
+    "startDate": "2024-01-01T00:00:00",
+    "endDate": "2024-01-31T23:59:59",
+    "isActive": true,
+    "priority": 2
   }
 }
 ```

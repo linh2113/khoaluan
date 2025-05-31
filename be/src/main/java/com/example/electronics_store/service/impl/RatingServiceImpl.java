@@ -57,13 +57,13 @@ public class RatingServiceImpl implements RatingService {
         // Check if user has already rated this product
         Optional<Rating> existingRating = ratingRepository.findByProductAndUserAndParentIsNull(product, user);
         if (existingRating.isPresent()) {
-            throw new RuntimeException("You have already rated this product");
+            throw new RuntimeException("Bạn đã đánh giá sản phẩm này rồi");
         }
 
         // Kiểm tra xem người dùng đã mua sản phẩm này chưa
         boolean hasPurchased = orderDetailRepository.existsByProductIdAndUserIdAndOrderCompleted(productId, userId);
         if (!hasPurchased) {
-            throw new RuntimeException("You can only rate products that you have purchased");
+            throw new RuntimeException("Bạn chỉ có thể đánh giá khi mua sản phẩm này");
         }
 
         Rating rating = new Rating();

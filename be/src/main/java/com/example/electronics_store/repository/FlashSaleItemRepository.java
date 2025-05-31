@@ -14,7 +14,8 @@ import java.util.Optional;
 @Repository
 public interface FlashSaleItemRepository extends JpaRepository<FlashSaleItem, Integer> {
     @Query("SELECT fsi FROM FlashSaleItem fsi WHERE fsi.product.id = :productId AND " +
-           "fsi.flashSale.startTime <= :now AND fsi.flashSale.endTime >= :now")
+           "fsi.flashSale.startTime <= :now AND fsi.flashSale.endTime >= :now AND " +
+           "(fsi.stockLimit IS NULL OR fsi.soldCount < fsi.stockLimit)")
     Optional<FlashSaleItem> findActiveFlashSaleItemByProductId(@Param("productId") Integer productId, @Param("now") LocalDateTime now);
 
     List<FlashSaleItem> findByFlashSaleId(Integer flashSaleId);

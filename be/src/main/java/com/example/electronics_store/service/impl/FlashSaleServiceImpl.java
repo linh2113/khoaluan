@@ -1,5 +1,5 @@
 package com.example.electronics_store.service.impl;
-import jakarta.persistence.criteria.Predicate;
+
 import com.example.electronics_store.dto.FlashSaleDTO;
 import com.example.electronics_store.dto.FlashSaleItemDTO;
 import com.example.electronics_store.dto.ProductDTO;
@@ -10,6 +10,7 @@ import com.example.electronics_store.repository.FlashSaleRepository;
 import com.example.electronics_store.repository.FlashSaleItemRepository;
 import com.example.electronics_store.repository.ProductRepository;
 import com.example.electronics_store.service.FlashSaleService;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -75,9 +76,9 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         if (flashSaleDTO.getStartTime() != null && flashSaleDTO.getEndTime() != null) {
         // Validate thời gian
             validateFlashSaleTime(flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime());
-        
+
         // Kiểm tra xem có flash sale nào khác đang hoạt động trong khoảng thời gian mới không
-        if (!flashSale.getStartTime().equals(flashSaleDTO.getStartTime()) || 
+        if (!flashSale.getStartTime().equals(flashSaleDTO.getStartTime()) ||
             !flashSale.getEndTime().equals(flashSaleDTO.getEndTime())) {
             if (flashSaleRepository.existsActiveFlashSaleInTimeRange(
                     flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime())) {
@@ -92,7 +93,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         if (flashSaleDTO.getName() != null) {
             flashSale.setName(flashSaleDTO.getName());
         }
-    
+
         if (flashSaleDTO.getDescription() != null) {
             flashSale.setDescription(flashSaleDTO.getDescription());
         }
@@ -108,26 +109,33 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
+    public List<FlashSaleDTO> getAllFlashSales() {
+        return flashSaleRepository.findAll().stream()
+                .map(this::mapFlashSaleToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Page<FlashSaleDTO> getFlashSalesWithSearch(String search, Pageable pageable) {
     Specification<FlashSale> spec = Specification.where(null);
-    
+
     if (search != null && !search.trim().isEmpty()) {
         String searchTerm = "%" + search.toLowerCase() + "%";
         spec = spec.and((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-            
+
             // Tìm theo ID
             try {
                 Integer flashSaleId = Integer.parseInt(search);
                 predicates.add(cb.equal(root.get("id"), flashSaleId));
             } catch (NumberFormatException ignored) {
             }
-            
+
             // Tìm theo tên và mô tả
             predicates.add(cb.like(cb.lower(root.get("name")), searchTerm));
             predicates.add(cb.like(cb.lower(root.get("description")), searchTerm));
-            
+
             // Tìm theo trạng thái
             LocalDateTime now = LocalDateTime.now();
             if ("active".equalsIgnoreCase(search) || "current".equalsIgnoreCase(search)) {
@@ -140,7 +148,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
             } else if ("past".equalsIgnoreCase(search) || "ended".equalsIgnoreCase(search)) {
                 predicates.add(cb.lessThan(root.get("endTime"), now));
             }
-            
+
             // Tìm theo ngày (định dạng yyyy-MM-dd)
             if (search.matches("\\d{4}-\\d{2}-\\d{2}")) {
                 predicates.add(cb.like(
@@ -152,11 +160,11 @@ public class FlashSaleServiceImpl implements FlashSaleService {
                     search
                 ));
             }
-            
+
             return cb.or(predicates.toArray(new Predicate[0]));
         });
     }
-    
+
     Page<FlashSale> flashSalePage = flashSaleRepository.findAll(spec, pageable);
     return flashSalePage.map(this::mapFlashSaleToDTO);
     }

@@ -603,7 +603,7 @@ public class AdminController {
 
 
     // Gắn discount với nhiều sản phẩm
-    @PostMapping("/discounts/{discountId}/products")
+    @PostMapping("/discounts/{discountId}/assign-products")
     public ResponseEntity<ApiResponse<?>> assignDiscountToProducts(
             @PathVariable Integer discountId,
             @RequestBody BatchAssignRequest request) {
@@ -628,12 +628,18 @@ public class AdminController {
         }
     }
 
-    // Gắn discount với nhiều danh mục
-    @PostMapping("/discounts/{discountId}/categories")
+    // gắn discount với nhiều danh mục
+    @PostMapping("/discounts/{discountId}/assign-categories")
     public ResponseEntity<ApiResponse<?>> assignDiscountToCategories(
             @PathVariable Integer discountId,
-            @RequestBody List<Integer> categoryIds) {
+            @RequestBody Map<String, List<Integer>> request) {
         try {
+            List<Integer> categoryIds = request.get("categoryIds");
+            if (categoryIds == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("categoryIds is required"));
+            }
+
             Integer successCount = discountService.assignDiscountToCategories(discountId, categoryIds);
 
             Map<String, Object> response = new HashMap<>();
@@ -648,7 +654,77 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
         }
-    }// Lấy danh sách sản phẩm đủ điều kiện để áp dụng discount, khi mở admin
+    }
+
+    @GetMapping("/discounts/active")
+    public ResponseEntity<ApiResponse<?>> getActiveDiscounts() {
+        try {
+            List<DiscountDTO> discounts = discountService.getAllActiveDiscounts();
+            return ResponseEntity.ok(ApiResponse.success(discounts));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/discounts/expired")
+    public ResponseEntity<ApiResponse<?>> getExpiredDiscounts() {
+        try {
+            List<DiscountDTO> discounts = discountService.getAllExpiredDiscounts();
+            return ResponseEntity.ok(ApiResponse.success(discounts));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/discounts/upcoming")
+    public ResponseEntity<ApiResponse<?>> getUpcomingDiscounts() {
+        try {
+            List<DiscountDTO> discounts = discountService.getAllUpcomingDiscounts();
+            return ResponseEntity.ok(ApiResponse.success(discounts));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/discounts/product-discounts")
+    public ResponseEntity<ApiResponse<?>> getProductDiscounts() {
+        try {
+            List<DiscountDTO> discounts = discountService.getAllProductDiscounts();
+            return ResponseEntity.ok(ApiResponse.success(discounts));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/discounts/category-discounts")
+    public ResponseEntity<ApiResponse<?>> getCategoryDiscounts() {
+        try {
+            List<DiscountDTO> discounts = discountService.getAllCategoryDiscounts();
+            return ResponseEntity.ok(ApiResponse.success(discounts));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/discounts/{id}")
+    public ResponseEntity<ApiResponse<?>> deleteDiscount(@PathVariable Integer id) {
+        try {
+            discountService.deleteDiscount(id);
+            return ResponseEntity.ok(ApiResponse.success("Discount deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+   
+
+    // Lấy danh sách sản phẩm đủ điều kiện để áp dụng discount, khi mở admin
     @GetMapping("/products/eligible-for-discount")
     public ResponseEntity<ApiResponse<?>> getProductsEligibleForDiscount(
             @RequestParam(required = false) String search,

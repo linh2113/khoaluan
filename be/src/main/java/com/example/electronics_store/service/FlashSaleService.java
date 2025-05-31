@@ -19,6 +19,8 @@ public interface FlashSaleService {
 
     FlashSaleDTO getFlashSaleById(Integer id);
 
+    List<FlashSaleDTO> getAllFlashSales();
+
     Page<FlashSaleDTO> getFlashSalesWithSearch(String search, Pageable pageable);
 
     List<FlashSaleDTO> getCurrentFlashSales();

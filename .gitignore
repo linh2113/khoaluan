@@ -44,3 +44,7 @@ be/logs/
 be/logs/*.log
 be/logs/*.gz
 be/src/main/resources/application.properties
+be/src/main/resources/application-test.properties
+be/src/test/
+be/test_data.sql
+

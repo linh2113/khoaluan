@@ -68,7 +68,7 @@ public class DiscountServiceImpl implements DiscountService {
             int successCount = assignDiscountToProducts(savedDiscount.getId(),
                     discountDTO.getProductIds(),
                     discountDTO.getDiscountedPrices());
-            resultDTO.setAssignedCount(successCount);       
+            resultDTO.setAssignedCount(successCount);
             resultDTO.setProductIds(discountDTO.getProductIds());
         }
         //Gắn với danh mục
@@ -98,6 +98,29 @@ public class DiscountServiceImpl implements DiscountService {
         }
 
         throw new RuntimeException("Discount not found");
+    }
+
+    @Override
+    @Transactional
+    public void deleteDiscount(Integer id) {
+        // Tìm và xóa discount từ bảng chính
+        Discount discount = discountRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Discount not found"));
+
+        // Xóa tất cả ProductDiscount liên quan
+        List<ProductDiscount> productDiscounts = productDiscountRepository.findByDiscountId(id);
+        if (!productDiscounts.isEmpty()) {
+            productDiscountRepository.deleteAll(productDiscounts);
+        }
+
+        // Xóa tất cả CategoryDiscount liên quan
+        List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findByDiscountId(id);
+        if (!categoryDiscounts.isEmpty()) {
+            categoryDiscountRepository.deleteAll(categoryDiscounts);
+        }
+
+        // Cuối cùng xóa discount chính
+        discountRepository.delete(discount);
     }
 
     @Override

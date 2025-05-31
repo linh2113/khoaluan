@@ -15,6 +15,7 @@ public interface DiscountService {
     // Các phương thức cho Discount chung
     DiscountDTO createDiscount(DiscountDTO discountDTO);
     DiscountDTO updateDiscount(Integer id, DiscountUpdateDTO discountUpdateDTO);
+    void deleteDiscount(Integer id);
     DiscountDTO getDiscountById(Integer id);
     Page<DiscountDTO> getAllDiscounts(String search, Pageable pageable);
     List<DiscountDTO> getAllActiveDiscounts();

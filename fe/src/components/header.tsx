@@ -1,10 +1,21 @@
 'use client'
 import { ModeToggle } from '@/components/mode-toggle'
 import { Input } from '@/components/ui/input'
-import { Bell, BookHeart, LayoutDashboard, LogOut, Search, ShoppingCart, User, WalletCards } from 'lucide-react'
+import {
+   Bell,
+   BookHeart,
+   LayoutDashboard,
+   LogOut,
+   Mic,
+   MicOff,
+   Search,
+   ShoppingCart,
+   User,
+   WalletCards
+} from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import React, { Fragment } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
    Dialog,
    DialogContent,
@@ -30,15 +41,79 @@ import { toast } from 'react-toastify'
 import { useGetAllCart } from '@/queries/useCart'
 import SwitchLanguage from '@/components/switch-language'
 import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
+
+// Thêm kiểu cho window để hỗ trợ SpeechRecognition
+declare global {
+   interface Window {
+      SpeechRecognition: any
+      webkitSpeechRecognition: any
+   }
+}
 
 export default function Header() {
-   const { userId, logout } = useAppContext()
+   const { userId, logout, setSearchProduct } = useAppContext()
+   const router = useRouter()
+   const [searchValue, setSearchValue] = useState<string>('')
    const { data } = useGetUserInfo(userId!)
    const userInfo = data?.data.data
    const [showLogoutDialog, setShowLogoutDialog] = React.useState(false)
    const getAllCart = useGetAllCart(userId!)
    const cartData = getAllCart.data?.data.data.items || []
    const t = useTranslations('Header')
+
+   // Voice search states
+   const [isListening, setIsListening] = useState(false)
+   const [speechSupported, setSpeechSupported] = useState(false)
+   const recognitionRef = useRef<any>(null)
+
+   // Check if speech recognition is supported
+   useEffect(() => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      if (SpeechRecognition) {
+         setSpeechSupported(true)
+         recognitionRef.current = new SpeechRecognition()
+         recognitionRef.current.continuous = false
+         recognitionRef.current.interimResults = false
+         recognitionRef.current.lang = 'vi-VN'
+
+         recognitionRef.current.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript
+            setSearchValue(transcript)
+            setIsListening(false)
+         }
+
+         recognitionRef.current.onerror = (event: any) => {
+            if (event.error === 'aborted') return // 🛠 ignore harmless abort error
+            console.error('Speech recognition error', event.error)
+            setIsListening(false)
+         }
+
+         recognitionRef.current.onend = () => {
+            setIsListening(false)
+         }
+      }
+
+      return () => {
+         if (recognitionRef.current) {
+            recognitionRef.current.abort()
+         }
+      }
+   }, [])
+
+   const toggleListening = () => {
+      if (isListening) {
+         recognitionRef.current.abort()
+         setIsListening(false)
+      } else {
+         try {
+            recognitionRef.current.start()
+            setIsListening(true)
+         } catch (error) {
+            console.error('Speech recognition error:', error)
+         }
+      }
+   }
 
    const handleLogout = () => {
       logout()
@@ -50,13 +125,8 @@ export default function Header() {
       <>
          <header className='bg-primaryColor py-3'>
             <div className='container flex justify-end gap-4 items-center mb-2'>
-               <SwitchLanguage />
                <ModeToggle />
-               <div className='flex items-center text-white gap-1 relative'>
-                  <Bell size={20} strokeWidth={1.5} />
-                  {t('notifications')}
-                  <div className='absolute top-[-7px] left-[5px] bg-secondaryColor px-2 text-xs rounded-lg'>0</div>
-               </div>
+               <SwitchLanguage />
 
                <div className='flex items-center gap-1 text-white'>
                   {userInfo ? (
@@ -110,7 +180,7 @@ export default function Header() {
                                  </Link>
                                  <button
                                     onClick={() => setShowLogoutDialog(true)}
-                                    className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2 text-red-500'
+                                    className='flex border-t items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2 text-red-500'
                                  >
                                     <LogOut size={20} />
                                     {t('logout')}
@@ -126,31 +196,48 @@ export default function Header() {
                   )}
                </div>
             </div>
-            <div className='container flex items-center'>
-               <Link href={'/'} className='w-1/5'>
-                  <Image
-                     src={
-                        'https://cdn2.fptshop.com.vn/unsafe/360x0/filters:quality(100)/small/fptshop_logo_c5ac91ae46.png'
-                     }
-                     priority
-                     alt='fptshop'
-                     width={150}
-                     height={40}
-                     className='w-[150px] h-10 flex-shrink-0'
-                  />
+            <div className='container flex items-center gap-2'>
+               <Link href={'/'} className='sm:w-1/5 flex items-center'>
+                  <Image src={'/logo.png'} alt='logo' width={50} height={50} className='w-[50px] h-[50px]' />
+                  <span className='font-semibold text-lg sm:block hidden text-white'>TechShop</span>
                </Link>
-               <form className='w-3/5 flex-1 flex items-center'>
+               <form
+                  onSubmit={(e) => {
+                     e.preventDefault()
+                     setSearchProduct(searchValue)
+                     router.push('/')
+                  }}
+                  className='sm:w-3/5 flex-1 flex items-center'
+               >
                   <Input
+                     id='keyword'
                      placeholder={t('search.placeholder')}
-                     required
+                     value={searchValue}
+                     onChange={(e) => setSearchValue(e.target.value)}
                      className='bg-white text-black rounded-tr-none rounded-br-none border-none outline-none ring-offset-0'
                   />
-                  <button className='flex h-9 items-center gap-1 bg-[#097345] font-medium px-3 text-white whitespace-nowrap rounded-tr-md rounded-br-md'>
+                  {speechSupported && (
+                     <button
+                        type='button'
+                        onClick={toggleListening}
+                        className={`flex h-9 items-center justify-center px-2 ${
+                           isListening ? 'bg-red-500' : 'bg-white'
+                        } text-black border-r border-gray-200`}
+                        aria-label={isListening ? t('search.stopVoice') : t('search.startVoice')}
+                        title={isListening ? t('search.stopVoice') : t('search.startVoice')}
+                     >
+                        {isListening ? <MicOff size={18} strokeWidth={1.5} /> : <Mic size={18} strokeWidth={1.5} />}
+                     </button>
+                  )}
+                  <button
+                     type='submit'
+                     className='flex h-9 items-center gap-1 bg-[#097345] font-medium px-3 text-white whitespace-nowrap rounded-tr-md rounded-br-md'
+                  >
                      <Search size={20} strokeWidth={1.5} />
-                     {t('search.button')}
+                     <span className='sm:block hidden'> {t('search.button')}</span>
                   </button>
                </form>
-               <div className='w-1/5 flex items-center justify-center text-white'>
+               <div className='sm:w-1/5 flex items-center justify-center text-white'>
                   <DropdownMenu>
                      <DropdownMenuTrigger asChild>
                         <div className='relative cursor-pointer'>
@@ -160,7 +247,7 @@ export default function Header() {
                            </div>
                         </div>
                      </DropdownMenuTrigger>
-                     <DropdownMenuContent className='w-96'>
+                     <DropdownMenuContent className='w-[300px] sm:w-96'>
                         <DropdownMenuGroup className='p-0'>
                            {cartData?.length === 0 && (
                               <div className='flex flex-col justify-center items-center gap-3 my-5'>

@@ -6,7 +6,8 @@ import { useAddToCart } from '@/queries/useCart'
 import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { ORDER_STATUS } from '@/types/order.type'
+import { ORDER_STATUS, PAYMENT_STATUS } from '@/types/order.type'
+import { renderOrderStatusBadge, renderPaymentStatusBadge } from '@/lib/order-utils'
 import Image from 'next/image'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -18,10 +19,10 @@ import {
    DialogTitle
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Loader2, ShoppingCart } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { useRouter } from 'next/navigation'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 export default function Purchase() {
    const router = useRouter()
@@ -30,6 +31,7 @@ export default function Purchase() {
    const deleteOrderMutation = useDeleteOrder()
    const updateOrderStatusMutation = useUpdateOrderStatus()
    const addToCartMutation = useAddToCart()
+   const isMobile = useIsMobile()
 
    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
    const [isOpenCancelDialog, setIsOpenCancelDialog] = useState(false)
@@ -107,82 +109,6 @@ export default function Purchase() {
       addProductsToCart()
    }
 
-   // Hiển thị trạng thái đơn hàng
-   const renderOrderStatusBadge = (status: number) => {
-      switch (status) {
-         case ORDER_STATUS.PENDING:
-            return (
-               <Badge variant='outline' className='bg-yellow-50 text-yellow-600 border-yellow-300'>
-                  Chờ xác nhận
-               </Badge>
-            )
-         case ORDER_STATUS.PROCESSING:
-            return (
-               <Badge variant='outline' className='bg-blue-50 text-blue-600 border-blue-300'>
-                  Đang xử lý
-               </Badge>
-            )
-         case ORDER_STATUS.SHIPPED:
-            return (
-               <Badge variant='outline' className='bg-indigo-50 text-indigo-600 border-indigo-300'>
-                  Đang giao hàng
-               </Badge>
-            )
-         case ORDER_STATUS.DELIVERED:
-            return (
-               <Badge variant='outline' className='bg-green-50 text-green-600 border-green-300'>
-                  Đã giao hàng
-               </Badge>
-            )
-         case ORDER_STATUS.COMPLETED:
-            return (
-               <Badge variant='outline' className='bg-green-50 text-green-600 border-green-300'>
-                  Hoàn thành
-               </Badge>
-            )
-         case ORDER_STATUS.CANCELLED:
-            return (
-               <Badge variant='outline' className='bg-red-50 text-red-600 border-red-300'>
-                  Đã hủy
-               </Badge>
-            )
-         default:
-            return <Badge variant='outline'>Không xác định</Badge>
-      }
-   }
-
-   // Hiển thị trạng thái thanh toán
-   const renderPaymentStatusBadge = (status: string) => {
-      switch (status) {
-         case 'Pending':
-            return (
-               <Badge variant='outline' className='bg-yellow-50 text-yellow-600 border-yellow-300'>
-                  Chờ thanh toán
-               </Badge>
-            )
-         case 'Paid':
-            return (
-               <Badge variant='outline' className='bg-green-50 text-green-600 border-green-300'>
-                  Đã thanh toán
-               </Badge>
-            )
-         case 'Failed':
-            return (
-               <Badge variant='outline' className='bg-red-50 text-red-600 border-red-300'>
-                  Thanh toán thất bại
-               </Badge>
-            )
-         case 'Refunded':
-            return (
-               <Badge variant='outline' className='bg-blue-50 text-blue-600 border-blue-300'>
-                  Đã hoàn tiền
-               </Badge>
-            )
-         default:
-            return <Badge variant='outline'>Không xác định</Badge>
-      }
-   }
-
    // Hiển thị danh sách đơn hàng
    const renderOrderList = (orderList: typeof orders) => {
       if (orderList.length === 0) {
@@ -194,13 +120,13 @@ export default function Purchase() {
       }
 
       return orderList.map((order) => (
-         <div key={order.id} className='border rounded-lg p-4 mb-4 shadow-sm'>
-            <div className='flex justify-between items-center mb-3 pb-3 border-b'>
+         <div key={order.id} className='border rounded-lg p-3 md:p-4 mb-4 shadow-sm'>
+            <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3 pb-3 border-b'>
                <div>
                   <span className='text-gray-500 mr-2'>Mã đơn hàng:</span>
                   <span className='font-medium'>#{order.id}</span>
                </div>
-               <div className='flex items-center gap-2'>
+               <div className='flex flex-wrap items-center gap-2'>
                   {renderOrderStatusBadge(order.orderStatus)}
                   {renderPaymentStatusBadge(order.paymentStatus)}
                </div>
@@ -209,46 +135,51 @@ export default function Purchase() {
             {/* Hiển thị sản phẩm đầu tiên và số lượng sản phẩm còn lại */}
             {order.orderDetails.length > 0 && (
                <div className='mb-3'>
-                  <div className='flex items-center gap-4 mb-2'>
-                     <div className='w-16 h-16 flex-shrink-0'>
+                  <div className='flex items-center gap-3 md:gap-4 mb-2'>
+                     <div className='w-12 h-12 md:w-16 md:h-16 flex-shrink-0'>
                         <Image
                            src={order.orderDetails[0].productImage}
                            alt={order.orderDetails[0].productName}
                            width={64}
                            height={64}
-                           className='rounded object-cover'
+                           className='rounded object-cover w-full h-full'
                         />
                      </div>
                      <div className='flex-grow'>
-                        <p className='font-medium line-clamp-1'>{order.orderDetails[0].productName}</p>
-                        <p className='text-sm text-gray-500'>
+                        <p className='font-medium text-sm md:text-base line-clamp-1'>
+                           {order.orderDetails[0].productName}
+                        </p>
+                        <p className='text-xs md:text-sm text-gray-500'>
                            {formatCurrency(order.orderDetails[0].price)} x {order.orderDetails[0].quantity}
                         </p>
                      </div>
                   </div>
 
                   {order.orderDetails.length > 1 && (
-                     <p className='text-sm text-gray-500 ml-20'>và {order.orderDetails.length - 1} sản phẩm khác</p>
+                     <p className='text-xs md:text-sm text-gray-500 ml-16'>
+                        và {order.orderDetails.length - 1} sản phẩm khác
+                     </p>
                   )}
                </div>
             )}
 
-            <div className='flex justify-between items-center mb-3'>
-               <div>
+            <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3'>
+               <div className='text-sm md:text-base'>
                   <span className='text-gray-500 mr-2'>Ngày đặt:</span>
                   <span>{format(new Date(order.createAt), 'dd/MM/yyyy HH:mm', { locale: vi })}</span>
                </div>
-               <div>
+               <div className='text-sm md:text-base'>
                   <span className='text-gray-500 mr-2'>Tổng tiền:</span>
-                  <span className='text-lg font-medium text-secondaryColor'>
+                  <span className='text-base md:text-lg font-medium text-secondaryColor'>
                      {formatCurrency(order.totalPrice + order.shippingFee)}
                   </span>
                </div>
             </div>
 
-            <div className='flex justify-end gap-2 mt-3'>
+            <div className='flex flex-wrap justify-end gap-2 mt-3'>
                <Button
                   variant='outline'
+                  size={isMobile ? 'sm' : 'default'}
                   onClick={() => {
                      setSelectedOrderId(order.id)
                      setIsOpenDetailDialog(true)
@@ -261,6 +192,7 @@ export default function Purchase() {
                {(order.orderStatus === ORDER_STATUS.PENDING || order.orderStatus === ORDER_STATUS.PROCESSING) && (
                   <Button
                      variant='destructive'
+                     size={isMobile ? 'sm' : 'default'}
                      onClick={() => {
                         setSelectedOrderId(order.id)
                         setIsOpenCancelDialog(true)
@@ -272,7 +204,11 @@ export default function Purchase() {
 
                {/* Hiển thị nút mua lại khi đơn hàng đã hoàn thành hoặc đã hủy */}
                {(order.orderStatus === ORDER_STATUS.COMPLETED || order.orderStatus === ORDER_STATUS.CANCELLED) && (
-                  <Button onClick={() => handleReorder(order)} disabled={isReordering}>
+                  <Button
+                     onClick={() => handleReorder(order)}
+                     disabled={isReordering}
+                     size={isMobile ? 'sm' : 'default'}
+                  >
                      {isReordering ? (
                         <>
                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -291,6 +227,7 @@ export default function Purchase() {
                {(order.orderStatus === ORDER_STATUS.COMPLETED || order.orderStatus === ORDER_STATUS.CANCELLED) && (
                   <Button
                      variant='destructive'
+                     size={isMobile ? 'sm' : 'default'}
                      onClick={() => {
                         setSelectedOrderId(order.id)
                         setIsOpenDeleteDialog(true)
@@ -313,52 +250,61 @@ export default function Purchase() {
    }
 
    return (
-      <div className='container my-10'>
-         <h1 className='text-2xl font-bold mb-6'>Đơn hàng của tôi</h1>
+      <div className='container my-6 md:my-10 px-4 md:px-6'>
+         <h1 className='text-xl md:text-2xl font-bold mb-4 md:mb-6'>Đơn hàng của tôi</h1>
 
          <Tabs defaultValue='all'>
-            <TabsList className='mb-6 flex flex-wrap'>
-               <TabsTrigger value='all'>Tất cả ({orders.length})</TabsTrigger>
-               <TabsTrigger value='pending'>Chờ xác nhận ({pendingOrders.length})</TabsTrigger>
-               <TabsTrigger value='processing'>Đang xử lý ({processingOrders.length})</TabsTrigger>
-               <TabsTrigger value='shipping'>Đang giao ({shippingOrders.length})</TabsTrigger>
-               <TabsTrigger value='delivered'>Đã giao ({deliveredOrders.length})</TabsTrigger>
-               <TabsTrigger value='completed'>Hoàn thành ({completedOrders.length})</TabsTrigger>
-               <TabsTrigger value='cancelled'>Đã hủy ({cancelledOrders.length})</TabsTrigger>
+            <TabsList className='mb-4 md:mb-6 flex flex-wrap h-full gap-1'>
+               <TabsTrigger value='all' className='text-xs md:text-sm'>
+                  Tất cả ({orders.length})
+               </TabsTrigger>
+               <TabsTrigger value='pending' className='text-xs md:text-sm'>
+                  Chờ xác nhận ({pendingOrders.length})
+               </TabsTrigger>
+               <TabsTrigger value='processing' className='text-xs md:text-sm'>
+                  Đang xử lý ({processingOrders.length})
+               </TabsTrigger>
+               <TabsTrigger value='shipping' className='text-xs md:text-sm'>
+                  Đang giao ({shippingOrders.length})
+               </TabsTrigger>
+               <TabsTrigger value='delivered' className='text-xs md:text-sm'>
+                  Đã giao ({deliveredOrders.length})
+               </TabsTrigger>
+               <TabsTrigger value='completed' className='text-xs md:text-sm'>
+                  Hoàn thành ({completedOrders.length})
+               </TabsTrigger>
+               <TabsTrigger value='cancelled' className='text-xs md:text-sm'>
+                  Đã hủy ({cancelledOrders.length})
+               </TabsTrigger>
             </TabsList>
 
             <TabsContent value='all'>{renderOrderList(orders)}</TabsContent>
-
             <TabsContent value='pending'>{renderOrderList(pendingOrders)}</TabsContent>
-
             <TabsContent value='processing'>{renderOrderList(processingOrders)}</TabsContent>
-
             <TabsContent value='shipping'>{renderOrderList(shippingOrders)}</TabsContent>
-
             <TabsContent value='delivered'>{renderOrderList(deliveredOrders)}</TabsContent>
-
             <TabsContent value='completed'>{renderOrderList(completedOrders)}</TabsContent>
-
             <TabsContent value='cancelled'>{renderOrderList(cancelledOrders)}</TabsContent>
          </Tabs>
 
          {/* Dialog xác nhận hủy đơn hàng */}
          <Dialog open={isOpenCancelDialog} onOpenChange={setIsOpenCancelDialog}>
-            <DialogContent>
+            <DialogContent className='max-w-md mx-4'>
                <DialogHeader>
                   <DialogTitle>Xác nhận hủy đơn hàng</DialogTitle>
                   <DialogDescription>
                      Bạn có chắc chắn muốn hủy đơn hàng #{selectedOrderId} không? Hành động này không thể hoàn tác.
                   </DialogDescription>
                </DialogHeader>
-               <DialogFooter>
-                  <Button variant='outline' onClick={() => setIsOpenCancelDialog(false)}>
+               <DialogFooter className='flex-col sm:flex-row gap-2'>
+                  <Button variant='outline' onClick={() => setIsOpenCancelDialog(false)} className='sm:w-auto w-full'>
                      Hủy
                   </Button>
                   <Button
                      variant='destructive'
                      onClick={handleCancelOrder}
                      disabled={updateOrderStatusMutation.isPending}
+                     className='sm:w-auto w-full'
                   >
                      {updateOrderStatusMutation.isPending ? (
                         <>
@@ -375,7 +321,7 @@ export default function Purchase() {
 
          {/* Dialog chi tiết đơn hàng */}
          <Dialog open={isOpenDetailDialog} onOpenChange={setIsOpenDetailDialog}>
-            <DialogContent className='max-w-3xl'>
+            <DialogContent className='max-w-3xl mx-4 w-[calc(100%-2rem)]'>
                <DialogHeader>
                   <DialogTitle>Chi tiết đơn hàng #{selectedOrderId}</DialogTitle>
                </DialogHeader>
@@ -383,7 +329,7 @@ export default function Purchase() {
                {selectedOrder && (
                   <div className='space-y-4 max-h-[70vh] overflow-y-auto pr-2'>
                      {/* Thông tin đơn hàng */}
-                     <div className='grid grid-cols-2 gap-4'>
+                     <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                         <div>
                            <h3 className='font-medium text-gray-500'>Trạng thái đơn hàng</h3>
                            <div>{renderOrderStatusBadge(selectedOrder.orderStatus)}</div>
@@ -405,7 +351,7 @@ export default function Purchase() {
                      {/* Thông tin giao hàng */}
                      <div className='border-t pt-4'>
                         <h3 className='font-medium mb-2'>Thông tin giao hàng</h3>
-                        <div className='grid grid-cols-2 gap-4'>
+                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                            <div>
                               <p className='text-gray-500'>Người nhận</p>
                               <p>{selectedOrder.userName}</p>
@@ -414,7 +360,7 @@ export default function Purchase() {
                               <p className='text-gray-500'>Số điện thoại</p>
                               <p>{selectedOrder.phoneNumber}</p>
                            </div>
-                           <div className='col-span-2'>
+                           <div className='col-span-1 sm:col-span-2'>
                               <p className='text-gray-500'>Địa chỉ</p>
                               <p>{selectedOrder.address}</p>
                            </div>
@@ -436,24 +382,26 @@ export default function Purchase() {
                         <h3 className='font-medium mb-2'>Sản phẩm</h3>
                         <div className='space-y-3'>
                            {selectedOrder.orderDetails.map((item) => (
-                              <div key={item.id} className='flex items-center gap-4 border-b pb-3'>
-                                 <div className='w-16 h-16 flex-shrink-0'>
+                              <div key={item.id} className='flex items-center gap-3 md:gap-4 border-b pb-3'>
+                                 <div className='w-12 h-12 md:w-16 md:h-16 flex-shrink-0'>
                                     <Image
                                        src={item.productImage}
                                        alt={item.productName}
                                        width={64}
                                        height={64}
-                                       className='rounded object-cover'
+                                       className='rounded object-cover w-full h-full'
                                     />
                                  </div>
                                  <div className='flex-grow'>
-                                    <p className='font-medium'>{item.productName}</p>
-                                    <p className='text-sm text-gray-500'>
+                                    <p className='font-medium text-sm md:text-base'>{item.productName}</p>
+                                    <p className='text-xs md:text-sm text-gray-500'>
                                        {formatCurrency(item.price)} x {item.quantity}
                                     </p>
                                  </div>
                                  <div className='text-right'>
-                                    <p className='font-medium text-secondaryColor'>{formatCurrency(item.totalPrice)}</p>
+                                    <p className='font-medium text-secondaryColor text-sm md:text-base'>
+                                       {formatCurrency(item.totalPrice)}
+                                    </p>
                                  </div>
                               </div>
                            ))}
@@ -462,15 +410,15 @@ export default function Purchase() {
 
                      {/* Tổng tiền */}
                      <div className='border-t pt-4'>
-                        <div className='flex justify-between mb-1'>
+                        <div className='flex justify-between mb-1 text-sm md:text-base'>
                            <span>Tạm tính</span>
                            <span>{formatCurrency(selectedOrder.totalPrice)}</span>
                         </div>
-                        <div className='flex justify-between mb-1'>
+                        <div className='flex justify-between mb-1 text-sm md:text-base'>
                            <span>Phí vận chuyển</span>
                            <span>{formatCurrency(selectedOrder.shippingFee)}</span>
                         </div>
-                        <div className='flex justify-between font-medium text-lg'>
+                        <div className='flex justify-between font-medium text-base md:text-lg'>
                            <span>Tổng cộng</span>
                            <span className='text-secondaryColor'>
                               {formatCurrency(selectedOrder.totalPrice + selectedOrder.shippingFee)}
@@ -480,8 +428,8 @@ export default function Purchase() {
                   </div>
                )}
 
-               <DialogFooter>
-                  <Button variant='outline' onClick={() => setIsOpenDetailDialog(false)}>
+               <DialogFooter className='flex-col sm:flex-row gap-2'>
+                  <Button variant='outline' onClick={() => setIsOpenDetailDialog(false)} className='sm:w-auto w-full'>
                      Đóng
                   </Button>
 
@@ -496,6 +444,7 @@ export default function Purchase() {
                                  setIsOpenDetailDialog(false)
                                  setIsOpenCancelDialog(true)
                               }}
+                              className='sm:w-auto w-full'
                            >
                               Hủy đơn hàng
                            </Button>

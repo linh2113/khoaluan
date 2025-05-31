@@ -30,7 +30,7 @@ public class Brand {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    private Boolean status;
+    private Integer status;
 
     @PrePersist
     protected void onCreate() {

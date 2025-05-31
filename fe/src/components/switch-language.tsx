@@ -4,12 +4,12 @@ import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { Locale, locales } from '@/i18n/config'
 import { setUserLocale } from '@/services/locale'
-import { Check, Globe } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-export default function SwitchLanguage({ variant = 'default' }: { variant?: 'default' | 'minimal' }) {
+export default function SwitchLanguage() {
    const t = useTranslations('SwitchLanguage')
    const locale = useLocale() as Locale
 
@@ -27,28 +27,20 @@ export default function SwitchLanguage({ variant = 'default' }: { variant?: 'def
          <DropdownMenuTrigger className='text-sm' asChild>
             <Button
                variant='ghost'
-               size={variant === 'minimal' ? 'icon' : 'sm'}
-               className={cn(
-                  'gap-2 hover:bg-primary/10 focus-visible:ring-0 focus-visible:ring-offset-0',
-                  variant === 'minimal' ? 'px-2' : 'px-3'
-               )}
+               className={cn('gap-2 hover:bg-primary/10 focus-visible:ring-0 focus-visible:ring-offset-0 px-3')}
             >
-               {variant === 'minimal' ? (
-                  <Globe size={18} strokeWidth={1.5} />
-               ) : (
-                  <>
-                     <span className='font-medium flex items-center gap-2 text-white'>
-                        <Image
-                           src={currentLocale.flagSrc}
-                           alt={currentLocale.name}
-                           width={20}
-                           height={20}
-                           className='rounded-full h-5 w-5 flex-shrink-0'
-                        />
-                        {variant === 'default' && currentLocale.name}
-                     </span>
-                  </>
-               )}
+               <>
+                  <span className='font-medium flex items-center gap-1 text-white'>
+                     <Image
+                        src={currentLocale.flagSrc}
+                        alt={currentLocale.name}
+                        width={20}
+                        height={20}
+                        className='rounded-full h-5 w-5 flex-shrink-0'
+                     />
+                     <span>{currentLocale.name}</span>
+                  </span>
+               </>
             </Button>
          </DropdownMenuTrigger>
          <DropdownMenuContent align='end' className='w-[180px] text-sm'>

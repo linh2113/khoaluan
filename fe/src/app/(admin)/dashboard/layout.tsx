@@ -18,7 +18,9 @@ import {
    User,
    LayoutDashboard,
    WalletCards,
-   BookHeart
+   BookHeart,
+   Star,
+   Archive
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -35,6 +37,8 @@ import {
    DialogTitle
 } from '@/components/ui/dialog'
 import { useGetUserInfo } from '@/queries/useUser'
+import Image from 'next/image'
+import { ModeToggle } from '@/components/mode-toggle'
 
 interface NavItem {
    title: string
@@ -79,12 +83,17 @@ export default function DashboardLayout({
       {
          title: 'Thương hiệu',
          href: '/dashboard/brand',
-         icon: <Tag className='h-5 w-5' />
+         icon: <Archive className='h-5 w-5' />
       },
       {
          title: 'Người dùng',
          href: '/dashboard/user',
          icon: <Users className='h-5 w-5' />
+      },
+      {
+         title: 'Đánh giá sản phẩm',
+         href: '/dashboard/rating',
+         icon: <Star className='h-5 w-5' />
       },
       {
          title: 'Phương thức vận chuyển',
@@ -116,8 +125,9 @@ export default function DashboardLayout({
             <Button variant='ghost' size='icon' onClick={toggleSidebar}>
                <Menu className='h-6 w-6' />
             </Button>
-            <Link href='/' className='flex items-center gap-2'>
-               <span className='font-bold text-xl'>Admin Dashboard</span>
+            <Link href={'/'} className='sm:w-1/5 flex items-center'>
+               <Image src={'/logo.png'} alt='logo' width={50} height={50} className='w-[50px] h-[50px]' />
+               <span className='font-semibold text-lg sm:block hidden text-white'>TechShop</span>
             </Link>
             {userInfo ? (
                <Popover>
@@ -164,7 +174,7 @@ export default function DashboardLayout({
                         </Link>
                         <button
                            onClick={() => setShowLogoutDialog(true)}
-                           className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2 text-red-500'
+                           className='flex items-center border-t hover:bg-primary/10 px-4 py-2 transition-colors gap-2 text-red-500'
                         >
                            <LogOut size={20} />
                            Đăng xuất
@@ -191,8 +201,9 @@ export default function DashboardLayout({
             <div className='flex flex-col h-full'>
                {/* Sidebar header */}
                <div className='flex items-center justify-between p-4 border-b'>
-                  <Link href='/' className='flex items-center gap-2'>
-                     <span className='font-bold text-xl'>Admin Dashboard</span>
+                  <Link href={'/'} className='sm:w-1/5 flex items-center gap-1'>
+                     <Image src={'/logo.png'} alt='logo' width={50} height={50} className='w-[50px] h-[50px]' />
+                     <span className='font-semibold text-lg sm:block hidden text-white'>TechShop</span>
                   </Link>
                   <Button variant='ghost' size='icon' onClick={toggleSidebar} className='lg:hidden'>
                      <X className='h-5 w-5' />
@@ -279,7 +290,7 @@ export default function DashboardLayout({
                                  </Link>
                                  <button
                                     onClick={() => setShowLogoutDialog(true)}
-                                    className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2 text-red-500'
+                                    className='flex items-center border-t hover:bg-primary/10 px-4 py-2 transition-colors gap-2 text-red-500'
                                  >
                                     <LogOut size={20} />
                                     Đăng xuất
@@ -303,7 +314,7 @@ export default function DashboardLayout({
          {isSidebarOpen && <div className='fixed inset-0 bg-gray-900/50 z-30 lg:hidden' onClick={toggleSidebar} />}
 
          {/* Main content */}
-         <main className='flex-1 lg:ml-64 min-h-screen'>
+         <main className='flex-1 lg:ml-64 min-h-screen w-[calc(100%-256px)]'>
             {/* Desktop header */}
             <header className='hidden lg:flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800 sticky top-0 z-10'>
                <div>
@@ -317,6 +328,9 @@ export default function DashboardLayout({
                         Về trang chủ
                      </Button>
                   </Link>
+                  <div className='bg-primaryColor w-8 h-8 flex items-center justify-center rounded'>
+                     <ModeToggle />
+                  </div>
                   {userInfo ? (
                      <Popover>
                         <PopoverTrigger asChild>
@@ -355,7 +369,7 @@ export default function DashboardLayout({
                               </Link>
                               <button
                                  onClick={() => setShowLogoutDialog(true)}
-                                 className='flex items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2 text-red-500'
+                                 className='flex border-t items-center hover:bg-primary/10 px-4 py-2 transition-colors gap-2 text-red-500'
                               >
                                  <LogOut size={20} />
                                  Đăng xuất

@@ -65,25 +65,9 @@ export const ORDER_STATUS = {
    CANCELLED: 5
 }
 
-export const ORDER_STATUS_TEXT = {
-   [ORDER_STATUS.PENDING]: 'Chờ xác nhận',
-   [ORDER_STATUS.PROCESSING]: 'Đang xử lý',
-   [ORDER_STATUS.SHIPPED]: 'Đang giao hàng',
-   [ORDER_STATUS.DELIVERED]: 'Đã giao hàng',
-   [ORDER_STATUS.COMPLETED]: 'Hoàn thành',
-   [ORDER_STATUS.CANCELLED]: 'Đã hủy'
-}
-
 export const PAYMENT_STATUS = {
    PENDING: 'Pending',
    PAID: 'Paid',
    FAILED: 'Failed',
    REFUNDED: 'Refunded'
-}
-
-export const PAYMENT_STATUS_TEXT = {
-   [PAYMENT_STATUS.PENDING]: 'Chờ thanh toán',
-   [PAYMENT_STATUS.PAID]: 'Đã thanh toán',
-   [PAYMENT_STATUS.FAILED]: 'Thanh toán thất bại',
-   [PAYMENT_STATUS.REFUNDED]: 'Đã hoàn tiền'
 }

@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useGetAllPaymentMethod, useGetAllShippingMethod } from '@/queries/useAdmin'
 import { useTranslations } from 'next-intl'
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table'
 
 export default function Order() {
    const t = useTranslations('Order')
@@ -211,34 +212,46 @@ export default function Order() {
             {/* Danh sách sản phẩm */}
             <div>
                <h2 className='font-semibold text-lg mb-3'>{t('products', { count: cartItems.length })}</h2>
-               <div className='grid gap-5'>
-                  {cartItems.map((item) => (
-                     <div
-                        key={item.id}
-                        className='grid grid-cols-12 items-center gap-3 p-3 border border-gray-200 rounded'
-                     >
-                        <div className='col-span-2'>
-                           <Image
-                              width={80}
-                              height={80}
-                              src={item.productImage}
-                              alt={item.productName}
-                              className='w-full rounded aspect-square'
-                           />
-                        </div>
-                        <div className='col-span-5'>
-                           <h3 className='text-base font-medium line-clamp-2'>{item.productName}</h3>
-                        </div>
-                        <div className='col-span-2 text-center'>
-                           <span className='text-gray-400 line-through'>{formatCurrency(299999)}</span>
-                           <div>{formatCurrency(item.price)}</div>
-                        </div>
-                        <div className='col-span-1 text-center'>x{item.quantity}</div>
-                        <div className='col-span-2 font-medium text-secondaryColor text-center'>
-                           {formatCurrency(item.totalPrice)}
-                        </div>
-                     </div>
-                  ))}
+               <div className='w-full'>
+                  <Table>
+                     <TableHeader>
+                        <TableRow>
+                           <TableHead className='w-[80px]'>{t('image')}</TableHead>
+                           <TableHead>{t('name')}</TableHead>
+                           <TableHead className='text-center'>{t('price')}</TableHead>
+                           <TableHead className='text-center w-[80px]'>{t('quantity')}</TableHead>
+                           <TableHead className='text-right'>{t('total')}</TableHead>
+                        </TableRow>
+                     </TableHeader>
+                     <TableBody>
+                        {cartItems.map((item) => (
+                           <TableRow key={item.id}>
+                              <TableCell>
+                                 <Image
+                                    width={60}
+                                    height={60}
+                                    src={item.productImage}
+                                    alt={item.productName}
+                                    className='rounded aspect-square object-cover'
+                                 />
+                              </TableCell>
+                              <TableCell>
+                                 <h3 className='font-medium line-clamp-2'>{item.productName}</h3>
+                              </TableCell>
+                              <TableCell className='text-center'>
+                                 <span className='text-gray-400 line-through block text-sm'>
+                                    {formatCurrency(299999)}
+                                 </span>
+                                 <span>{formatCurrency(item.price)}</span>
+                              </TableCell>
+                              <TableCell className='text-center'>x{item.quantity}</TableCell>
+                              <TableCell className='text-right font-medium text-secondaryColor'>
+                                 {formatCurrency(item.totalPrice)}
+                              </TableCell>
+                           </TableRow>
+                        ))}
+                     </TableBody>
+                  </Table>
                </div>
             </div>
          </div>

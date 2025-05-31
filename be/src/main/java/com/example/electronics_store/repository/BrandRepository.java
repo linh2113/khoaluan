@@ -16,7 +16,7 @@ public interface BrandRepository extends JpaRepository<Brand, Integer>, JpaSpeci
 
     List<Brand> findByBrandNameContaining(String brandName);
 
-    @Query("SELECT b FROM Brand b WHERE b.status = true")
+    @Query("SELECT b FROM Brand b WHERE b.status = 1")
     List<Brand> findAllActiveBrands();
 
     @Query("SELECT COUNT(p) FROM Product p WHERE p.brand.id = :brandId")

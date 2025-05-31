@@ -170,7 +170,7 @@ export default function Statistics() {
          </div>
 
          <Tabs defaultValue='orders' className='w-full'>
-            <TabsList className='mb-4'>
+            <TabsList className='mb-4 flex-wrap h-full'>
                <TabsTrigger value='orders'>Đơn hàng gần đây</TabsTrigger>
                <TabsTrigger value='products'>Sản phẩm bán chạy</TabsTrigger>
                <TabsTrigger value='customers'>Khách hàng hàng đầu</TabsTrigger>

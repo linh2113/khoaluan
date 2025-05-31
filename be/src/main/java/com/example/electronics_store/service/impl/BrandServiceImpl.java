@@ -39,7 +39,7 @@ public class BrandServiceImpl implements BrandService {
         brand.setBrandName(brandDTO.getBrandName());
         brand.setDescription(brandDTO.getDescription());
         brand.setLogo(brandDTO.getLogo());
-        brand.setStatus(brandDTO.getStatus());
+        brand.setStatus(brandDTO.getStatus() != null ? brandDTO.getStatus() : 1);
 
         Brand savedBrand = brandRepository.save(brand);
         return mapBrandToDTO(savedBrand);
@@ -53,25 +53,18 @@ public class BrandServiceImpl implements BrandService {
 
         // Chỉ cập nhật brandName nếu có giá trị mới và khác giá trị hiện tại
         if (brandDTO.getBrandName() != null && !brandDTO.getBrandName().equals(brand.getBrandName())) {
-            // Kiểm tra xem tên thương hiệu mới đã tồn tại chưa
             Optional<Brand> existingBrand = brandRepository.findByBrandName(brandDTO.getBrandName());
             if (existingBrand.isPresent() && !existingBrand.get().getId().equals(id)) {
                 throw new RuntimeException("Brand name already exists");
             }
             brand.setBrandName(brandDTO.getBrandName());
         }
-
-        // Chỉ cập nhật description nếu có giá trị mới
         if (brandDTO.getDescription() != null) {
             brand.setDescription(brandDTO.getDescription());
         }
-
-        // Chỉ cập nhật logo nếu có giá trị mới
         if (brandDTO.getLogo() != null) {
             brand.setLogo(brandDTO.getLogo());
         }
-
-        // Chỉ cập nhật status nếu có giá trị mới
         if (brandDTO.getStatus() != null) {
             brand.setStatus(brandDTO.getStatus());
         }
@@ -147,10 +140,17 @@ public class BrandServiceImpl implements BrandService {
                 }
                 predicates.add(cb.like(cb.lower(root.get("brandName")), searchTerm));
                 predicates.add(cb.like(cb.lower(root.get("description")), searchTerm));
-                if ("true".equalsIgnoreCase(search) || "active".equalsIgnoreCase(search)) {
-                    predicates.add(cb.equal(root.get("status"), true));
-                } else if ("false".equalsIgnoreCase(search) || "inactive".equalsIgnoreCase(search)) {
-                    predicates.add(cb.equal(root.get("status"), false));
+                try {
+                    Integer status = Integer.parseInt(search);
+                    if (status == 0 || status == 1) {
+                        predicates.add(cb.equal(root.get("status"), status));
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+                if ("active".equalsIgnoreCase(search) || "1".equals(search)) {
+                    predicates.add(cb.equal(root.get("status"), 1));
+                } else if ("inactive".equalsIgnoreCase(search) || "0".equals(search)) {
+                    predicates.add(cb.equal(root.get("status"), 0));
                 }
                 if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
                     predicates.add(cb.like(

@@ -17,8 +17,11 @@ import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 
 export default function Cart() {
+   const searchParams = useSearchParams()
+   const purchaseId = searchParams.get('purchaseId')
    const t = useTranslations('Cart')
    const { userId } = useAppContext()
    const updateSelectedCart = useUpdateSelectedCart()
@@ -124,6 +127,13 @@ export default function Cart() {
       const savedPerItem = (originalPrice - item.price) * item.quantity
       return sum + savedPerItem
    }, 0)
+
+   useEffect(() => {
+      if (purchaseId) {
+         const cartId = cartData.find((item) => item.productId === Number(purchaseId))?.id
+         handleCheckItem(true, Number(cartId))
+      }
+   }, [purchaseId])
    return (
       <div className='my-10 container'>
          <div className='overflow-auto'>

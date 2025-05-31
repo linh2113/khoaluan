@@ -16,18 +16,20 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
 import { useGetAllBrand, useGetAllCategories } from '@/queries/useAdmin'
 import { useTranslations } from 'next-intl'
+import { useAppContext } from '@/context/app.context'
 
 export default function Home() {
    const router = useRouter()
    const t = useTranslations('Home')
+   const { searchProduct } = useAppContext()
 
    // Lấy danh sách thương hiệu sản phẩm
    const getAllBrand = useGetAllBrand({})
    const brands = getAllBrand.data?.data.data.content || []
 
    // Lấy danh sách danh mục sản phẩm
-   const getAllCategories = useGetAllCategories()
-   const categories = getAllCategories.data?.data.data || []
+   const getAllCategories = useGetAllCategories({ page: 0, size: 1000 })
+   const categories = getAllCategories.data?.data.data.content || []
    const [currentPage, setCurrentPage] = useState<number>(1)
    const [queryParams, setQueryParams] = useState<GetProductQueryParamsType>({
       page: currentPage - 1,
@@ -113,6 +115,14 @@ export default function Home() {
       router.push(`/compare?ids=${productIds}`)
    }
 
+   useEffect(() => {
+      setQueryParams((prev) => ({
+         ...prev,
+         keyword: searchProduct,
+         page: 0
+      }))
+   }, [searchProduct])
+
    return (
       <div className='container py-6'>
          {/* Banner Carousel */}
@@ -170,8 +180,8 @@ export default function Home() {
                      />
                   </CarouselItem>
                </CarouselContent>
-               <CarouselPrevious className='left-4' />
-               <CarouselNext className='right-4' />
+               <CarouselPrevious />
+               <CarouselNext />
             </Carousel>
          </div>
 
@@ -277,8 +287,8 @@ export default function Home() {
                               <Image
                                  src={product.image || '/placeholder.svg'}
                                  alt={product.name}
-                                 width={40}
-                                 height={40}
+                                 width={100}
+                                 height={100}
                                  className='rounded border'
                               />
                               <button

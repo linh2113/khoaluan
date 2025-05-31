@@ -14,8 +14,10 @@
       "wishlist": "Sản phẩm yêu thích",
       "logout": "Đăng xuất",
       "search": {
-         "placeholder": "Bạn muốn tìm gì...",
-         "button": "Tìm kiếm"
+         "placeholder": "Bạn tìm gì hôm nay...",
+         "button": "Tìm kiếm",
+         "startVoice": "Tìm kiếm bằng giọng nói",
+         "stopVoice": "Dừng tìm kiếm"
       },
       "cart": {
          "title": "Sản phẩm mới thêm",
@@ -129,7 +131,11 @@
          "phoneRequired": "Vui lòng nhập số điện thoại",
          "invalidPhone": "Số điện thoại không hợp lệ (10-11 số)",
          "selectProducts": "Vui lòng chọn sản phẩm để đặt hàng"
-      }
+      },
+      "image": "Hình ảnh",
+      "name": "Tên sản phẩm",
+      "price": "Đơn giá",
+      "quantity": "Số lượng"
    },
    "Cart": {
       "product": "Sản phẩm",
@@ -194,6 +200,13 @@
          "camera": "Camera:",
          "os": "Hệ điều hành:",
          "connectivity": "Kết nối:"
-      }
+      },
+      "totalReviews": "Tổng số đánh giá: {count}",
+      "sortBy": "Sắp xếp theo",
+      "newest": "Mới nhất",
+      "oldest": "Cũ nhất",
+      "highestRating": "Đánh giá cao nhất",
+      "lowestRating": "Đánh giá thấp nhất",
+      "addImage": "Thêm hình ảnh"
    }
 }

@@ -15,7 +15,9 @@
       "logout": "Logout",
       "search": {
          "placeholder": "What are you looking for...",
-         "button": "Search"
+         "button": "Search",
+         "startVoice": "Search with voice",
+         "stopVoice": "Stop voice search"
       },
       "cart": {
          "title": "Recently added products",
@@ -129,7 +131,11 @@
          "phoneRequired": "Please enter phone number",
          "invalidPhone": "Invalid phone number (10-11 digits)",
          "selectProducts": "Please select products to order"
-      }
+      },
+      "image": "Image",
+      "name": "Name",
+      "price": "Price",
+      "quantity": "Quantity"
    },
    "Cart": {
       "product": "Product",
@@ -194,6 +200,13 @@
          "camera": "Camera:",
          "os": "Operating System:",
          "connectivity": "Connectivity:"
-      }
+      },
+      "totalReviews": "Total reviews: {count}",
+      "sortBy": "Sort by",
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "highestRating": "Highest Rating",
+      "lowestRating": "Lowest Rating",
+      "addImage": "Add Image"
    }
 }

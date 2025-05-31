@@ -1,6 +1,5 @@
 package com.example.electronics_store.dto;
 
-import com.example.electronics_store.model.Discount;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class DiscountUpdateDTO {
     // Các trường có thể cập nhật
+    private String name;
     private Double value;
     private LocalDateTime startDate;
     private LocalDateTime endDate;

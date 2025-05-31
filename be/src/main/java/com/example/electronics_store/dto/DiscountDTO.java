@@ -1,6 +1,8 @@
 package com.example.electronics_store.dto;
 
 import com.example.electronics_store.model.Discount;
+
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +21,10 @@ import java.util.Map;
 @AllArgsConstructor
 public class DiscountDTO {
     private Integer id;
+    
+    @Column(name = "name", nullable = false)
+    private String name;
+    
     @NotNull(message = "Type is required")
     private Discount.DiscountType type;
 

@@ -23,4 +23,6 @@ public interface DiscountRepository extends JpaRepository<Discount, Integer>, Jp
     
     @Query("SELECT d FROM Discount d WHERE d.startDate > :now")
     List<Discount> findAllUpcomingDiscounts(@Param("now") LocalDateTime now);
+
+    List<Discount> findByNameContainingIgnoreCase(String name);
 }

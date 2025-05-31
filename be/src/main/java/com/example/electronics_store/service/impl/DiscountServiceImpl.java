@@ -50,6 +50,7 @@ public class DiscountServiceImpl implements DiscountService {
     public DiscountDTO createDiscount(DiscountDTO discountDTO) {
         // Tạo discount
         Discount discount = new Discount();
+        discount.setName(discountDTO.getName());
         discount.setType(discountDTO.getType());
         discount.setValue(discountDTO.getValue());
         discount.setStartDate(discountDTO.getStartDate());
@@ -319,6 +320,9 @@ public class DiscountServiceImpl implements DiscountService {
 
                 String searchTerm = "%" + search.toLowerCase() + "%";
 
+                // Tìm kiếm theo tên discount
+                predicates.add(cb.like(cb.lower(root.get("name")), searchTerm));
+                
                 // Tìm kiếm theo giá trị giảm giá
                 predicates.add(cb.like(cb.lower(root.get("value").as(String.class)), searchTerm));
                 // Tìm kiếm theo loại discount
@@ -491,6 +495,12 @@ public class DiscountServiceImpl implements DiscountService {
         Discount discount = productDiscount.getDiscount();
         boolean updateDiscount = false;
 
+
+        if (discountUpdateDTO.getName() != null && !discountUpdateDTO.getName().equals(discount.getName())) {
+            discount.setName(discountUpdateDTO.getName());
+            updateDiscount = true;
+        }
+
         if (discountUpdateDTO.getValue() != null && !discountUpdateDTO.getValue().equals(discount.getValue())) {
             discount.setValue(discountUpdateDTO.getValue());
             updateDiscount = true;
@@ -618,6 +628,11 @@ public class DiscountServiceImpl implements DiscountService {
         Discount discount = categoryDiscount.getDiscount();
         boolean updateDiscount = false;
 
+        if (discountUpdateDTO.getName() != null && !discountUpdateDTO.getName().equals(discount.getName())) {
+            discount.setName(discountUpdateDTO.getName());
+            updateDiscount = true;
+        }
+
         if (discountUpdateDTO.getValue() != null && !discountUpdateDTO.getValue().equals(discount.getValue())) {
             discount.setValue(discountUpdateDTO.getValue());
             updateDiscount = true;
@@ -742,6 +757,7 @@ public class DiscountServiceImpl implements DiscountService {
 
         return DiscountDTO.builder()
                 .id(productDiscount.getId())
+                .name(discount.getName())
                 .type(Discount.DiscountType.PRODUCT)
                 .productId(productDiscount.getProduct().getId())
                 .productName(productDiscount.getProduct().getName())
@@ -765,6 +781,7 @@ public class DiscountServiceImpl implements DiscountService {
 
         return DiscountDTO.builder()
                 .id(categoryDiscount.getId())
+                .name(discount.getName())
                 .type(Discount.DiscountType.CATEGORY)
                 .categoryId(categoryDiscount.getCategory().getId())
                 .categoryName(categoryDiscount.getCategory().getCategoryName())
@@ -780,6 +797,7 @@ public class DiscountServiceImpl implements DiscountService {
     private DiscountDTO mapToBasicDTO(Discount discount) {
         return DiscountDTO.builder()
                 .id(discount.getId())
+                .name(discount.getName())
                 .type(discount.getType())
                 .value(discount.getValue())
                 .startDate(discount.getStartDate())

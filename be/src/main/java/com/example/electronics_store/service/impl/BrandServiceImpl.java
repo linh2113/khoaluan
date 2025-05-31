@@ -39,7 +39,7 @@ public class BrandServiceImpl implements BrandService {
         brand.setBrandName(brandDTO.getBrandName());
         brand.setDescription(brandDTO.getDescription());
         brand.setLogo(brandDTO.getLogo());
-        brand.setStatus(brandDTO.getStatus() != null ? brandDTO.getStatus() : 1);
+        brand.setStatus(brandDTO.getStatus() != null ? brandDTO.getStatus() : true);
 
         Brand savedBrand = brandRepository.save(brand);
         return mapBrandToDTO(savedBrand);

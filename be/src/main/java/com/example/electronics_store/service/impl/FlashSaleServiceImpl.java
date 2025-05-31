@@ -102,6 +102,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     return mapFlashSaleToDTO(updatedFlashSale);
 }
     @Override
+    @Transactional(readOnly = true)
     public FlashSaleDTO getFlashSaleById(Integer id) {
         FlashSale flashSale = flashSaleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Flash sale not found"));
@@ -109,6 +110,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<FlashSaleDTO> getAllFlashSales() {
         return flashSaleRepository.findAll().stream()
                 .map(this::mapFlashSaleToDTO)

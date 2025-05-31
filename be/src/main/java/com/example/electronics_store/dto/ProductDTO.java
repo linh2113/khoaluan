@@ -39,6 +39,7 @@ public class ProductDTO {
     private LocalDateTime updateAt;
     private String updateBy;
     private Integer stock;
+    private Integer soldQuantity;
     private Double averageRating;
     private Long reviewCount;
     private List<ProductImageDTO> productImages;

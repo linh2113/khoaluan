@@ -36,6 +36,7 @@ public class AdminController {
     private final ShippingMethodService shippingMethodService;
     private final PaymentMethodService paymentMethodService;
     private final DiscountEligibilityService discountEligibilityService;
+    private final ProductSalesService productSalesService;
     @Autowired
     public AdminController(
             UserService userService,
@@ -44,7 +45,7 @@ public class AdminController {
             OrderService orderService,
             DiscountService discountService,
             RatingService ratingService,
-            StatisticsService statisticsService, BrandService brandService, ShippingMethodService shippingMethodService, PaymentMethodService paymentMethodService,DiscountEligibilityService discountEligibilityService) {
+            StatisticsService statisticsService, BrandService brandService, ShippingMethodService shippingMethodService, PaymentMethodService paymentMethodService,DiscountEligibilityService discountEligibilityService, ProductSalesService productSalesService) {
         this.userService = userService;
         this.productService = productService;
         this.categoryService = categoryService;
@@ -56,6 +57,7 @@ public class AdminController {
         this.shippingMethodService = shippingMethodService;
         this.paymentMethodService = paymentMethodService;
         this.discountEligibilityService = discountEligibilityService;
+        this.productSalesService = productSalesService;
     }
 
     // User Management - Unified API with filtering and pagination
@@ -750,6 +752,51 @@ public class AdminController {
             return ResponseEntity.ok(ApiResponse.success(products));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Product Sales Management
+    @GetMapping("/products/best-selling")
+    public ResponseEntity<ApiResponse<?>> getBestSellingProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "soldQuantity") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        try {
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() :
+                    Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<ProductDTO> products = productSalesService.getBestSellingProducts(pageable);
+
+            return ResponseEntity.ok(ApiResponse.success(products));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+
+    @PostMapping("/products/recalculate-sold-quantities")
+    public ResponseEntity<ApiResponse<?>> recalculateAllSoldQuantities() {
+        try {
+            productSalesService.recalculateAllSoldQuantities();
+            return ResponseEntity.ok(ApiResponse.success("Successfully recalculated all sold quantities"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/products/{id}/recalculate-sold-quantity")
+    public ResponseEntity<ApiResponse<?>> recalculateSoldQuantity(@PathVariable Integer id) {
+        try {
+            productSalesService.recalculateSoldQuantity(id);
+            return ResponseEntity.ok(ApiResponse.success("Successfully recalculated sold quantity for product " + id));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
         }
     }

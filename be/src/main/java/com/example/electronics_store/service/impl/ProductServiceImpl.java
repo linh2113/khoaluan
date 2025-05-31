@@ -223,6 +223,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ProductDTO> getAllProducts(ProductFilterRequest filter) {
         Pageable pageable = filter.getPageable();
 
@@ -368,6 +369,7 @@ public class ProductServiceImpl implements ProductService {
                 .map(this::mapProductToDTO);
     }
     @Override
+    @Transactional(readOnly = true)
     public Page<ProductDTO> getAllProducts(Pageable pageable) {
         return productRepository.findAll(pageable)
                 .map(this::mapProductToDTO);
@@ -404,7 +406,7 @@ public class ProductServiceImpl implements ProductService {
         String searchTerm = "%" + search.toLowerCase() + "%";
         spec = spec.and((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-            
+
             // Tìm theo ID
             try {
                 Integer productId = Integer.parseInt(search);
@@ -412,28 +414,28 @@ public class ProductServiceImpl implements ProductService {
             } catch (NumberFormatException ignored) {
                 // Không phải số, bỏ qua
             }
-            
+
             // Tìm theo tên sản phẩm
             predicates.add(cb.like(cb.lower(root.get("name")), searchTerm));
-            
+
             // Tìm theo mô tả
             predicates.add(cb.like(cb.lower(root.get("description")), searchTerm));
-            
+
             // Tìm theo tên danh mục
             predicates.add(cb.like(cb.lower(root.get("category").get("categoryName")), searchTerm));
-            
+
             // Tìm theo tên thương hiệu
             predicates.add(cb.like(cb.lower(root.get("brand").get("brandName")), searchTerm));
-            
+
             // Tìm theo giá (nếu search là số)
             try {
                 Float price = Float.parseFloat(search);
                 predicates.add(cb.equal(root.get("price"), price));
             } catch (NumberFormatException ignored) {
             }
-            
+
             predicates.add(cb.like(cb.lower(root.get("sku")), searchTerm));
-            
+
             // Tìm theo ngày tạo/cập nhật (nếu search là định dạng ngày)
             if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
                 predicates.add(cb.like(
@@ -448,7 +450,7 @@ public class ProductServiceImpl implements ProductService {
             return cb.or(predicates.toArray(new Predicate[0]));
         });
     }
-    
+
     return productRepository.findAll(spec, pageable).map(this::mapProductToDTO);
 }
 
@@ -714,6 +716,7 @@ public class ProductServiceImpl implements ProductService {
         dto.setUpdateAt(product.getUpdateAt());
         dto.setUpdateBy(product.getUpdateBy());
         dto.setStock(product.getStock());
+        dto.setSoldQuantity(product.getSoldQuantity() != null ? product.getSoldQuantity() : 0);
 
         // Get average rating
         Double avgRating = ratingRepository.getAverageRatingForProduct(product.getId());

@@ -8,6 +8,7 @@ import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.CartService;
 import com.example.electronics_store.service.DiscountService;
 import com.example.electronics_store.service.OrderService;
+import com.example.electronics_store.service.ProductSalesService;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,6 +36,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProductDiscountRepository productDiscountRepository;
     private final CategoryDiscountRepository categoryDiscountRepository;
     private final FlashSaleItemRepository flashSaleItemRepository;
+    private final ProductSalesService productSalesService;
 
     @Autowired
     public OrderServiceImpl(
@@ -47,7 +49,7 @@ public class OrderServiceImpl implements OrderService {
             ProductRepository productRepository,
             ShippingMethodRepository shippingMethodRepository,
             PaymentMethodRepository paymentMethodRepository,
-            DiscountService discountService, ProductDiscountRepository productDiscountRepository, CategoryDiscountRepository categoryDiscountRepository, FlashSaleItemRepository flashSaleItemRepository) {
+            DiscountService discountService, ProductDiscountRepository productDiscountRepository, CategoryDiscountRepository categoryDiscountRepository, FlashSaleItemRepository flashSaleItemRepository, ProductSalesService productSalesService) {
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
         this.userRepository = userRepository;
@@ -59,6 +61,7 @@ public class OrderServiceImpl implements OrderService {
         this.productDiscountRepository = productDiscountRepository;
         this.categoryDiscountRepository = categoryDiscountRepository;
         this.flashSaleItemRepository = flashSaleItemRepository;
+        this.productSalesService = productSalesService;
     }
 
     @Override
@@ -286,13 +289,26 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Invalid order status");
         }
 
-        // If cancelling order, restore product stock
+        // If cancelling order, restore product stock and decrease sold quantity
         if (status == 5 && order.getOrderStatus() != 5) {
             List<OrderDetail> orderDetails = orderDetailRepository.findByOrder(order);
             for (OrderDetail orderDetail : orderDetails) {
                 Product product = orderDetail.getProduct();
                 product.setStock(product.getStock() + orderDetail.getQuantity());
                 productRepository.save(product);
+
+                // Decrease sold quantity if it was previously completed
+                if (order.getOrderStatus() == 4) {
+                    productSalesService.updateSoldQuantity(product.getId(), -orderDetail.getQuantity());
+                }
+            }
+        }
+
+        // If completing order, update sold quantity
+        if (status == 4 && order.getOrderStatus() != 4) {
+            List<OrderDetail> orderDetails = orderDetailRepository.findByOrder(order);
+            for (OrderDetail orderDetail : orderDetails) {
+                productSalesService.updateSoldQuantity(orderDetail.getProduct().getId(), orderDetail.getQuantity());
             }
         }
 

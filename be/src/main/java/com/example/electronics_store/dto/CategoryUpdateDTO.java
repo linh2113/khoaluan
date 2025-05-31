@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CategoryUpdateDTO {
     private String categoryName;
-    private Integer status;
+    private Boolean status;
 }

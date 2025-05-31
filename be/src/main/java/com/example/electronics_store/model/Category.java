@@ -16,11 +16,12 @@ public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
+
     @Column(name = "category_name", nullable = false)
     private String categoryName;
-    
-    private Integer status;
+
+    @Column(columnDefinition = "boolean default true")
+    private Boolean status;
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

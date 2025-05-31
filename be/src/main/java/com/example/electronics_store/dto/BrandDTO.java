@@ -27,7 +27,7 @@ public class BrandDTO {
     private LocalDateTime updatedAt;
 
     @NotNull(message = "Status is required")
-    private Integer status;
+    private Boolean status;
 
     private Long productCount;
 }

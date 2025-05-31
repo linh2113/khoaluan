@@ -15,12 +15,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class CategoryDTO {
     private Integer id;
-    
+
     @NotBlank(message = "Category name is required")
     private String categoryName;
-    
+
     @NotNull(message = "Status is required")
-    private Integer status;
+    private Boolean status;
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

@@ -15,7 +15,7 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
+
     @ManyToOne
     @JoinColumn(name = "id_category")
     private Category category;
@@ -26,42 +26,48 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "id_brand")
     private Brand brand;
-    
+
     private String image;
-    
+
     private Integer price;
-    
+
     @Column(name = "des", columnDefinition = "TEXT")
     private String description;
-    
+
     private String warranty;
-    
+
     private Float weight;
-    
+
     private String dimensions;
-    
+
     @Column(name = "create_at", updatable = false)
     private LocalDateTime createAt;
-    
+
     @Column(name = "create_by")
     private String createBy;
-    
+
     private Boolean status;
-    
+
     @Column(name = "update_at")
     private LocalDateTime updateAt;
-    
+
     @Column(name = "update_by")
     private String updateBy;
-    
+
     private Integer stock;
-    
+
+    @Column(name = "sold_quantity", columnDefinition = "INTEGER DEFAULT 0")
+    private Integer soldQuantity = 0;
+
     @PrePersist
     protected void onCreate() {
         createAt = LocalDateTime.now();
         updateAt = LocalDateTime.now();
+        if (soldQuantity == null) {
+            soldQuantity = 0;
+        }
     }
-    
+
     @PreUpdate
     protected void onUpdate() {
         updateAt = LocalDateTime.now();

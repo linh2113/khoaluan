@@ -356,7 +356,7 @@ public class AdminController {
 
             Pageable pageable = PageRequest.of(page, size, sort);
             Page<ProductDTO> products;
-            
+
             if (search != null && !search.trim().isEmpty()) {
                 products = productService.getProductsWithSearch(search, pageable);
             } else {
@@ -588,7 +588,7 @@ public class AdminController {
     @PostMapping("/users")
     public ResponseEntity<ApiResponse<?>> createUser(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
         try {
-            UserDTO createdUser = userService.registerUser(registrationDTO);
+            UserDTO createdUser = userService.createUserByAdmin(registrationDTO);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("User created successfully", createdUser));
         } catch (Exception e) {
@@ -729,7 +729,7 @@ public class AdminController {
         }
     }
 
-   
+
 
     // Lấy danh sách sản phẩm đủ điều kiện để áp dụng discount, khi mở admin
     @GetMapping("/products/eligible-for-discount")

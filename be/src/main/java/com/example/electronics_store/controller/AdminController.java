@@ -340,9 +340,10 @@ public class AdminController {
             }
     }
 
-    // Get all products
+   // Get all products
     @GetMapping("/products")
     public ResponseEntity<ApiResponse<?>> getAllProducts(
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -354,7 +355,13 @@ public class AdminController {
                     Sort.by(sortBy).ascending();
 
             Pageable pageable = PageRequest.of(page, size, sort);
-            Page<ProductDTO> products = productService.getAllProducts(pageable);
+            Page<ProductDTO> products;
+            
+            if (search != null && !search.trim().isEmpty()) {
+                products = productService.getProductsWithSearch(search, pageable);
+            } else {
+                products = productService.getAllProducts(pageable);
+            }
 
             return ResponseEntity.ok(ApiResponse.success(products));
         } catch (Exception e) {

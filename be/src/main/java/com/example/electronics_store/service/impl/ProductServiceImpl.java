@@ -397,6 +397,62 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> getProductsWithSearch(String search, Pageable pageable) {
+    Specification<Product> spec = Specification.where(null);
+    if (search != null && !search.trim().isEmpty()) {
+        String searchTerm = "%" + search.toLowerCase() + "%";
+        spec = spec.and((root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            // Tìm theo ID
+            try {
+                Integer productId = Integer.parseInt(search);
+                predicates.add(cb.equal(root.get("id"), productId));
+            } catch (NumberFormatException ignored) {
+                // Không phải số, bỏ qua
+            }
+            
+            // Tìm theo tên sản phẩm
+            predicates.add(cb.like(cb.lower(root.get("name")), searchTerm));
+            
+            // Tìm theo mô tả
+            predicates.add(cb.like(cb.lower(root.get("description")), searchTerm));
+            
+            // Tìm theo tên danh mục
+            predicates.add(cb.like(cb.lower(root.get("category").get("categoryName")), searchTerm));
+            
+            // Tìm theo tên thương hiệu
+            predicates.add(cb.like(cb.lower(root.get("brand").get("brandName")), searchTerm));
+            
+            // Tìm theo giá (nếu search là số)
+            try {
+                Float price = Float.parseFloat(search);
+                predicates.add(cb.equal(root.get("price"), price));
+            } catch (NumberFormatException ignored) {
+            }
+            
+            predicates.add(cb.like(cb.lower(root.get("sku")), searchTerm));
+            
+            // Tìm theo ngày tạo/cập nhật (nếu search là định dạng ngày)
+            if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
+                predicates.add(cb.like(
+                        cb.function("DATE_FORMAT", String.class, root.get("createAt"), cb.literal("%Y-%m-%d")),
+                        search + "%"
+                ));
+                predicates.add(cb.like(
+                        cb.function("DATE_FORMAT", String.class, root.get("updateAt"), cb.literal("%Y-%m-%d")),
+                        search + "%"
+                ));
+            }
+            return cb.or(predicates.toArray(new Predicate[0]));
+        });
+    }
+    
+    return productRepository.findAll(spec, pageable).map(this::mapProductToDTO);
+}
+
+    @Override
     public List<ProductDTO> getProductsByPriceRange(Integer minPrice, Integer maxPrice) {
         return productRepository.findByPriceRange(minPrice, maxPrice).stream()
                 .map(this::mapProductToDTO)

@@ -59,5 +59,7 @@ public interface ProductService {
     Optional<Product> getProductEntityById(Integer id);
     
     List<ProductDTO> compareProducts(List<Integer> productIds);
+    
+    Page<ProductDTO> getProductsWithSearch(String search, Pageable pageable);
 
 }

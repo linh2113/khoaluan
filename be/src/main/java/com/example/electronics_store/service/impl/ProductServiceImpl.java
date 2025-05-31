@@ -216,6 +216,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductDTO getProductById(Integer id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -376,12 +377,14 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ProductDTO> getAllActiveProducts(Pageable pageable) {
         return productRepository.findAllActiveProducts(pageable)
                 .map(this::mapProductToDTO);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByCategory(Integer categoryId) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -455,6 +458,7 @@ public class ProductServiceImpl implements ProductService {
 }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByPriceRange(Integer minPrice, Integer maxPrice) {
         return productRepository.findByPriceRange(minPrice, maxPrice).stream()
                 .map(this::mapProductToDTO)
@@ -462,6 +466,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByBrand(String brandName) {
         Brand brand = brandRepository.findByBrandName(brandName)
                 .orElseThrow(() -> new RuntimeException("Brand not found: " + brandName));
@@ -473,6 +478,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDTO> getTopSellingProducts() {
         return productRepository.findTopSellingProducts().stream()
                 .map(this::mapProductToDTO)
@@ -480,6 +486,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDTO> getTopRatedProducts() {
         return productRepository.findTopRatedProducts().stream()
                 .map(this::mapProductToDTO)
@@ -488,13 +495,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductDTO> getRecommendedProducts(Integer userId) {
-        // This would typically use a recommendation algorithm
-        // For now, return top selling products as a placeholder
         return getTopSellingProducts();
     }
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDTO> getNewArrivals() {
         // Get the 10 most recently added products
         return productRepository.findAll().stream()
@@ -507,6 +513,7 @@ public class ProductServiceImpl implements ProductService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDTO> getLowStockProducts() {
         return productRepository.findLowStockProducts().stream()
                 .map(this::mapProductToDTO)
@@ -671,6 +678,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDTO> compareProducts(List<Integer> productIds) {
         if (productIds.size() < 2 || productIds.size() > 4) {
             throw new RuntimeException("You can compare between 2 and 4 products");

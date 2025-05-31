@@ -6,6 +6,7 @@ import com.example.electronics_store.dto.RatingDTO;
 import com.example.electronics_store.model.Product;
 import com.example.electronics_store.model.Rating;
 import com.example.electronics_store.model.User;
+import com.example.electronics_store.repository.OrderDetailRepository;
 import com.example.electronics_store.repository.ProductRepository;
 import com.example.electronics_store.repository.RatingRepository;
 import com.example.electronics_store.repository.UserRepository;
@@ -29,16 +30,19 @@ public class RatingServiceImpl implements RatingService {
     private final RatingRepository ratingRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final OrderDetailRepository orderDetailRepository;
     private Cloudinary cloudinary;
     @Autowired
     public RatingServiceImpl(
             RatingRepository ratingRepository,
             UserRepository userRepository,
-            ProductRepository productRepository, Cloudinary cloudinary) {
+            ProductRepository productRepository, Cloudinary cloudinary,
+            OrderDetailRepository orderDetailRepository) {
         this.ratingRepository = ratingRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.cloudinary = cloudinary;
+        this.orderDetailRepository = orderDetailRepository;
     }
 
     @Override
@@ -56,6 +60,12 @@ public class RatingServiceImpl implements RatingService {
             throw new RuntimeException("You have already rated this product");
         }
 
+        // Kiểm tra xem người dùng đã mua sản phẩm này chưa
+        boolean hasPurchased = orderDetailRepository.existsByProductIdAndUserIdAndOrderCompleted(productId, userId);
+        if (!hasPurchased) {
+            throw new RuntimeException("You can only rate products that you have purchased");
+        }
+
         Rating rating = new Rating();
         rating.setUser(user);
         rating.setProduct(product);
@@ -63,6 +73,8 @@ public class RatingServiceImpl implements RatingService {
         rating.setComment(ratingDTO.getComment());
         rating.setParent(null);
         Rating savedRating = ratingRepository.save(rating);
+        // Cập nhật trạng thái đã review trong order detail
+        orderDetailRepository.updateReviewStatusForProductAndUser(productId, userId, true);
         return mapRatingToDTO(savedRating);
     }
 

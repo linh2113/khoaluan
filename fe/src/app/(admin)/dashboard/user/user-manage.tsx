@@ -42,9 +42,8 @@ export default function UserManage() {
       email: '',
       phone: '',
       address: '',
-      role: false,
-      active: 1,
-      password: ''
+      password: '',
+      userName: ''
    })
    const [searchTerm, setSearchTerm] = useState('')
 
@@ -101,7 +100,7 @@ export default function UserManage() {
       setQueryParams({
          ...queryParams,
          page: 0,
-         search: searchTerm
+         search: searchTerm.trim()
       })
    }
 
@@ -247,8 +246,6 @@ export default function UserManage() {
                email: '',
                phone: '',
                address: '',
-               role: false,
-               active: 1,
                password: ''
             })
             getAllUser.refetch()
@@ -450,6 +447,19 @@ export default function UserManage() {
                         />
                      </div>
                   </div>
+                  <div>
+                     <Label htmlFor='userName' className='text-sm'>
+                        Tên đăng nhập <span className='text-red-500'>*</span>
+                     </Label>
+                     <Input
+                        id='userName'
+                        name='userName'
+                        type='text'
+                        value={newUser.userName || ''}
+                        onChange={handleNewUserInputChange}
+                        className='mt-1'
+                     />
+                  </div>
 
                   <div>
                      <Label htmlFor='newEmail' className='text-sm'>
@@ -506,32 +516,6 @@ export default function UserManage() {
                         className='mt-1'
                      />
                   </div>
-
-                  <div>
-                     <Label htmlFor='newRole' className='text-sm'>
-                        Vai trò
-                     </Label>
-                     <Select value={newUser.role ? 'admin' : 'user'} onValueChange={handleNewUserRoleChange}>
-                        <SelectTrigger className='mt-1'>
-                           <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                           <SelectItem value='admin'>Admin</SelectItem>
-                           <SelectItem value='user'>Người dùng</SelectItem>
-                        </SelectContent>
-                     </Select>
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                     <Switch
-                        id='newActive'
-                        checked={newUser.active === 1 ? true : false}
-                        onCheckedChange={handleNewUserStatusChange}
-                     />
-                     <Label htmlFor='newActive' className='text-sm'>
-                        {newUser.active === 1 ? 'Hoạt động' : 'Bị khóa'}
-                     </Label>
-                  </div>
                </div>
 
                <DialogFooter>
@@ -580,7 +564,18 @@ export default function UserManage() {
                            />
                         </div>
                      </div>
-
+                     <div>
+                        <Label htmlFor='userName' className='text-sm'>
+                           Email
+                        </Label>
+                        <Input
+                           id='userName'
+                           name='userName'
+                           value={editingUser.userName || ''}
+                           onChange={handleInputChange}
+                           className='mt-1'
+                        />
+                     </div>
                      <div>
                         <Label htmlFor='email' className='text-sm'>
                            Email
@@ -618,21 +613,6 @@ export default function UserManage() {
                            onChange={handleInputChange}
                            className='mt-1'
                         />
-                     </div>
-
-                     <div>
-                        <Label htmlFor='role' className='text-sm'>
-                           Vai trò
-                        </Label>
-                        <Select value={editingUser.role ? 'admin' : 'user'} onValueChange={handleRoleChange}>
-                           <SelectTrigger className='mt-1'>
-                              <SelectValue />
-                           </SelectTrigger>
-                           <SelectContent>
-                              <SelectItem value='admin'>Admin</SelectItem>
-                              <SelectItem value='user'>Người dùng</SelectItem>
-                           </SelectContent>
-                        </Select>
                      </div>
 
                      <div className='flex items-center gap-2'>

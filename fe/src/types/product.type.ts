@@ -6,14 +6,18 @@ export interface ProductType {
    id: number
    categoryId: number
    categoryName: string
-   discountId: any
-   discountName: any
-   brandId: any
-   brandName: any
+   brandId: number
+   brandName: string
    name: string
    image: string
    price: number
    discountedPrice: number
+   discountStartDate: string
+   discountEndDate: string
+   isDiscountActive: boolean
+   discountType: string
+   discountPercentage: number
+   discountId: number
    description: string
    warranty: string
    weight: number
@@ -22,27 +26,35 @@ export interface ProductType {
    createBy: string
    status: boolean
    updateAt: string
-   updateBy: string
-   stock: number
+   updateBy: any
+   stock: any
+   soldQuantity: number
    averageRating: number
    reviewCount: number
-   productImages: { id: number; imageUrl: string; isPrimary: boolean; displayOrder: any }[]
-   productDetail: {
-      id: number
-      productId: number
-      processor: string
-      ram: string
-      storage: string
-      display: string
-      graphics: string
-      battery: string
-      camera: string
-      operatingSystem: string
-      connectivity: string
-      otherFeatures: string
-   }
+   productImages: ProductImage[]
+   productDetail: ProductDetail | null
+}
+export interface ProductImage {
+   id: number
+   imageUrl: string
+   isPrimary: boolean
+   displayOrder: number
 }
 
+export interface ProductDetail {
+   id: number
+   productId: number
+   processor: string
+   ram: string
+   storage: string
+   display: string
+   graphics: string
+   battery: string
+   camera: string
+   operatingSystem: string
+   connectivity: string
+   otherFeatures: string
+}
 //////GetProductQueryParamsType
 export interface GetProductQueryParamsType {
    page?: number

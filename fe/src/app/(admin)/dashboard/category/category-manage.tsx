@@ -74,7 +74,7 @@ export default function CategoryManage() {
       setQueryParams({
          ...queryParams,
          page: 0,
-         search: searchTerm
+         search: searchTerm.trim()
       })
    }
 

@@ -1,16 +1,22 @@
 import {
+   addProductToFlashSale,
    createBrand,
    createCategory,
+   createDiscount,
+   createFlashSale,
    createPaymentMethod,
    createProduct,
    createShippingMethod,
    createUser,
+   deleteFlashSale,
    deleteProductImage,
+   deleteProductToFlashSale,
    getAllAdminOrder,
    getAllAdminProduct,
    getAllBrand,
    getAllCategories,
    getAllDiscount,
+   getAllFlashSale,
    getAllPaymentMethod,
    getAllRating,
    getAllShippingMethod,
@@ -18,11 +24,14 @@ import {
    getDashboardStatistics,
    updateBrand,
    updateCategory,
+   updateDiscount,
+   updateFlashSale,
    updateOrderPayment,
    updateOrderStatus,
    updatePaymentMethod,
    updatePrimaryImage,
    updateProduct,
+   updateProductToFlashSale,
    updateShippingMethod,
    updateUser,
    uploadProductImage
@@ -30,7 +39,10 @@ import {
 import {
    GetBrandQueryParamsType,
    GetCategoryQueryParamsType,
+   GetDiscountQueryParamsType,
+   GetFlashSaleQueryParamsType,
    GetOrderQueryParamsType,
+   GetProductAdminQueryParamsType,
    GetUserQueryParamsType
 } from '@/types/admin.type'
 import { GetProductQueryParamsType } from '@/types/product.type'
@@ -153,10 +165,40 @@ export const useUpdateBrand = () => {
 }
 
 // Discount
-export const useGetAllDiscount = () => {
+export const useGetAllDiscount = (queryParams: GetDiscountQueryParamsType) => {
    return useQuery({
-      queryKey: ['discount'],
-      queryFn: getAllDiscount
+      queryKey: ['discount', queryParams],
+      queryFn: () => getAllDiscount(queryParams)
+   })
+}
+export const useCreateDiscount = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: createDiscount,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['discount']
+         })
+         toast.success('Thêm mã giảm giá thành công')
+      },
+      onError: () => {
+         toast.error('Thêm mã giảm giá thất bại')
+      }
+   })
+}
+export const useUpdateDiscount = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updateDiscount,
+      onSuccess: () => {
+         queryClient.invalidateQueries({
+            queryKey: ['discount']
+         })
+         toast.success('Cập nhật mã giảm giá thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật mã giảm giá thất bại')
+      }
    })
 }
 
@@ -200,9 +242,7 @@ export const useUpdateCategory = () => {
 }
 
 // Product
-export const useGetAllAdminProduct = (
-   queryParams: Pick<GetProductQueryParamsType, 'page' | 'size' | 'sortBy' | 'sortDir'>
-) => {
+export const useGetAllAdminProduct = (queryParams: GetProductAdminQueryParamsType) => {
    return useQuery({
       queryKey: ['product', queryParams],
       queryFn: () => getAllAdminProduct(queryParams)
@@ -373,5 +413,96 @@ export const useGetAllRating = (queryParams: RatingQueryParamsType & { search?: 
    return useQuery({
       queryKey: ['rating', queryParams],
       queryFn: () => getAllRating(queryParams)
+   })
+}
+
+// Flash Sale
+export const useGetAllFlashSales = (queryParams: GetFlashSaleQueryParamsType) => {
+   return useQuery({
+      queryKey: ['flash-sales', queryParams],
+      queryFn: () => getAllFlashSale(queryParams)
+   })
+}
+
+export const useCreateFlashSale = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: createFlashSale,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['flash-sales'] })
+         toast.success('Thêm Flash Sale thành công')
+      },
+      onError: () => {
+         toast.error('Thêm Flash Sale thất bại')
+      }
+   })
+}
+
+export const useUpdateFlashSale = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updateFlashSale,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['flash-sales'] })
+         toast.success('Cập nhật Flash Sale thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật Flash Sale thất bại')
+      }
+   })
+}
+
+export const useDeleteFlashSale = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: deleteFlashSale,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['flash-sales'] })
+         toast.success('Xóa Flash Sale thành công')
+      },
+      onError: () => {
+         toast.error('Xóa Flash Sale thất bại')
+      }
+   })
+}
+export const useAddProductToFlashSale = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: addProductToFlashSale,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['flash-sales'] })
+         toast.success('Thêm sản phẩm vào Flash Sale thành công')
+      },
+      onError: () => {
+         toast.error('Thêm sản phẩm vào Flash Sale thất bại')
+      }
+   })
+}
+
+export const useUpdateProductInFlashSale = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: updateProductToFlashSale,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['flash-sales'] })
+         toast.success('Cập nhật sản phẩm trong Flash Sale thành công')
+      },
+      onError: () => {
+         toast.error('Cập nhật sản phẩm trong Flash Sale thất bại')
+      }
+   })
+}
+
+export const useDeleteProductFromFlashSale = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: deleteProductToFlashSale,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['flash-sales'] })
+         toast.success('Xóa sản phẩm khỏi Flash Sale thành công')
+      },
+      onError: () => {
+         toast.error('Xóa sản phẩm khỏi Flash Sale thất bại')
+      }
    })
 }

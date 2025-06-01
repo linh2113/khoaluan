@@ -1,18 +1,28 @@
 import http from '@/lib/http'
 import {
+   AddProductToFlashSaleType,
    BrandType,
    CategoryType,
+   CreateDiscountType,
+   CreateFlashSaleType,
    CreateProductType,
    DashboardStatisticsType,
    DiscountType,
+   FlashSaleType,
    GetAllBrandType,
    GetBrandQueryParamsType,
    GetCategoryQueryParamsType,
+   GetDiscountQueryParamsType,
+   GetFlashSaleQueryParamsType,
    GetOrderQueryParamsType,
+   GetProductAdminQueryParamsType,
    GetUserQueryParamsType,
    OrderType,
    PaymentMethodType,
    ShippingMethodType,
+   UpdateDiscountType,
+   UpdateFlashSaleType,
+   UpdateProductToFlashSaleType,
    UserType
 } from '@/types/admin.type'
 import { GetAllProductType, GetProductQueryParamsType } from '@/types/product.type'
@@ -37,7 +47,12 @@ export const createBrand = (body: BrandType) => http.post(`/admin/brands`, body)
 export const updateBrand = (body: BrandType) => http.put(`/admin/brands/${body.id}`, body)
 
 // Discount
-export const getAllDiscount = () => http.get<ResponseData<ResponseDataWithPaginate<DiscountType[]>>>(`/admin/discounts`)
+export const getAllDiscount = (queryParams: GetDiscountQueryParamsType) =>
+   http.get<ResponseData<ResponseDataWithPaginate<DiscountType[]>>>(
+      `/admin/discounts?` + queryString.stringify(queryParams)
+   )
+export const createDiscount = (body: CreateDiscountType) => http.post('/admin/discounts', body)
+export const updateDiscount = (body: UpdateDiscountType) => http.put(`/admin/discounts/${body.id}`, body)
 
 // Category
 export const getAllCategories = (queryParams: GetCategoryQueryParamsType) =>
@@ -48,9 +63,8 @@ export const createCategory = (body: CategoryType) => http.post('/admin/categori
 export const updateCategory = (body: CategoryType) => http.put(`/admin/categories/${body.id}`, body)
 
 // Product
-export const getAllAdminProduct = (
-   queryParams: Pick<GetProductQueryParamsType, 'page' | 'size' | 'sortBy' | 'sortDir'>
-) => http.get<GetAllProductType>(`/admin/products?` + queryString.stringify(queryParams))
+export const getAllAdminProduct = (queryParams: GetProductAdminQueryParamsType) =>
+   http.get<GetAllProductType>(`/admin/products?` + queryString.stringify(queryParams))
 
 export const createProduct = (body: CreateProductType) => http.post(`/admin/products`, body)
 // Thêm API upload hình ảnh sản phẩm
@@ -83,9 +97,23 @@ export const getDashboardStatistics = () => http.get<ResponseData<DashboardStati
 //user
 export const getAllUser = (queryParams: GetUserQueryParamsType) =>
    http.get<ResponseData<ResponseDataWithPaginate<UserType[]>>>(`/admin/users?` + queryString.stringify(queryParams))
-export const updateUser = (body: UserType) => http.put(`/admin/users/${body.id}`, body)
-export const createUser = (body: UserType) => http.post(`/admin/users`, body)
+export const updateUser = (body: Omit<UserType, 'role'>) => http.put(`/admin/users/${body.id}`, body)
+export const createUser = (body: Omit<UserType, 'role' | 'active'>) => http.post(`/admin/users`, body)
 
 //rating
 export const getAllRating = (queryParams: RatingQueryParamsType & { search?: string }) =>
    http.get<ResponseData<ResponseDataWithPaginate<RatingDTO[]>>>(`/admin/ratings?` + queryString.stringify(queryParams))
+
+//flash sale
+export const getAllFlashSale = (queryParams: GetFlashSaleQueryParamsType) =>
+   http.get<ResponseData<ResponseDataWithPaginate<FlashSaleType[]>>>(
+      `/admin/flash-sales?` + queryString.stringify(queryParams)
+   )
+export const createFlashSale = (body: CreateFlashSaleType) => http.post(`/admin/flash-sales`, body)
+export const updateFlashSale = (body: UpdateFlashSaleType) => http.put(`/admin/flash-sales/${body.id}`, body)
+export const deleteFlashSale = (id: number) => http.delete(`admin/flash-sales/${id}`)
+export const addProductToFlashSale = (body: AddProductToFlashSaleType) =>
+   http.post(`admin/flash-sales/${body.id}/products`, body)
+export const updateProductToFlashSale = (body: UpdateProductToFlashSaleType) =>
+   http.put(`admin/flash-sales/items/${body.id}`, body)
+export const deleteProductToFlashSale = (id: number) => http.delete(`admin/flash-sales/items/${id}`)

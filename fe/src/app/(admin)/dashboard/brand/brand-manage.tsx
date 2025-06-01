@@ -83,7 +83,7 @@ export default function BrandManage() {
       setQueryParams({
          ...queryParams,
          page: 0,
-         search: searchTerm
+         search: searchTerm.trim()
       })
    }
 

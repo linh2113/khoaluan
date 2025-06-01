@@ -55,19 +55,19 @@ public class DiscountEligibilityServiceImpl implements DiscountEligibilityServic
             return false;
         }
 
-        // Kiểm tra danh mục của sản phẩm đã có discount chưa
-        boolean hasCategoryDiscount = !categoryDiscountRepository.findActiveDiscountsByCategory(product.getCategory(), now).isEmpty();
-        if (hasCategoryDiscount) {
-            return false;
-        }
 
         return true;
     }
 
     @Override
-    public List<Integer> getEligibleProductIds(List<Integer> productIds) {
+    public boolean hasOverlappingDiscount(Integer productId, LocalDateTime startDate, LocalDateTime endDate) {
+        return !productDiscountRepository.findByProductAndTimeOverlap(productId, startDate, endDate).isEmpty();
+    }
+
+     @Override
+    public List<Integer> getEligibleProductIds(List<Integer> productIds, LocalDateTime startDate, LocalDateTime endDate) {
         return productIds.stream()
-                .filter(this::isProductEligibleForDiscount)
+                .filter(productId -> !hasOverlappingDiscount(productId, startDate, endDate))
                 .collect(Collectors.toList());
     }
 
@@ -138,23 +138,6 @@ public class DiscountEligibilityServiceImpl implements DiscountEligibilityServic
 
             // Sản phẩm không có product discount hiện tại
             predicates.add(cb.not(cb.exists(productDiscountSubquery)));
-
-            // Subquery để kiểm tra sản phẩm không thuộc danh mục có category discount
-            Subquery<Integer> categoryDiscountSubquery = query.subquery(Integer.class);
-            Root<CategoryDiscount> categoryDiscountRoot = categoryDiscountSubquery.from(CategoryDiscount.class);
-            Join<CategoryDiscount, Discount> categoryDiscountJoin = categoryDiscountRoot.join("discount");
-
-            categoryDiscountSubquery.select(categoryDiscountRoot.get("category").get("id"))
-                    .where(
-                            cb.equal(categoryDiscountRoot.get("category").get("id"), root.get("category").get("id")),
-                            cb.lessThanOrEqualTo(categoryDiscountJoin.get("startDate"), now),
-                            cb.greaterThanOrEqualTo(categoryDiscountJoin.get("endDate"), now),
-                            cb.isTrue(categoryDiscountJoin.get("isActive"))
-                    );
-
-            // Sản phẩm không thuộc danh mục có category discount hiện tại
-            predicates.add(cb.not(cb.exists(categoryDiscountSubquery)));
-
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }

@@ -201,10 +201,10 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         FlashSale flashSale = flashSaleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Flash sale not found"));
 
-        LocalDateTime now = LocalDateTime.now();
-        if (flashSale.getStartTime().isBefore(now) && flashSale.getEndTime().isAfter(now)) {
-            throw new RuntimeException("Cannot delete active flash sale");
-        }
+       LocalDateTime now = LocalDateTime.now();
+        if (flashSale.getStartTime().isBefore(now)) {
+        throw new RuntimeException("Cannot delete flash sale that has already started");
+    }
 
         flashSaleRepository.deleteById(id);
     }

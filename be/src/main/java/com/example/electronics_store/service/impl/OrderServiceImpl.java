@@ -33,11 +33,9 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final ShippingMethodRepository shippingMethodRepository;
     private final PaymentMethodRepository paymentMethodRepository;
-    private final ProductDiscountRepository productDiscountRepository;
-    private final CategoryDiscountRepository categoryDiscountRepository;
     private final FlashSaleItemRepository flashSaleItemRepository;
     private final ProductSalesService productSalesService;
-
+    private final DiscountService discountService;
     @Autowired
     public OrderServiceImpl(
             OrderRepository orderRepository,
@@ -49,7 +47,7 @@ public class OrderServiceImpl implements OrderService {
             ProductRepository productRepository,
             ShippingMethodRepository shippingMethodRepository,
             PaymentMethodRepository paymentMethodRepository,
-            DiscountService discountService, ProductDiscountRepository productDiscountRepository, CategoryDiscountRepository categoryDiscountRepository, FlashSaleItemRepository flashSaleItemRepository, ProductSalesService productSalesService) {
+            DiscountService discountService, FlashSaleItemRepository flashSaleItemRepository, ProductSalesService productSalesService) {
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
         this.userRepository = userRepository;
@@ -58,10 +56,9 @@ public class OrderServiceImpl implements OrderService {
         this.productRepository = productRepository;
         this.shippingMethodRepository = shippingMethodRepository;
         this.paymentMethodRepository = paymentMethodRepository;
-        this.productDiscountRepository = productDiscountRepository;
-        this.categoryDiscountRepository = categoryDiscountRepository;
         this.flashSaleItemRepository = flashSaleItemRepository;
         this.productSalesService = productSalesService;
+        this.discountService = discountService;
     }
 
     @Override
@@ -109,17 +106,11 @@ public class OrderServiceImpl implements OrderService {
         PaymentMethod paymentMethod = paymentMethodRepository.findById(orderCreateDTO.getPaymentMethodId())
                 .orElseThrow(() -> new RuntimeException("Payment method not found"));
 
-        // Calculate total price
-        Float totalPrice = selectedCartItems.stream()
-                .map(item -> item.getPrice() * item.getQuantity())
-                .reduce(0f, Float::sum);
-
-
+        Float totalPrice = 0f;
 
         // Create order
         Order order = new Order();
         order.setUser(user);
-        order.setTotalPrice(totalPrice);
         order.setShippingFee(shippingMethod.getBaseCost());
         order.setAddress(orderCreateDTO.getAddress());
         order.setPhoneNumber(orderCreateDTO.getPhoneNumber());
@@ -139,7 +130,9 @@ public class OrderServiceImpl implements OrderService {
             orderDetail.setProduct(cartItem.getProduct());
             orderDetail.setQuantity(cartItem.getQuantity());
             orderDetail.setReviewStatus(false);
-
+            Float currentPrice = calculateDiscountedPriceAtTime(cartItem.getProduct(), orderTime);
+            orderDetail.setPrice(currentPrice);
+            totalPrice += currentPrice * cartItem.getQuantity();
             orderDetails.add(orderDetail);
 
             // Update product stock
@@ -156,6 +149,7 @@ public class OrderServiceImpl implements OrderService {
 
             cartItemIds.add(cartItem.getId());
         }
+        order.setTotalPrice(totalPrice);
         orderDetailRepository.saveAll(orderDetails);
         cartItemRepository.deleteAllByIds(cartItemIds);
         return mapOrderToDTO(savedOrder);
@@ -458,10 +452,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderDetailDTO mapOrderDetailToDTO(OrderDetail orderDetail) {
-        Float price = orderDetail.getOrder().getCreateAt() != null
-                ? calculateDiscountedPriceAtTime(orderDetail.getProduct(), orderDetail.getOrder().getCreateAt())
-                : orderDetail.getProduct().getPrice().floatValue();
-
+        Float price = orderDetail.getPrice();
         Float totalPrice = price * orderDetail.getQuantity();
 
         return OrderDetailDTO.builder()
@@ -477,49 +468,6 @@ public class OrderServiceImpl implements OrderService {
                 .build();
     }
     private Float calculateDiscountedPriceAtTime(Product product, LocalDateTime orderTime) {
-        // Kiểm tra flash sale tại thời điểm đặt hàng
-        Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findByProductAndTimeRange(
-                product.getId(), orderTime);
-        if (flashSaleItem.isPresent()) {
-            return flashSaleItem.get().getFlashPrice().floatValue();
-        }
-
-        // Kiểm tra product discount tại thời điểm đặt hàng
-        List<ProductDiscount> productDiscounts = productDiscountRepository.findByProductAndTimeRange(
-                product.getId(), orderTime);
-        if (!productDiscounts.isEmpty()) {
-            // Lấy discount có priority cao nhất
-            ProductDiscount highestPriorityDiscount = productDiscounts.stream()
-                    .sorted(Comparator.comparing(pd -> pd.getDiscount().getPriority(), Comparator.reverseOrder()))
-                    .findFirst().orElse(null);
-
-            if (highestPriorityDiscount != null) {
-                if (highestPriorityDiscount.getDiscountedPrice() != null) {
-                    return highestPriorityDiscount.getDiscountedPrice().floatValue();
-                } else {
-                    // Tính giá giảm dựa trên phần trăm
-                    double discountValue = highestPriorityDiscount.getDiscount().getValue();
-                    return (float) (product.getPrice() * (1 - discountValue / 100));
-                }
-            }
-        }
-
-        // Kiểm tra category discount tại thời điểm đặt hàng
-        List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findByCategoryAndTimeRange(
-                product.getCategory().getId(), orderTime);
-        if (!categoryDiscounts.isEmpty()) {
-            // Lấy discount có priority cao nhất
-            CategoryDiscount highestPriorityDiscount = categoryDiscounts.stream()
-                    .sorted(Comparator.comparing(cd -> cd.getDiscount().getPriority(), Comparator.reverseOrder()))
-                    .findFirst().orElse(null);
-
-            if (highestPriorityDiscount != null) {
-                double discountValue = highestPriorityDiscount.getDiscount().getValue();
-                return (float) (product.getPrice() * (1 - discountValue / 100));
-            }
-        }
-
-        // Không có giảm giá
-        return product.getPrice().floatValue();
+       return discountService.calculateProductPriceAtTime(product.getId(), orderTime);
     }
 }

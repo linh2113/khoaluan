@@ -56,7 +56,6 @@ public class DiscountServiceImpl implements DiscountService {
         discount.setStartDate(discountDTO.getStartDate());
         discount.setEndDate(discountDTO.getEndDate());
         discount.setIsActive(discountDTO.getIsActive() != null ? discountDTO.getIsActive() : true);
-        discount.setPriority(discountDTO.getPriority() != null ? discountDTO.getPriority() : 0);
 
         Discount savedDiscount = discountRepository.save(discount);
 
@@ -232,30 +231,34 @@ public class DiscountServiceImpl implements DiscountService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         LocalDateTime now = LocalDateTime.now();
+        
         // Kiểm tra flash sale trước
         Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(product.getId(), now);
         if (flashSaleItem.isPresent()) {
             return flashSaleItem.get().getFlashPrice().floatValue();
         }
+        
         // Kiểm tra product discount
         List<ProductDiscount> productDiscounts = productDiscountRepository.findActiveDiscountsByProduct(product, now);
         if (!productDiscounts.isEmpty()) {
-            ProductDiscount highestPriorityDiscount = productDiscounts.get(0);
-            if (highestPriorityDiscount.getDiscountedPrice() != null) {
-                return highestPriorityDiscount.getDiscountedPrice().floatValue();
+            ProductDiscount productDiscount = productDiscounts.get(0);
+            if (productDiscount.getDiscountedPrice() != null) {
+                return productDiscount.getDiscountedPrice().floatValue();
             } else {
-                double discountValue = highestPriorityDiscount.getDiscount().getValue();
+                double discountValue = productDiscount.getDiscount().getValue();
                 return (float) (product.getPrice() * (1 - discountValue / 100));
             }
         }
-        //check category discount
+        
+        // Kiểm tra category discount
         List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findActiveDiscountsByCategory(product.getCategory(), now);
         if (!categoryDiscounts.isEmpty()) {
-            CategoryDiscount highestPriorityDiscount = categoryDiscounts.get(0);
-            double discountValue = highestPriorityDiscount.getDiscount().getValue();
+            CategoryDiscount categoryDiscount = categoryDiscounts.get(0);
+            double discountValue = categoryDiscount.getDiscount().getValue();
             return (float) (product.getPrice() * (1 - discountValue / 100));
         }
-        // no discount
+        
+        // Không có giảm giá
         return product.getPrice().floatValue();
     }
 
@@ -273,32 +276,23 @@ public class DiscountServiceImpl implements DiscountService {
         // Kiểm tra product discount tại thời điểm cụ thể
         List<ProductDiscount> productDiscounts = productDiscountRepository.findByProductAndTimeRange(product.getId(), time);
         if (!productDiscounts.isEmpty()) {
-            // Lấy discount có priority cao nhất
-            ProductDiscount highestPriorityDiscount = productDiscounts.stream()
-                    .sorted(Comparator.comparing(pd -> pd.getDiscount().getPriority(), Comparator.reverseOrder()))
-                    .findFirst().orElse(null);
-
-            if (highestPriorityDiscount != null) {
-                if (highestPriorityDiscount.getDiscountedPrice() != null) {
-                    return highestPriorityDiscount.getDiscountedPrice().floatValue();
-                } else {
-                    // Tính giá giảm dựa trên phần trăm
-                    double discountValue = highestPriorityDiscount.getDiscount().getValue();
-                    return (float) (product.getPrice() * (1 - discountValue / 100));
-                }
-            }
-        }
-        // Kiểm tra category discount tại thời điểm cụ thể
-        List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findByCategoryAndTimeRange(product.getCategory().getId(), time);
-        if (!categoryDiscounts.isEmpty()) {
-            CategoryDiscount highestPriorityDiscount = categoryDiscounts.stream()
-                    .sorted(Comparator.comparing(cd -> cd.getDiscount().getPriority(), Comparator.reverseOrder()))
-                    .findFirst().orElse(null);
-            if (highestPriorityDiscount != null) {
-                double discountValue = highestPriorityDiscount.getDiscount().getValue();
+            ProductDiscount productDiscount = productDiscounts.get(0);
+            if (productDiscount.getDiscountedPrice() != null) {
+                return productDiscount.getDiscountedPrice().floatValue();
+            } else {
+                double discountValue = productDiscount.getDiscount().getValue();
                 return (float) (product.getPrice() * (1 - discountValue / 100));
             }
         }
+        
+        // Kiểm tra category discount tại thời điểm cụ thể
+        List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findByCategoryAndTimeRange(product.getCategory().getId(), time);
+        if (!categoryDiscounts.isEmpty()) {
+            CategoryDiscount categoryDiscount = categoryDiscounts.get(0);
+            double discountValue = categoryDiscount.getDiscount().getValue();
+            return (float) (product.getPrice() * (1 - discountValue / 100));
+        }
+        
         return product.getPrice().floatValue();
     }
 
@@ -359,14 +353,6 @@ public class DiscountServiceImpl implements DiscountService {
                             cb.greaterThanOrEqualTo(root.get("endDate"), now)
                     ));
                 }
-
-                // Tìm kiếm theo độ ưu tiên
-                try {
-                    Integer priority = Integer.parseInt(search);
-                    predicates.add(cb.equal(root.get("priority"), priority));
-                } catch (NumberFormatException ignored) {
-                }
-
                 return cb.or(predicates.toArray(new Predicate[0]));
             });
         }
@@ -390,11 +376,11 @@ public class DiscountServiceImpl implements DiscountService {
         // Fallback
         return DiscountDTO.builder()
                 .id(discount.getId())
+                .name(discount.getName())
                 .value(discount.getValue())
                 .startDate(discount.getStartDate())
                 .endDate(discount.getEndDate())
                 .isActive(discount.getIsActive())
-                .priority(discount.getPriority())
                 .build();
     }
 
@@ -422,11 +408,11 @@ public class DiscountServiceImpl implements DiscountService {
             throw new RuntimeException("This discount has expired");
         }
 
-        // Lọc ra các sản phẩm đủ điều kiện
-        List<Integer> eligibleProductIds = discountEligibilityService.getEligibleProductIds(productIds);
-
-        if (eligibleProductIds.isEmpty()) {
-            throw new RuntimeException("No eligible products found");
+         // Lọc ra các sản phẩm không có discount chồng chéo thời gian
+        List<Integer> eligibleProductIds = discountEligibilityService.getEligibleProductIds(
+                productIds, discount.getStartDate(), discount.getEndDate());
+         if (eligibleProductIds.isEmpty()) {
+            throw new RuntimeException("No eligible products found. All products already have discounts in this time period.");
         }
 
         int successCount = 0;
@@ -517,11 +503,6 @@ public class DiscountServiceImpl implements DiscountService {
             discount.setIsActive(discountUpdateDTO.getIsActive());
             updateDiscount = true;
         }
-        if (discountUpdateDTO.getPriority() != null && !discountUpdateDTO.getPriority().equals(discount.getPriority())) {
-            discount.setPriority(discountUpdateDTO.getPriority());
-            updateDiscount = true;
-        }
-
         if (updateDiscount) {
             discountRepository.save(discount);
         }
@@ -649,10 +630,6 @@ public class DiscountServiceImpl implements DiscountService {
             discount.setIsActive(discountUpdateDTO.getIsActive());
             updateDiscount = true;
         }
-        if (discountUpdateDTO.getPriority() != null && !discountUpdateDTO.getPriority().equals(discount.getPriority())) {
-            discount.setPriority(discountUpdateDTO.getPriority());
-            updateDiscount = true;
-        }
 
         if (updateDiscount) {
             discountRepository.save(discount);
@@ -767,7 +744,6 @@ public class DiscountServiceImpl implements DiscountService {
                 .startDate(discount.getStartDate())
                 .endDate(discount.getEndDate())
                 .isActive(isActive)
-                .priority(discount.getPriority())
                 .createdAt(productDiscount.getCreatedAt())
                 .build();
     }
@@ -790,7 +766,6 @@ public class DiscountServiceImpl implements DiscountService {
                 .startDate(discount.getStartDate())
                 .endDate(discount.getEndDate())
                 .isActive(isActive)
-                .priority(discount.getPriority())
                 .createdAt(categoryDiscount.getCreatedAt())
                 .build();
     }
@@ -803,7 +778,6 @@ public class DiscountServiceImpl implements DiscountService {
                 .startDate(discount.getStartDate())
                 .endDate(discount.getEndDate())
                 .isActive(discount.getIsActive())
-                .priority(discount.getPriority())
                 .createdAt(discount.getCreatedAt())
                 .updatedAt(discount.getUpdatedAt())
                 .assignedCount(0)

@@ -37,6 +37,8 @@ public class AdminController {
     private final PaymentMethodService paymentMethodService;
     private final DiscountEligibilityService discountEligibilityService;
     private final ProductSalesService productSalesService;
+    private final FlashSaleService flashSaleService;
+
     @Autowired
     public AdminController(
             UserService userService,
@@ -45,7 +47,7 @@ public class AdminController {
             OrderService orderService,
             DiscountService discountService,
             RatingService ratingService,
-            StatisticsService statisticsService, BrandService brandService, ShippingMethodService shippingMethodService, PaymentMethodService paymentMethodService,DiscountEligibilityService discountEligibilityService, ProductSalesService productSalesService) {
+            StatisticsService statisticsService, BrandService brandService, ShippingMethodService shippingMethodService, PaymentMethodService paymentMethodService,DiscountEligibilityService discountEligibilityService, ProductSalesService productSalesService, FlashSaleService flashSaleService) {
         this.userService = userService;
         this.productService = productService;
         this.categoryService = categoryService;
@@ -58,6 +60,7 @@ public class AdminController {
         this.paymentMethodService = paymentMethodService;
         this.discountEligibilityService = discountEligibilityService;
         this.productSalesService = productSalesService;
+        this.flashSaleService = flashSaleService;
     }
 
     // User Management - Unified API with filtering and pagination
@@ -797,6 +800,161 @@ public class AdminController {
             return ResponseEntity.ok(ApiResponse.success("Successfully recalculated sold quantity for product " + id));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+     /**
+     * Tạo flash sale mới (Admin only)
+     */
+    @PostMapping("/flash-sale")
+    public ResponseEntity<ApiResponse<?>> createFlashSale(@Valid @RequestBody FlashSaleDTO flashSaleDTO) {
+        try {
+            FlashSaleDTO createdFlashSale = flashSaleService.createFlashSale(flashSaleDTO);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Flash sale created successfully", createdFlashSale));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Cập nhật flash sale (Admin only)
+     */
+    @PutMapping("/flash-sale/{id}")
+    public ResponseEntity<ApiResponse<?>> updateFlashSale(@PathVariable Integer id,
+                                                         @Valid @RequestBody FlashSaleDTO flashSaleDTO) {
+        try {
+            FlashSaleDTO updatedFlashSale = flashSaleService.updateFlashSale(id, flashSaleDTO);
+            return ResponseEntity.ok(ApiResponse.success("Flash sale updated successfully", updatedFlashSale));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Xóa flash sale (Admin only)
+     */
+    @DeleteMapping("/flash-sale/{id}")
+    public ResponseEntity<ApiResponse<?>> deleteFlashSale(@PathVariable Integer id) {
+        try {
+            flashSaleService.deleteFlashSale(id);
+            return ResponseEntity.ok(ApiResponse.success("Flash sale deleted successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Lấy tất cả flash sales (Admin only)
+     */
+    @GetMapping("/flash-sales")
+    public ResponseEntity<ApiResponse<?>> getAllFlashSales(
+        @RequestParam(required = false) String search,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "id") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir) {
+    try {
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<FlashSaleDTO> flashSalePage = flashSaleService.getFlashSalesWithSearch(search, pageable);
+        
+        return ResponseEntity.ok(ApiResponse.success("Flash sales retrieved successfully", flashSalePage));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(e.getMessage()));
+    }
+}
+
+    /**
+     * Thêm sản phẩm vào flash sale (Admin only)
+     */
+    @PostMapping("/flash-sales/{flashSaleId}/products")
+    public ResponseEntity<ApiResponse<?>> addProductToFlashSale(@PathVariable Integer flashSaleId,
+                                                               @Valid @RequestBody FlashSaleItemDTO flashSaleItemDTO) {
+        try {
+            FlashSaleItemDTO addedItem = flashSaleService.addProductToFlashSale(flashSaleId, flashSaleItemDTO);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Product added to flash sale successfully", addedItem));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Cập nhật sản phẩm trong flash sale (Admin only)
+     */
+    @PutMapping("/flash-sales/items/{flashSaleItemId}")
+    public ResponseEntity<ApiResponse<?>> updateFlashSaleItem(@PathVariable Integer flashSaleItemId,
+                                                             @Valid @RequestBody FlashSaleItemDTO flashSaleItemDTO) {
+        try {
+            FlashSaleItemDTO updatedItem = flashSaleService.updateFlashSaleItem(flashSaleItemId, flashSaleItemDTO);
+            return ResponseEntity.ok(ApiResponse.success("Flash sale item updated successfully", updatedItem));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Xóa sản phẩm khỏi flash sale (Admin only)
+     */
+    @DeleteMapping("/flash-sales/items/{flashSaleItemId}")
+    public ResponseEntity<ApiResponse<?>> removeProductFromFlashSale(@PathVariable Integer flashSaleItemId) {
+        try {
+            flashSaleService.removeProductFromFlashSale(flashSaleItemId);
+            return ResponseEntity.ok(ApiResponse.success("Product removed from flash sale successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Lấy danh sách flash sale items theo flash sale id (Admin only)
+     */
+    @GetMapping("/flash-sales/{flashSaleId}/items")
+    public ResponseEntity<ApiResponse<?>> getFlashSaleItems(@PathVariable Integer flashSaleId) {
+        try {
+            List<FlashSaleItemDTO> items = flashSaleService.getFlashSaleItems(flashSaleId);
+            return ResponseEntity.ok(ApiResponse.success("Flash sale items retrieved successfully", items));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Tìm kiếm flash sale theo tên (Admin only)
+     */
+    @GetMapping("/flash-sales/search")
+    public ResponseEntity<ApiResponse<?>> searchFlashSales(@RequestParam String name) {
+        try {
+            List<FlashSaleDTO> flashSales = flashSaleService.searchFlashSalesByName(name);
+            return ResponseEntity.ok(ApiResponse.success("Flash sales found", flashSales));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Lấy thống kê số lượng flash sale đang hoạt động (Admin only)
+     */
+    @GetMapping("/flash-sales/stats/active-count")
+    public ResponseEntity<ApiResponse<?>> getActiveFlashSalesCount() {
+        try {
+            Long count = flashSaleService.countActiveFlashSales();
+            return ResponseEntity.ok(ApiResponse.success("Active flash sales count retrieved", count));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(e.getMessage()));
         }
     }

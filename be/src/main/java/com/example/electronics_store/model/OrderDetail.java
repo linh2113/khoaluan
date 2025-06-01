@@ -27,4 +27,5 @@ public class OrderDetail {
     
     @Column(name = "review_status")
     private Boolean reviewStatus;
+    private Float price;
 }

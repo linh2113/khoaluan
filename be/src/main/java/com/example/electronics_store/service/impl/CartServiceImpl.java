@@ -5,13 +5,13 @@ import com.example.electronics_store.dto.CartItemDTO;
 import com.example.electronics_store.model.*;
 import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.CartService;
+import com.example.electronics_store.service.DiscountService;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,9 +22,7 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final ProductDiscountRepository productDiscountRepository;
-    private final CategoryDiscountRepository categoryDiscountRepository;
-    private final FlashSaleItemRepository flashSaleItemRepository;
+    private final DiscountService discountService;
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
@@ -32,14 +30,12 @@ public class CartServiceImpl implements CartService {
             CartRepository cartRepository,
             CartItemRepository cartItemRepository,
             UserRepository userRepository,
-            ProductRepository productRepository, ProductDiscountRepository productDiscountRepository, CategoryDiscountRepository categoryDiscountRepository, FlashSaleItemRepository flashSaleItemRepository) {
+            ProductRepository productRepository,  DiscountService discountService) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
-        this.productDiscountRepository = productDiscountRepository;
-        this.categoryDiscountRepository = categoryDiscountRepository;
-        this.flashSaleItemRepository = flashSaleItemRepository;
+        this.discountService = discountService;
     }
 
     @Override
@@ -105,36 +101,11 @@ public class CartServiceImpl implements CartService {
 
         return mapCartToDTO(cart);
     }
+
     private Float calculateDiscountedPrice(Product product) {
-        LocalDateTime now = LocalDateTime.now();
-        // Kiểm tra flash sale trước
-        Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(product.getId(), now);
-        if (flashSaleItem.isPresent()) {
-            return flashSaleItem.get().getFlashPrice().floatValue();
-        }
-        // Kiểm tra product discount
-        List<ProductDiscount> productDiscounts = productDiscountRepository.findActiveDiscountsByProduct(product, now);
-        if (!productDiscounts.isEmpty()) {
-            // Lấy discount có priority cao nhất (đã sắp xếp trong query)
-            ProductDiscount highestPriorityDiscount = productDiscounts.get(0);
-            if (highestPriorityDiscount.getDiscountedPrice() != null) {
-                return highestPriorityDiscount.getDiscountedPrice().floatValue();
-            } else {
-                // Tính giá giảm dựa trên phần trăm
-                double discountValue = highestPriorityDiscount.getDiscount().getValue();
-                return (float) (product.getPrice() * (1 - discountValue / 100));
-            }
-        }
-        // Kiểm tra category discount
-        List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findActiveDiscountsByCategory(product.getCategory(), now);
-        if (!categoryDiscounts.isEmpty()) {
-            // Lấy discount có priority cao nhất
-            CategoryDiscount highestPriorityDiscount = categoryDiscounts.get(0);
-            double discountValue = highestPriorityDiscount.getDiscount().getValue();
-            return (float) (product.getPrice() * (1 - discountValue / 100));
-        }
-        return product.getPrice().floatValue();
+        return discountService.calculateProductPrice(product.getId());
     }
+
     @Override
     @Transactional
     public CartDTO updateCartItemQuantity(Integer userId, Integer cartItemId, Integer quantity) {

@@ -39,8 +39,6 @@ public class Discount {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    private Integer priority;
-
     public enum DiscountType {
         PRODUCT, CATEGORY
     }

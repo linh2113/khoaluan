@@ -158,6 +158,7 @@ GET /api/flash-sales/check-product/{productId}
 - Kiểm tra flash sale khi tạo order
 - Cập nhật `soldCount` khi order thành công
 - Validate stock limit
+- Lưu giá flash sale vào OrderDetail khi tạo đơn hàng
 
 ### 2. Cart Service
 - Hiển thị giá flash sale trong cart
@@ -210,34 +211,6 @@ CREATE TABLE flash_sale_items (
     stock_limit INTEGER,
     sold_count INTEGER DEFAULT 0
 );
-```
-
-## Testing
-
-### Unit Tests
-- FlashSaleServiceImpl methods
-- Validation logic
-- Business rules
-
-### Integration Tests
-- API endpoints
-- Database operations
-- Service integrations
-
-### Test Data
-```json
-{
-  "flashSale": {
-    "name": "Test Flash Sale",
-    "startTime": "2024-12-01T00:00:00",
-    "endTime": "2024-12-07T23:59:59"
-  },
-  "flashSaleItem": {
-    "productId": 1,
-    "flashPrice": 100000,
-    "stockLimit": 50
-  }
-}
 ```
 
 ---
@@ -373,65 +346,12 @@ POST /api/v1/admin/discounts/{discountId}/assign-categories
 - Discount có priority cao hơn sẽ được áp dụng trước
 - Flash sale có ưu tiên cao nhất
 - Product discount có ưu tiên cao hơn category discount
+- Một sản phẩm có thể thuộc cả product discount và category discount, nhưng sẽ áp dụng product discount
 
 ### 3. Status Management
 - Active: Discount đang hoạt động (trong khoảng thời gian)
 - Expired: Discount đã hết hạn
 - Upcoming: Discount chưa bắt đầu
-
-## Error Handling
-
-### Common Error Codes
-- `400 Bad Request`: Dữ liệu không hợp lệ
-- `404 Not Found`: Discount không tồn tại
-- `422 Unprocessable Entity`: Vi phạm business rules
-
-### Error Messages
-- "Discount not found"
-- "This discount is not applicable to products"
-- "This discount is not applicable to categories"
-- "Product ID {id} already has this discount"
-- "Category ID {id} already has this discount"
-
-## Database Schema
-
-### discounts table
-```sql
-CREATE TABLE discounts (
-    id SERIAL PRIMARY KEY,
-    type VARCHAR(20) NOT NULL CHECK (type IN ('PRODUCT', 'CATEGORY')),
-    value DECIMAL(5,2) NOT NULL CHECK (value >= 0 AND value <= 100),
-    start_date TIMESTAMP NOT NULL,
-    end_date TIMESTAMP NOT NULL,
-    is_active BOOLEAN DEFAULT true,
-    priority INTEGER DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### product_discounts table
-```sql
-CREATE TABLE product_discounts (
-    id SERIAL PRIMARY KEY,
-    id_discount INTEGER NOT NULL REFERENCES discounts(id),
-    id_product INTEGER NOT NULL REFERENCES products(id),
-    discounted_price DECIMAL(10,2) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(id_discount, id_product)
-);
-```
-
-### category_discounts table
-```sql
-CREATE TABLE category_discounts (
-    id SERIAL PRIMARY KEY,
-    id_discount INTEGER NOT NULL REFERENCES discounts(id),
-    id_category INTEGER NOT NULL REFERENCES categories(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(id_discount, id_category)
-);
-```
 
 ## Integration Points
 
@@ -446,15 +366,34 @@ CREATE TABLE category_discounts (
 ### 3. Cart Service
 - Tính toán giá discount trong giỏ hàng
 - Hiển thị thông tin tiết kiệm
+- Sử dụng DiscountService để tính giá sản phẩm
 
 ### 4. Order Service
 - Áp dụng discount khi tạo đơn hàng
 - Lưu thông tin discount đã áp dụng
+- Lưu giá đã giảm vào OrderDetail khi tạo đơn hàng
+- Sử dụng DiscountService để tính giá sản phẩm tại thời điểm đặt hàng
+
+## Centralized Price Calculation
+
+Để đảm bảo tính nhất quán trong việc tính giá, hệ thống sử dụng DiscountService làm điểm trung tâm:
+
+### DiscountService
+- `calculateProductPrice(Integer productId)`: Tính giá sản phẩm tại thời điểm hiện tại
+- `calculateProductPriceAtTime(Integer productId, LocalDateTime time)`: Tính giá sản phẩm tại thời điểm cụ thể
+- `getProductDiscountInfo(Integer productId)`: Lấy thông tin giảm giá của sản phẩm
+
+### Quy trình tính giá
+1. Kiểm tra flash sale (ưu tiên cao nhất)
+2. Kiểm tra product discount (ưu tiên thứ hai)
+3. Kiểm tra category discount (ưu tiên thấp nhất)
+4. Trả về giá gốc nếu không có giảm giá nào áp dụng
 
 ## Testing
 
 ### Unit Tests
 - DiscountServiceImpl methods
+- FlashSaleServiceImpl methods
 - Validation logic
 - Business rules
 - Assignment operations
@@ -464,17 +403,27 @@ CREATE TABLE category_discounts (
 - Database operations
 - Service integrations
 - Bulk operations
+- Price calculation across services
 
 ### Test Data
 ```json
 {
+  "flashSale": {
+    "name": "Test Flash Sale",
+    "startTime": "2024-12-01T00:00:00",
+    "endTime": "2024-12-07T23:59:59"
+  },
+  "flashSaleItem": {
+    "productId": 1,
+    "flashPrice": 100000,
+    "stockLimit": 50
+  },
   "productDiscount": {
     "type": "PRODUCT",
     "value": 25.0,
     "startDate": "2024-01-01T00:00:00",
     "endDate": "2024-01-31T23:59:59",
     "isActive": true,
-    "priority": 3
   },
   "categoryDiscount": {
     "type": "CATEGORY",
@@ -482,7 +431,5 @@ CREATE TABLE category_discounts (
     "startDate": "2024-01-01T00:00:00",
     "endDate": "2024-01-31T23:59:59",
     "isActive": true,
-    "priority": 2
   }
 }
-```

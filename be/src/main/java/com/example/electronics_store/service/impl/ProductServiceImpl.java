@@ -437,8 +437,6 @@ public class ProductServiceImpl implements ProductService {
             } catch (NumberFormatException ignored) {
             }
 
-            predicates.add(cb.like(cb.lower(root.get("sku")), searchTerm));
-
             // Tìm theo ngày tạo/cập nhật (nếu search là định dạng ngày)
             if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
                 predicates.add(cb.like(

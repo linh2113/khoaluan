@@ -8,33 +8,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FlashSaleDTO {
-    private Integer id;
-
+public class CreateFlashSaleDTO {
+    @NotBlank(message = "Name is required")
     private String name;
 
     private String description;
 
+    @NotNull(message = "Start time is required")
     private LocalDateTime startTime;
-    
+
+    @NotNull(message = "End time is required")
     private LocalDateTime endTime;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    private List<FlashSaleItemDTO> items;
-
-    private Boolean isActive;
-
-    private Boolean isUpcoming;
-
-    private Boolean isPast;
 }
-

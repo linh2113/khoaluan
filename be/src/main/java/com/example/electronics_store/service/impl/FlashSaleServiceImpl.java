@@ -61,46 +61,95 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     @Override
     @Transactional
     public FlashSaleDTO updateFlashSale(Integer id, FlashSaleDTO flashSaleDTO) {
-        FlashSale flashSale = flashSaleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Flash sale not found"));
+    FlashSale flashSale = flashSaleRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Flash sale not found"));
 
+    // Kiểm tra xem flash sale đã bắt đầu chưa
+    LocalDateTime now = LocalDateTime.now();
+    if (flashSale.getStartTime().isBefore(now)) {
+        throw new RuntimeException("Cannot update flash sale that has already started");
+    }
+    
+    // Cập nhật thời gian
+    LocalDateTime newStartTime = flashSaleDTO.getStartTime();
+    LocalDateTime newEndTime = flashSaleDTO.getEndTime();
+    
+    // Nếu chỉ cập nhật endTime
+    if (newStartTime == null && newEndTime != null) {
+        // Sử dụng startTime hiện tại
+        newStartTime = flashSale.getStartTime();
+        
         // Validate thời gian
-        validateFlashSaleTime(flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime());
-
-        // Kiểm tra xem flash sale đã bắt đầu chưa
-        LocalDateTime now = LocalDateTime.now();
-        if (flashSale.getStartTime().isBefore(now)) {
-            throw new RuntimeException("Cannot update flash sale that has already started");
+        if (newEndTime.isBefore(newStartTime)) {
+            throw new RuntimeException("End time must be after start time");
         }
-        // Chỉ cập nhật thời gian nếu cả hai trường đều được cung cấp
-        if (flashSaleDTO.getStartTime() != null && flashSaleDTO.getEndTime() != null) {
-        // Validate thời gian
-            validateFlashSaleTime(flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime());
-
+        
         // Kiểm tra xem có flash sale nào khác đang hoạt động trong khoảng thời gian mới không
-        if (!flashSale.getStartTime().equals(flashSaleDTO.getStartTime()) ||
-            !flashSale.getEndTime().equals(flashSaleDTO.getEndTime())) {
+        if (!flashSale.getEndTime().equals(newEndTime)) {
             if (flashSaleRepository.existsActiveFlashSaleInTimeRange(
-                    flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime())) {
+                    newStartTime, newEndTime)) {
                 throw new IllegalArgumentException("There is already another flash sale in this time range");
             }
         }
-        flashSale.setStartTime(flashSaleDTO.getStartTime());
-        flashSale.setEndTime(flashSaleDTO.getEndTime());
+        
+        flashSale.setEndTime(newEndTime);
+    }
+    // Nếu chỉ cập nhật startTime
+    else if (newStartTime != null && newEndTime == null) {
+        // Sử dụng endTime hiện tại
+        newEndTime = flashSale.getEndTime();
+        
+        // Validate thời gian
+        if (newStartTime.isAfter(newEndTime)) {
+            throw new RuntimeException("Start time must be before end time");
+        }
+        
+        if (newStartTime.isBefore(now)) {
+            throw new RuntimeException("Start time cannot be in the past");
+        }
+        
+        // Kiểm tra xem có flash sale nào khác đang hoạt động trong khoảng thời gian mới không
+        if (!flashSale.getStartTime().equals(newStartTime)) {
+            if (flashSaleRepository.existsActiveFlashSaleInTimeRange(
+                    newStartTime, newEndTime)) {
+                throw new IllegalArgumentException("There is already another flash sale in this time range");
+            }
+        }
+        
+        flashSale.setStartTime(newStartTime);
+    }
+        // Nếu cập nhật cả startTime và endTime
+    else if (newStartTime != null && newEndTime != null) {
+        // Validate thời gian
+        validateFlashSaleTime(newStartTime, newEndTime);
+        
+        // Kiểm tra xem có flash sale nào khác đang hoạt động trong khoảng thời gian mới không
+        if (!flashSale.getStartTime().equals(newStartTime) ||
+            !flashSale.getEndTime().equals(newEndTime)) {
+            if (flashSaleRepository.existsActiveFlashSaleInTimeRange(
+                    newStartTime, newEndTime)) {
+                throw new IllegalArgumentException("There is already another flash sale in this time range");
+            }
+        }
+        
+        flashSale.setStartTime(newStartTime);
+        flashSale.setEndTime(newEndTime);
     }
 
-        // Chỉ cập nhật các trường nếu chúng được cung cấp
-        if (flashSaleDTO.getName() != null) {
-            flashSale.setName(flashSaleDTO.getName());
-        }
+    // Cập nhật các trường khác nếu được cung cấp
+    if (flashSaleDTO.getName() != null) {
+        flashSale.setName(flashSaleDTO.getName());
+    }
 
-        if (flashSaleDTO.getDescription() != null) {
-            flashSale.setDescription(flashSaleDTO.getDescription());
-        }
+    if (flashSaleDTO.getDescription() != null) {
+        flashSale.setDescription(flashSaleDTO.getDescription());
+    }
 
     FlashSale updatedFlashSale = flashSaleRepository.save(flashSale);
     return mapFlashSaleToDTO(updatedFlashSale);
-}
+    }
+
+
     @Override
     @Transactional(readOnly = true)
     public FlashSaleDTO getFlashSaleById(Integer id) {

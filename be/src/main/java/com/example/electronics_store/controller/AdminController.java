@@ -805,17 +805,22 @@ public class AdminController {
      /**
      * Tạo flash sale mới (Admin only)
      */
-    @PostMapping("/flash-sale")
-    public ResponseEntity<ApiResponse<?>> createFlashSale(@Valid @RequestBody FlashSaleDTO flashSaleDTO) {
+    @PostMapping("/flash-sales")
+    public ResponseEntity<ApiResponse<?>> createFlashSale(@Valid @RequestBody CreateFlashSaleDTO createFlashSaleDTO) {
         try {
+            FlashSaleDTO flashSaleDTO = FlashSaleDTO.builder()
+                .name(createFlashSaleDTO.getName())
+                .description(createFlashSaleDTO.getDescription())
+                .startTime(createFlashSaleDTO.getStartTime())
+                .endTime(createFlashSaleDTO.getEndTime())
+                .build();
             FlashSaleDTO createdFlashSale = flashSaleService.createFlashSale(flashSaleDTO);
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success("Flash sale created successfully", createdFlashSale));
+                .body(ApiResponse.success("Flash sale created successfully", createdFlashSale));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
+                .body(ApiResponse.error(e.getMessage()));
+    }}
 
     /**
      * Cập nhật flash sale (Admin only)

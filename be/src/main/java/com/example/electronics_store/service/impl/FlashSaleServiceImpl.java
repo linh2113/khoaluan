@@ -172,6 +172,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<FlashSaleDTO> getCurrentFlashSales() {
         LocalDateTime now = LocalDateTime.now();
         return flashSaleRepository.findCurrentFlashSales(now).stream()
@@ -180,6 +181,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<FlashSaleDTO> getUpcomingFlashSales() {
         LocalDateTime now = LocalDateTime.now();
         return flashSaleRepository.findUpcomingFlashSales(now).stream()
@@ -188,6 +190,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<FlashSaleDTO> getPastFlashSales() {
         LocalDateTime now = LocalDateTime.now();
         return flashSaleRepository.findPastFlashSales(now).stream()
@@ -288,6 +291,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDTO> getFlashSaleProducts(Integer flashSaleId) {
         List<FlashSaleItem> flashSaleItems = flashSaleItemRepository.findByFlashSaleId(flashSaleId);
         return flashSaleItems.stream()
@@ -296,17 +300,20 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean isProductInFlashSale(Integer productId) {
         LocalDateTime now = LocalDateTime.now();
         return flashSaleItemRepository.findActiveFlashSaleItemByProductId(productId, now).isPresent();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<FlashSale> getFlashSaleEntityById(Integer id) {
         return flashSaleRepository.findById(id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<FlashSaleItemDTO> getFlashSaleItems(Integer flashSaleId) {
         List<FlashSaleItem> flashSaleItems = flashSaleItemRepository.findByFlashSaleId(flashSaleId);
         return flashSaleItems.stream()
@@ -315,6 +322,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<FlashSaleDTO> searchFlashSalesByName(String name) {
         return flashSaleRepository.findByNameContainingIgnoreCase(name).stream()
                 .map(this::mapFlashSaleToDTO)

@@ -93,6 +93,7 @@ public class SecurityConfig {
                         "/oauth2/**",
                         "/login/oauth2/code/*",
                         "/products/**",
+                        "/flash-sales/**",
                         "/categories/**",
                         "/swagger-ui/**",
                         "/api-docs/**"

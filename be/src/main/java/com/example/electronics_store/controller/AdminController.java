@@ -1,7 +1,6 @@
 package com.example.electronics_store.controller;
 
 import com.example.electronics_store.dto.*;
-import com.example.electronics_store.model.Discount;
 import com.example.electronics_store.service.*;
 import com.example.electronics_store.service.domain.DiscountEligibilityService;
 import jakarta.validation.Valid;

@@ -3,6 +3,7 @@ package com.example.electronics_store.service.impl;
 import com.example.electronics_store.dto.FlashSaleDTO;
 import com.example.electronics_store.dto.FlashSaleItemDTO;
 import com.example.electronics_store.dto.ProductDTO;
+import com.example.electronics_store.model.Brand;
 import com.example.electronics_store.model.FlashSale;
 import com.example.electronics_store.model.FlashSaleItem;
 import com.example.electronics_store.model.Product;
@@ -10,6 +11,9 @@ import com.example.electronics_store.repository.FlashSaleRepository;
 import com.example.electronics_store.repository.FlashSaleItemRepository;
 import com.example.electronics_store.repository.ProductRepository;
 import com.example.electronics_store.service.FlashSaleService;
+
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -149,6 +153,63 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     return mapFlashSaleToDTO(updatedFlashSale);
     }
 
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> getFlashSaleProductsWithFilters(Integer flashSaleId,String search,Integer minPrice,Integer maxPrice,Pageable pageable) {
+    // Kiểm tra flash sale có tồn tại không
+    FlashSale flashSale = flashSaleRepository.findById(flashSaleId)
+            .orElseThrow(() -> new RuntimeException("Flash sale not found"));
+    
+    // Tạo specification để lọc sản phẩm
+    Specification<Product> spec = (root, query, cb) -> {
+        List<Predicate> predicates = new ArrayList<>();
+        
+        // Join với FlashSaleItem và FlashSale
+        Join<Product, FlashSaleItem> flashSaleItemJoin = root.join("flashSaleItems", JoinType.INNER);
+        Join<FlashSaleItem, FlashSale> flashSaleJoin = flashSaleItemJoin.join("flashSale", JoinType.INNER);
+        
+        // Lọc theo flash sale ID
+        predicates.add(cb.equal(flashSaleJoin.get("id"), flashSaleId));
+        
+        // Lọc theo từ khóa (tên sản phẩm hoặc mô tả)
+        if (search != null && !search.trim().isEmpty()) {
+            String searchTerm = "%" + search.toLowerCase() + "%";
+            predicates.add(cb.or(
+                cb.like(cb.lower(root.get("name")), searchTerm),
+                cb.like(cb.lower(root.get("description")), searchTerm)
+            ));
+        }
+        
+        
+        // Lọc theo khoảng giá (sử dụng giá flash sale)
+        if (minPrice != null) {
+            predicates.add(cb.greaterThanOrEqualTo(flashSaleItemJoin.get("flashPrice"), minPrice));
+        }
+        
+        if (maxPrice != null) {
+            predicates.add(cb.lessThanOrEqualTo(flashSaleItemJoin.get("flashPrice"), maxPrice));
+        }
+        
+        
+        // Chỉ lấy sản phẩm đang active
+        predicates.add(cb.isTrue(root.get("status")));
+        
+        return cb.and(predicates.toArray(new Predicate[0]));
+    };
+    
+    // Thực hiện truy vấn với specification và pageable
+    Page<Product> productPage = productRepository.findAll(spec, pageable);
+    
+    // Chuyển đổi kết quả sang DTO
+    return productPage.map(product -> {
+        // Tìm flash sale item tương ứng
+        FlashSaleItem flashSaleItem = flashSaleItemRepository.findByFlashSaleIdAndProductId(flashSaleId, product.getId())
+                .orElse(null);
+        // Map product sang DTO với thông tin flash sale
+        return mapProductToDTO(product, flashSaleItem);
+    });
+    }
 
     @Override
     @Transactional(readOnly = true)

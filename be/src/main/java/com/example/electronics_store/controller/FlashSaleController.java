@@ -5,6 +5,10 @@ import com.example.electronics_store.dto.FlashSaleDTO;
 import com.example.electronics_store.dto.ProductDTO;
 import com.example.electronics_store.service.FlashSaleService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -75,18 +79,28 @@ public class FlashSaleController {
         }
     }
 
-    /**
-     * Lấy danh sách sản phẩm trong flash sale (Public)
-     */
     @GetMapping("/{id}/products")
-    public ResponseEntity<ApiResponse<?>> getFlashSaleProducts(@PathVariable Integer id) {
-        try {
-            List<ProductDTO> products = flashSaleService.getFlashSaleProducts(id);
-            return ResponseEntity.ok(ApiResponse.success("Flash sale products retrieved successfully", products));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+    public ResponseEntity<ApiResponse<?>> getFlashSaleProducts(
+        @PathVariable Integer id,
+        @RequestParam(required = false) String search,
+        @RequestParam(required = false) Integer minPrice,
+        @RequestParam(required = false) Integer maxPrice,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "id") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir) {
+    try {
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<ProductDTO> products = flashSaleService.getFlashSaleProductsWithFilters(
+                id, search, minPrice, maxPrice, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Flash sale products retrieved successfully", products));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(e.getMessage()));
+    }
     }
 
     /**

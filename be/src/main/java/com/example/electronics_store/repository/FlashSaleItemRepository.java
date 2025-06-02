@@ -36,5 +36,5 @@ public interface FlashSaleItemRepository extends JpaRepository<FlashSaleItem, In
     Optional<FlashSaleItem> findByProductAndTimeRange(@Param("productId") Integer productId,
                                                       @Param("orderTime") LocalDateTime orderTime);
 
-
+Optional<FlashSaleItem> findByFlashSaleIdAndProductId(Integer flashSaleId, Integer productId);
 }

@@ -51,7 +51,7 @@ public interface FlashSaleService {
 
     // Lấy thống kê flash sale
     Long countActiveFlashSales();
-
+    Page<ProductDTO> getFlashSaleProductsWithFilters( Integer flashSaleId,String search,Integer minPrice,Integer maxPrice,Pageable pageable);
     // Kiểm tra xem có thể tạo flash sale trong khoảng thời gian không
     boolean canCreateFlashSaleInTimeRange(LocalDateTime startTime, LocalDateTime endTime);
 }

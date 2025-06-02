@@ -278,13 +278,14 @@ public class CartServiceImpl implements CartService {
     private CartItemDTO mapCartItemToDTO(CartItem cartItem) {
         Float price = calculateDiscountedPrice(cartItem.getProduct());
         Float totalPrice = price * cartItem.getQuantity();
-    
+        Integer originalPrice = cartItem.getProduct().getPrice();
         return CartItemDTO.builder()
                 .id(cartItem.getId())
                 .productId(cartItem.getProduct().getId())
                 .productName(cartItem.getProduct().getName())
                 .productImage(cartItem.getProduct().getImage())
                 .quantity(cartItem.getQuantity())
+                .originalPrice(originalPrice)
                 .price(price)
                 .totalPrice(totalPrice)
                 .createAt(cartItem.getCreateAt())

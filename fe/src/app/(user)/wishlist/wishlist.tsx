@@ -8,7 +8,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Heart, Loader2, ShoppingCart, Trash2 } from 'lucide-react'
+import { Heart, Loader2, ShoppingCart, Star, Trash2 } from 'lucide-react'
 import { toast } from 'react-toastify'
 import {
    AlertDialog,
@@ -151,7 +151,16 @@ export default function Wishlist() {
                      </h3>
                   </Link>
 
-                  <p className='text-secondaryColor font-bold mb-4'>{formatCurrency(item.productPrice)}</p>
+                  <div className='mt-2 flex items-center justify-between'>
+                     <div className='flex items-center gap-2'>
+                        {item.discountedPrice && item.productPrice && item.discountedPrice < item.productPrice && (
+                           <div className='text-gray-500 text-xs line-through'>{formatCurrency(item.productPrice)}</div>
+                        )}
+                        <div className='text-secondaryColor font-bold'>
+                           {formatCurrency(item.discountedPrice || item.productPrice || 0)}
+                        </div>
+                     </div>
+                  </div>
 
                   <div className='text-xs text-gray-500 mb-4'>
                      Đã thêm vào: {format(new Date(item.addedAt), 'dd/MM/yyyy', { locale: vi })}

@@ -49,7 +49,7 @@ export default function RatingManage() {
       setCurrentPage(1)
       setQueryParams((prev) => ({
          ...prev,
-         search: searchTerm,
+         search: searchTerm.trim(),
          page: 0
       }))
    }

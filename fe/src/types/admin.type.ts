@@ -44,18 +44,53 @@ export interface BrandType {
 }
 
 // Discount
+export interface GetDiscountQueryParamsType {
+   page?: number
+   size?: number
+   sortBy?: string | 'id'
+   sortDir?: string | 'desc'
+   search?: string
+}
 export interface DiscountType {
    id: number
-   code: string
-   discountName: string
-   description: string
+   name: string
+   type: 'PRODUCT' | 'CATEGORY'
    value: number
-   quantity: number
+   startDate: string
+   endDate: string
+   isActive: boolean
+   productIds: any
+   discountedPrices: any
+   categoryIds: any
+   productName: any
+   discountedPrice: any
+   categoryName: string
+   productId: any
+   categoryId: number
+   createdAt: string
+   updatedAt: any
+   discountId: number
+   assignedCount: any
+}
+
+export interface CreateDiscountType {
+   name: string
+   type: 'PRODUCT' | 'CATEGORY'
+   value: number
    startDate: string
    endDate: string
    isActive: boolean
 }
 
+export interface UpdateDiscountType {
+   id: number
+   name: string
+   type: 'PRODUCT' | 'CATEGORY'
+   value: number
+   startDate: string
+   endDate: string
+   isActive: boolean
+}
 // Category
 export interface GetCategoryQueryParamsType {
    page?: number
@@ -71,6 +106,13 @@ export interface CategoryType {
 }
 
 // Product
+export interface GetProductAdminQueryParamsType {
+   page?: number
+   size?: number
+   sortBy?: string | 'id'
+   sortDir?: string | 'desc'
+   search?: string
+}
 export interface CreateProductType {
    categoryId: number
    discountId: number | null
@@ -201,4 +243,67 @@ export interface UserType {
    address: string
    dateOfBirth: string
    gender: string
+}
+
+// flash sale
+export interface CreateFlashSaleType {
+   name: string
+   description: string
+   startTime: string
+   endTime: string
+}
+
+export interface UpdateFlashSaleType {
+   id: number
+   name: string
+   description: string
+   startTime: string
+   endTime: string
+}
+
+export interface GetFlashSaleQueryParamsType {
+   page?: number
+   size?: number
+   sortBy?: string | 'id'
+   sortDir?: string | 'desc'
+   search?: string
+}
+
+export interface FlashSaleType {
+   id: number
+   name: string
+   description: string
+   startTime: string
+   endTime: string
+   createdAt: string
+   updatedAt: string
+   items: {
+      id: number
+      flashSaleId: number
+      productId: number
+      productName: string
+      productImage: string
+      originalPrice: number
+      flashPrice: number
+      discountPercentage: number
+      stockLimit: number
+      soldCount: number
+      availableStock: number
+   }[]
+   isActive: boolean
+   isUpcoming: boolean
+   isPast: boolean
+}
+
+export interface AddProductToFlashSaleType {
+   id: number
+   productId: number
+   flashPrice: number
+   stockLimit: number
+}
+export interface UpdateProductToFlashSaleType {
+   id: number
+   productId: number
+   flashPrice: number
+   stockLimit: number
 }

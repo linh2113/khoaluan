@@ -16,7 +16,7 @@ import Paginate from '@/components/paginate'
 import Image from 'next/image'
 import { formatCurrency } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Edit, Plus, X } from 'lucide-react'
+import { Edit, Plus, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -53,8 +53,10 @@ export default function ProductManage() {
       page: currentPage - 1,
       size: 5,
       sortBy: 'id',
-      sortDir: 'asc'
+      sortDir: 'asc',
+      search: ''
    })
+   const [searchTerm, setSearchTerm] = useState('')
 
    const getAllAdminProduct = useGetAllAdminProduct(queryParams)
 
@@ -73,7 +75,7 @@ export default function ProductManage() {
    const getAllCategories = useGetAllCategories({})
    const categories = getAllCategories.data?.data.data.content || []
 
-   const getAllDiscount = useGetAllDiscount()
+   const getAllDiscount = useGetAllDiscount({})
    const discounts = getAllDiscount.data?.data.data.content || []
 
    const getAllBrand = useGetAllBrand({})
@@ -214,7 +216,7 @@ export default function ProductManage() {
    }
 
    const handleEditProduct = (product: ProductType) => {
-      const detail = product.productDetail || {}
+      const detail = product.productDetail
 
       const formData: CreateProductType & { id: number } = {
          id: product.id,
@@ -229,16 +231,16 @@ export default function ProductManage() {
          dimensions: product.dimensions || '',
          status: product.status,
          stock: product.stock || 0,
-         processor: detail.processor || '',
-         ram: detail.ram || '',
-         storage: detail.storage || '',
-         display: detail.display || '',
-         graphics: detail.graphics || '',
-         battery: detail.battery || '',
-         camera: detail.camera || '',
-         operatingSystem: detail.operatingSystem || '',
-         connectivity: detail.connectivity || '',
-         otherFeatures: detail.otherFeatures || ''
+         processor: detail?.processor || '',
+         ram: detail?.ram || '',
+         storage: detail?.storage || '',
+         display: detail?.display || '',
+         graphics: detail?.graphics || '',
+         battery: detail?.battery || '',
+         camera: detail?.camera || '',
+         operatingSystem: detail?.operatingSystem || '',
+         connectivity: detail?.connectivity || '',
+         otherFeatures: detail?.otherFeatures || ''
       }
 
       setEditingProduct(formData)
@@ -364,7 +366,30 @@ export default function ProductManage() {
          }))
       )
    }
+   const handleSearch = () => {
+      setCurrentPage(1)
+      setQueryParams({
+         ...queryParams,
+         page: 0,
+         search: searchTerm.trim()
+      })
+   }
 
+   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+         handleSearch()
+      }
+   }
+
+   const handleClearSearch = () => {
+      setSearchTerm('')
+      setCurrentPage(1)
+      setQueryParams({
+         ...queryParams,
+         page: 0,
+         search: ''
+      })
+   }
    return (
       <div className='container p-6'>
          <div className='flex justify-between flex-wrap gap-3 items-center'>
@@ -489,7 +514,7 @@ export default function ProductManage() {
                                     <SelectContent>
                                        {discounts.map((discount) => (
                                           <SelectItem key={discount.id} value={discount.id.toString()}>
-                                             {discount.discountName} ({discount.value}%)
+                                             {discount.name} ({discount.value}%)
                                           </SelectItem>
                                        ))}
                                     </SelectContent>
@@ -749,6 +774,23 @@ export default function ProductManage() {
          </div>
          <div className='flex items-center flex-wrap gap-4 my-5'>
             <div className='flex items-center gap-2'>
+               <Input
+                  placeholder='Tìm kiếm sản phẩm...'
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className='sm:w-[250px]'
+               />
+               <Button className='h-10 w-10 flex-shrink-0' onClick={handleSearch} size='icon' variant='outline'>
+                  <Search />
+               </Button>
+               {queryParams.search && (
+                  <Button onClick={handleClearSearch} variant='ghost' size='sm'>
+                     Xóa
+                  </Button>
+               )}
+            </div>
+            <div className='flex items-center gap-2'>
                <span className='text-sm'>Hiển thị:</span>
                <Select value={queryParams.size.toString()} onValueChange={handlePageSizeChange}>
                   <SelectTrigger className='w-[80px]'>
@@ -894,7 +936,7 @@ export default function ProductManage() {
                                     <SelectItem value='0'>Không áp dụng</SelectItem>
                                     {discounts.map((discount) => (
                                        <SelectItem key={discount.id} value={discount.id.toString()}>
-                                          {discount.discountName} ({formatCurrency(discount.value)})
+                                          {discount.name} ({formatCurrency(discount.value)})
                                        </SelectItem>
                                     ))}
                                  </SelectContent>

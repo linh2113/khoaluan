@@ -2,12 +2,12 @@
 import ProductRating from '@/components/product-rating'
 import QuantityController from '@/components/quantity-controller'
 import { formatCurrency, formatNumberToK, getIdFromNameId } from '@/lib/utils'
-import { ChevronLeft, ChevronRight, Heart, SendHorizontal, ShoppingBasket, Star } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Heart, ImagePlus, SendHorizontal, ShoppingBasket, Star, X, Zap } from 'lucide-react'
 import Image from 'next/image'
-import React, { useState, useRef, useEffect, useMemo } from 'react'
+import type React from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { useGetProduct } from '@/queries/useProduct'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { useAddToCart } from '@/queries/useCart'
@@ -28,15 +28,16 @@ import {
    WhatsappIcon
 } from 'react-share'
 import { useCreateRating, useGetRatingsByProductId, useReplyToRating } from '@/queries/useRating'
-import { RatingQueryParamsType } from '@/types/rating.type'
+import type { RatingQueryParamsType } from '@/types/rating.type'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { format } from 'date-fns'
-import { ro, vi } from 'date-fns/locale'
+import { vi } from 'date-fns/locale'
 import { Reply } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useRouter } from 'next/navigation'
+
 export default function ProductDetail({ id }: { id: string }) {
    const t = useTranslations('ProductDetail')
    const { userId } = useAppContext()
@@ -294,12 +295,6 @@ export default function ProductDetail({ id }: { id: string }) {
       }
    }
 
-   // Tính phần trăm giảm giá
-   const discountPercentage =
-      product?.discountedPrice && product?.price && product.discountedPrice < product.price
-         ? Math.round(((product.price - product.discountedPrice) / product.price) * 100)
-         : 0
-
    if (isLoading) {
       return (
          <div className='my-5 container'>
@@ -347,15 +342,10 @@ export default function ProductDetail({ id }: { id: string }) {
                   onMouseLeave={handleImageZoomLeave}
                   className='relative w-full overflow-hidden rounded-md'
                >
-                  {discountPercentage > 0 && (
-                     <Badge className='absolute top-2 left-2 z-10 bg-secondaryColor hover:bg-secondaryColor'>
-                        -{discountPercentage}%
-                     </Badge>
-                  )}
                   {product.productImages && product.productImages.length > 0 ? (
                      <Image
                         ref={imageRef}
-                        src={product.productImages[activeImageIndex].imageUrl}
+                        src={product.productImages[activeImageIndex].imageUrl || '/placeholder.svg'}
                         alt={product.name}
                         width={500}
                         height={500}
@@ -387,7 +377,7 @@ export default function ProductDetail({ id }: { id: string }) {
                               onClick={() => handleThumbnailClick(index)}
                            >
                               <Image
-                                 src={imageUrl.imageUrl}
+                                 src={imageUrl.imageUrl || '/placeholder.svg'}
                                  alt={`${product.name} - ảnh ${index + 1}`}
                                  width={100}
                                  height={100}
@@ -440,7 +430,7 @@ export default function ProductDetail({ id }: { id: string }) {
                      rating={product.averageRating || 0}
                   />
                   <span>{t('reviewCount', { count: product.reviewCount || 0 })}</span>|
-                  <span>{t('soldCount', { count: formatNumberToK(product.stock || 0) })}</span>
+                  <span>{t('soldCount', { count: formatNumberToK(product.soldQuantity || 0) })}</span>
                </div>
 
                {/* Giá */}
@@ -452,8 +442,14 @@ export default function ProductDetail({ id }: { id: string }) {
                            {formatCurrency(product.discountedPrice)}
                         </span>
                         <span className='rounded-sm bg-secondaryColor px-1 py-[2px] text-xs font-semibold text-white'>
-                           {discountPercentage}% GIẢM
+                           {product.discountPercentage.toFixed(0)}% GIẢM
                         </span>
+                        {product.discountType === 'FLASH_SALE' && (
+                           <span className='rounded-sm bg-yellow-500 flex items-center gap-1 px-1 py-[2px] text-xs font-semibold text-secondaryColor'>
+                              Flash sale
+                              <Zap size={16} />
+                           </span>
+                        )}
                      </>
                   ) : (
                      <span className='text-secondaryColor text-2xl font-medium'>{formatCurrency(product.price)}</span>
@@ -680,7 +676,7 @@ export default function ProductDetail({ id }: { id: string }) {
                         <div key={rating.id} className='p-4 border rounded-lg bg-background'>
                            <div className='flex items-start gap-3'>
                               <Avatar className='h-10 w-10'>
-                                 <AvatarImage src={rating.userPicture} alt={rating.userName} />
+                                 <AvatarImage src={rating.userPicture || '/placeholder.svg'} alt={rating.userName} />
                                  <AvatarFallback>{rating.userName?.charAt(0) || 'U'}</AvatarFallback>
                               </Avatar>
                               <div className='flex-1'>
@@ -709,7 +705,7 @@ export default function ProductDetail({ id }: { id: string }) {
                                              onClick={() => handleImageClick(imageUrl)}
                                           >
                                              <Image
-                                                src={imageUrl}
+                                                src={imageUrl || '/placeholder.svg'}
                                                 alt={`Rating image ${idx}`}
                                                 width={80}
                                                 height={80}
@@ -726,7 +722,7 @@ export default function ProductDetail({ id }: { id: string }) {
                                        <DialogTitle className='sr-only'>Xem hình ảnh phóng to</DialogTitle>
                                        <div className='bg-white/10 backdrop-blur-sm p-1 rounded-lg overflow-hidden max-h-[80vh] max-w-full'>
                                           <Image
-                                             src={selectedImage}
+                                             src={selectedImage || '/placeholder.svg'}
                                              alt='Enlarged image'
                                              width={1200}
                                              height={800}
@@ -737,20 +733,7 @@ export default function ProductDetail({ id }: { id: string }) {
                                           className='absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70'
                                           onClick={() => setIsImageDialogOpen(false)}
                                        >
-                                          <svg
-                                             xmlns='http://www.w3.org/2000/svg'
-                                             width='24'
-                                             height='24'
-                                             viewBox='0 0 24 24'
-                                             fill='none'
-                                             stroke='currentColor'
-                                             strokeWidth='2'
-                                             strokeLinecap='round'
-                                             strokeLinejoin='round'
-                                          >
-                                             <line x1='18' y1='6' x2='6' y2='18'></line>
-                                             <line x1='6' y1='6' x2='18' y2='18'></line>
-                                          </svg>
+                                          <X />
                                        </button>
                                     </DialogContent>
                                  </Dialog>
@@ -808,7 +791,7 @@ export default function ProductDetail({ id }: { id: string }) {
                                                       <Image
                                                          width={80}
                                                          height={80}
-                                                         src={URL.createObjectURL(image)}
+                                                         src={URL.createObjectURL(image) || '/placeholder.svg'}
                                                          alt={`Preview ${index}`}
                                                          className='w-full h-full object-cover'
                                                       />
@@ -818,18 +801,7 @@ export default function ProductDetail({ id }: { id: string }) {
                                                       onClick={() => handleRemoveReplyImage(index)}
                                                       className='absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity'
                                                    >
-                                                      <svg
-                                                         xmlns='http://www.w3.org/2000/svg'
-                                                         className='h-3 w-3'
-                                                         viewBox='0 0 20 20'
-                                                         fill='currentColor'
-                                                      >
-                                                         <path
-                                                            fillRule='evenodd'
-                                                            d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z'
-                                                            clipRule='evenodd'
-                                                         />
-                                                      </svg>
+                                                      <X size={20} />
                                                    </button>
                                                 </div>
                                              ))}
@@ -866,7 +838,10 @@ export default function ProductDetail({ id }: { id: string }) {
                                           <div key={reply.id} className='pt-3'>
                                              <div className='flex items-start gap-3'>
                                                 <Avatar className='h-8 w-8'>
-                                                   <AvatarImage src={reply.userPicture} alt={reply.userName} />
+                                                   <AvatarImage
+                                                      src={reply.userPicture || '/placeholder.svg'}
+                                                      alt={reply.userName}
+                                                   />
                                                    <AvatarFallback>{reply.userName?.charAt(0) || 'U'}</AvatarFallback>
                                                 </Avatar>
                                                 <div>
@@ -891,7 +866,7 @@ export default function ProductDetail({ id }: { id: string }) {
                                                                onClick={() => handleImageClick(imageUrl)}
                                                             >
                                                                <Image
-                                                                  src={imageUrl}
+                                                                  src={imageUrl || '/placeholder.svg'}
                                                                   alt={`Reply image ${idx}`}
                                                                   width={80}
                                                                   height={80}
@@ -1000,21 +975,7 @@ export default function ProductDetail({ id }: { id: string }) {
                               htmlFor='rating-images'
                               className='cursor-pointer px-4 py-2 rounded-md bg-primaryColor text-white text-sm font-medium hover:bg-primaryColor/90 transition-colors flex items-center gap-2'
                            >
-                              <svg
-                                 xmlns='http://www.w3.org/2000/svg'
-                                 width='16'
-                                 height='16'
-                                 viewBox='0 0 24 24'
-                                 fill='none'
-                                 stroke='currentColor'
-                                 strokeWidth='2'
-                                 strokeLinecap='round'
-                                 strokeLinejoin='round'
-                              >
-                                 <rect x='3' y='3' width='18' height='18' rx='2' ry='2' />
-                                 <circle cx='8.5' cy='8.5' r='1.5' />
-                                 <polyline points='21 15 16 10 5 21' />
-                              </svg>
+                              <ImagePlus size={20} />
                               Thêm hình ảnh
                            </label>
                            <input
@@ -1039,7 +1000,7 @@ export default function ProductDetail({ id }: { id: string }) {
                                  <div key={index} className='relative group'>
                                     <div className='aspect-square rounded-md overflow-hidden border'>
                                        <img
-                                          src={URL.createObjectURL(image)}
+                                          src={URL.createObjectURL(image) || '/placeholder.svg'}
                                           alt={`Preview ${index}`}
                                           className='w-full h-full object-cover'
                                        />
@@ -1049,18 +1010,7 @@ export default function ProductDetail({ id }: { id: string }) {
                                        onClick={() => handleRemoveImage(index)}
                                        className='absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity'
                                     >
-                                       <svg
-                                          xmlns='http://www.w3.org/2000/svg'
-                                          className='h-3 w-3'
-                                          viewBox='0 0 20 20'
-                                          fill='currentColor'
-                                       >
-                                          <path
-                                             fillRule='evenodd'
-                                             d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z'
-                                             clipRule='evenodd'
-                                          />
-                                       </svg>
+                                       <X size={20} />
                                     </button>
                                  </div>
                               ))}

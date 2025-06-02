@@ -17,6 +17,7 @@ import { toast } from 'react-toastify'
 import { useGetAllBrand, useGetAllCategories } from '@/queries/useAdmin'
 import { useTranslations } from 'next-intl'
 import { useAppContext } from '@/context/app.context'
+import FlashSale from '@/components/flash-sale'
 
 export default function Home() {
    const router = useRouter()
@@ -184,6 +185,9 @@ export default function Home() {
                <CarouselNext />
             </Carousel>
          </div>
+
+         {/* Flash sale */}
+         <FlashSale />
 
          {/* Layout chính: Filter bên trái, Sản phẩm bên phải */}
          <div className='flex flex-col lg:flex-row gap-6'>

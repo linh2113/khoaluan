@@ -20,7 +20,9 @@ import {
    WalletCards,
    BookHeart,
    Star,
-   Archive
+   Archive,
+   BadgeDollarSign,
+   Zap
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -79,6 +81,16 @@ export default function DashboardLayout({
          title: 'Danh mục',
          href: '/dashboard/category',
          icon: <Tag className='h-5 w-5' />
+      },
+      {
+         title: 'Mã giảm giá',
+         href: '/dashboard/discount',
+         icon: <BadgeDollarSign className='h-5 w-5' />
+      },
+      {
+         title: 'Flash Sale',
+         href: '/dashboard/flash-sale',
+         icon: <Zap className='h-5 w-5' />
       },
       {
          title: 'Thương hiệu',

@@ -21,7 +21,7 @@ import { useSearchParams } from 'next/navigation'
 
 export default function Cart() {
    const searchParams = useSearchParams()
-   const purchaseId = searchParams.get('purchaseId')
+   const purchaseId = searchParams?.get('purchaseId')
    const t = useTranslations('Cart')
    const { userId } = useAppContext()
    const updateSelectedCart = useUpdateSelectedCart()
@@ -196,9 +196,7 @@ export default function Cart() {
                            <div className='col-span-6 grid grid-cols-5 items-center'>
                               <div className='col-span-2'>
                                  <div className='flex items-center gap-x-3 justify-center'>
-                                    <span className='text-gray-400 line-through'>
-                                       {formatCurrency(cart.price + 300000)}
-                                    </span>
+                                    <span className='text-gray-400 line-through'>{formatCurrency(cart.price)}</span>
                                     <span>{formatCurrency(cart.price)}</span>
                                  </div>
                               </div>

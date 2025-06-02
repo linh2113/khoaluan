@@ -93,7 +93,7 @@ export default function OrderManage() {
       setQueryParams({
          ...queryParams,
          page: 0,
-         search: searchTerm
+         search: searchTerm.trim()
       })
    }
 

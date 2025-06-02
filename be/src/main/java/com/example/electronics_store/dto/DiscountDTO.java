@@ -42,13 +42,14 @@ public class DiscountDTO {
     @NotNull(message = "Active status is required")
     private Boolean isActive;
 
-
+    private Boolean isEffective;
 
     // Trường cho nhiều sản phẩm
     private List<Integer> productIds;
+    private List<String> productNames;
     private Map<Integer, Integer> discountedPrices; // productId -> discountedPrice
     private List<Integer> categoryIds;
-
+    private List<String> categoryNames;
     private String productName;
     private Integer discountedPrice;
     private String categoryName;
@@ -58,7 +59,5 @@ public class DiscountDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer discountId;
-    @NotNull(message = "Priority is required")
-    private Integer priority;
     private Integer assignedCount;
 }

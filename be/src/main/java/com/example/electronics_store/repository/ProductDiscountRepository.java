@@ -17,11 +17,11 @@ public interface ProductDiscountRepository extends JpaRepository<ProductDiscount
     
     @Query("SELECT pd FROM ProductDiscount pd WHERE pd.product = :product AND pd.discount.isActive = true " +
            "AND pd.discount.startDate <= :now AND pd.discount.endDate >= :now")
-    List<ProductDiscount> findActiveDiscountsByProduct(@Param("product") Product product, @Param("now") LocalDateTime now);
+    List<ProductDiscount> findEffectiveDiscountsByProduct(@Param("product") Product product, @Param("now") LocalDateTime now);
     
     @Query("SELECT pd FROM ProductDiscount pd WHERE pd.product.id = :productId AND pd.discount.isActive = true " +
            "AND pd.discount.startDate <= :now AND pd.discount.endDate >= :now")
-    List<ProductDiscount> findActiveDiscountsByProductId(@Param("productId") Integer productId, @Param("now") LocalDateTime now);
+    List<ProductDiscount> findEffectiveDiscountsByProductId(@Param("productId") Integer productId, @Param("now") LocalDateTime now);
     @Query("SELECT pd FROM ProductDiscount pd WHERE pd.product.id = :productId AND " +
             "pd.discount.startDate <= :orderTime AND pd.discount.endDate >= :orderTime " +
             "AND pd.discount.isActive = true")
@@ -38,5 +38,7 @@ public interface ProductDiscountRepository extends JpaRepository<ProductDiscount
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
+  @Query("SELECT pd FROM ProductDiscount pd WHERE pd.discount.id = :discountId AND pd.product.id = :productId")
+    Optional<ProductDiscount> findByDiscountIdAndProductId(@Param("discountId") Integer discountId, @Param("productId") Integer productId);
     
 }

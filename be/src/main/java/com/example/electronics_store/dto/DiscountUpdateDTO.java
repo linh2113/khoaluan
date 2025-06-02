@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DiscountUpdateDTO {
-    // Các trường có thể cập nhật
     private String name;
     private Double value;
     private LocalDateTime startDate;

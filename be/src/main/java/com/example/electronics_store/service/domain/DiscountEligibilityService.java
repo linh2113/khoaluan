@@ -35,9 +35,5 @@ public interface DiscountEligibilityService {
      */
     Page<ProductDTO> getEligibleProducts(String search, Pageable pageable);
 
-    /**
-     * Kiểm tra xem một danh mục có đủ điều kiện để áp dụng discount không
-     * @param categoryId ID của danh mục cần kiểm tra
-     */
-    boolean isCategoryEligibleForDiscount(Integer categoryId);
+    boolean isCategoryEligibleForDiscount(Integer categoryId, LocalDateTime startDate, LocalDateTime endDate);
 }

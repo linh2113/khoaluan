@@ -15,7 +15,6 @@ public interface DiscountService {
     // Các phương thức cho Discount chung
     DiscountDTO createDiscount(DiscountDTO discountDTO);
     DiscountDTO updateDiscount(Integer id, DiscountUpdateDTO discountUpdateDTO);
-    void deleteDiscount(Integer id);
     DiscountDTO getDiscountById(Integer id);
     Page<DiscountDTO> getAllDiscounts(String search, Pageable pageable);
     List<DiscountDTO> getAllActiveDiscounts();
@@ -32,8 +31,10 @@ public interface DiscountService {
     List<DiscountDTO> getProductDiscountsByProductId(Integer productId);
     List<DiscountDTO> getActiveProductDiscountsByProductId(Integer productId);
     List<DiscountDTO> getAllProductDiscounts();
-
+    Integer removeProductsFromDiscount(Integer discountId, List<Integer> productIds);
+    Integer updateProductDiscountPrices(Integer discountId, Map<Integer, Integer> productPrices);
     // Các phương thức cho Category Discount
+   Integer removeCategoriesFromDiscount(Integer discountId, List<Integer> categoryIds);
     List<DiscountDTO> getCategoryDiscountsByCategoryId(Integer categoryId);
     List<DiscountDTO> getActiveCategoryDiscountsByCategoryId(Integer categoryId);
     List<DiscountDTO> getAllCategoryDiscounts();

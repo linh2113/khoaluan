@@ -722,16 +722,49 @@ public class AdminController {
         }
     }
 
-    @DeleteMapping("/discounts/{id}")
-    public ResponseEntity<ApiResponse<?>> deleteDiscount(@PathVariable Integer id) {
-        try {
-            discountService.deleteDiscount(id);
-            return ResponseEntity.ok(ApiResponse.success("Discount deleted successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+   @DeleteMapping("/discounts/{discountId}/products")
+    public ResponseEntity<ApiResponse<?>> removeProductsFromDiscount(
+        @PathVariable Integer discountId,
+        @RequestBody Map<String, List<Integer>> request) {
+    try {
+        List<Integer> productIds = request.get("productIds");
+        Integer count = discountService.removeProductsFromDiscount(discountId, productIds);
+        return ResponseEntity.ok(ApiResponse.success("Successfully removed " + count + " products from discount"));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(e.getMessage()));
     }
+}
+    // API cho Product Discount - Cập nhật giá nhiều sản phẩm
+    @PutMapping("/discounts/{discountId}/products/prices")
+    public ResponseEntity<ApiResponse<?>> updateProductDiscountPrices(
+        @PathVariable Integer discountId,
+        @RequestBody Map<String, Map<Integer, Integer>> request) {
+    try {
+        Map<Integer, Integer> productPrices = request.get("productPrices");
+        Integer count = discountService.updateProductDiscountPrices(discountId, productPrices);
+        return ResponseEntity.ok(ApiResponse.success("Successfully updated " + count + " product prices"));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(e.getMessage()));
+    }
+    }
+
+    // API cho Category Discount - Xóa nhiều danh mục
+    @DeleteMapping("/discounts/{discountId}/categories")
+    public ResponseEntity<ApiResponse<?>> removeCategoriesFromDiscount(
+        @PathVariable Integer discountId,
+        @RequestBody Map<String, List<Integer>> request) {
+    try {
+        List<Integer> categoryIds = request.get("categoryIds");
+        Integer count = discountService.removeCategoriesFromDiscount(discountId, categoryIds);
+        return ResponseEntity.ok(ApiResponse.success("Successfully removed " + count + " categories from discount"));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(e.getMessage()));
+    }
+    }
+
 
 
 

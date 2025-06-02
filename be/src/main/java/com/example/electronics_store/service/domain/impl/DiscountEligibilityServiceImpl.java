@@ -50,7 +50,7 @@ public class DiscountEligibilityServiceImpl implements DiscountEligibilityServic
         }
 
         // Kiểm tra sản phẩm đã có discount chưa
-        boolean hasProductDiscount = !productDiscountRepository.findActiveDiscountsByProduct(product, now).isEmpty();
+        boolean hasProductDiscount = !productDiscountRepository.findEffectiveDiscountsByProduct(product, now).isEmpty();
         if (hasProductDiscount) {
             return false;
         }
@@ -83,10 +83,10 @@ public class DiscountEligibilityServiceImpl implements DiscountEligibilityServic
                 .map(this::mapProductToDTO);
     }
 
+    
     @Override
-    public boolean isCategoryEligibleForDiscount(Integer categoryId) {
-        LocalDateTime now = LocalDateTime.now();
-        return categoryDiscountRepository.findByCategoryAndTimeRange(categoryId, now).isEmpty();
+    public boolean isCategoryEligibleForDiscount(Integer categoryId, LocalDateTime startDate, LocalDateTime endDate) {
+    return categoryDiscountRepository.findByCategoryAndTimeOverlap(categoryId, startDate, endDate).isEmpty();
     }
 
     /**

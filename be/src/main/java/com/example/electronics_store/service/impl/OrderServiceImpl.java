@@ -9,6 +9,8 @@ import com.example.electronics_store.service.CartService;
 import com.example.electronics_store.service.DiscountService;
 import com.example.electronics_store.service.OrderService;
 import com.example.electronics_store.service.ProductSalesService;
+
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -36,6 +38,8 @@ public class OrderServiceImpl implements OrderService {
     private final FlashSaleItemRepository flashSaleItemRepository;
     private final ProductSalesService productSalesService;
     private final DiscountService discountService;
+    private final EntityManager entityManager;
+
     @Autowired
     public OrderServiceImpl(
             OrderRepository orderRepository,
@@ -47,7 +51,7 @@ public class OrderServiceImpl implements OrderService {
             ProductRepository productRepository,
             ShippingMethodRepository shippingMethodRepository,
             PaymentMethodRepository paymentMethodRepository,
-            DiscountService discountService, FlashSaleItemRepository flashSaleItemRepository, ProductSalesService productSalesService) {
+            DiscountService discountService, FlashSaleItemRepository flashSaleItemRepository, ProductSalesService productSalesService, EntityManager entityManager) {
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
         this.userRepository = userRepository;
@@ -59,6 +63,7 @@ public class OrderServiceImpl implements OrderService {
         this.flashSaleItemRepository = flashSaleItemRepository;
         this.productSalesService = productSalesService;
         this.discountService = discountService;
+        this.entityManager = entityManager;
     }
 
     @Override
@@ -119,14 +124,12 @@ public class OrderServiceImpl implements OrderService {
         order.setPaymentStatus("Pending");
         order.setOrderStatus(0); // 0: Pending, 1: Processing, 2: Shipped, 3: Delivered, 4: Completed, 5: Cancelled
 
-        Order savedOrder = orderRepository.save(order);
-
         // Create order details
         List<OrderDetail> orderDetails = new ArrayList<>();
         List<Integer> cartItemIds = new ArrayList<>();
         for (CartItem cartItem : selectedCartItems) {
             OrderDetail orderDetail = new OrderDetail();
-            orderDetail.setOrder(savedOrder);
+            orderDetail.setOrder(order);
             orderDetail.setProduct(cartItem.getProduct());
             orderDetail.setQuantity(cartItem.getQuantity());
             orderDetail.setReviewStatus(false);
@@ -151,7 +154,11 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setTotalPrice(totalPrice);
         orderDetailRepository.saveAll(orderDetails);
+        Order savedOrder = orderRepository.save(order);
         cartItemRepository.deleteAllByIds(cartItemIds);
+
+        entityManager.flush(); // đẩy các thay đổi cho orderdetail trước khi map
+       
         return mapOrderToDTO(savedOrder);
     }
 

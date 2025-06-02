@@ -10,6 +10,8 @@ import Link from 'next/link'
 import { useLogin } from '@/queries/useAuth'
 import { useAppContext } from '@/context/app.context'
 import { Button } from '@/components/ui/button'
+import { get } from 'http'
+import { getGoogleAuthUrl, getDiscordAuthUrl } from '@/apiRequest/auth';
 
 export default function Login() {
    const { setUserId } = useAppContext()
@@ -28,6 +30,14 @@ export default function Login() {
             setUserId(res.data.data.user.id)
          }
       })
+   }
+
+   const handleGoogleLogin = () => {
+      window.location.href = getGoogleAuthUrl();
+   }
+
+   const handleDiscordLogin = () => {
+      window.location.href = getDiscordAuthUrl();
    }
 
    return (
@@ -95,6 +105,7 @@ export default function Login() {
                            type='button'
                            variant={'outline'}
                            className='flex items-center justify-center gap-2 h-9 px-4 border rounded '
+                           onClick={handleGoogleLogin}
                         >
                            <svg className='w-4 h-4' viewBox='0 0 48 48'>
                               <path
@@ -121,6 +132,7 @@ export default function Login() {
                            type='button'
                            variant={'outline'}
                            className='flex items-center justify-center gap-2 h-9 px-4 border rounded'
+                           onClick={handleDiscordLogin}
                         >
                            <svg
                               viewBox='0 0 256 199'

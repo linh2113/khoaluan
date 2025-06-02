@@ -115,6 +115,23 @@ class Http {
       }
    }
 
+   // Thêm các phương thức setter cho token
+   public setAccessToken(token: string) {
+      this.accessToken = token;
+   // Lưu vào cookie
+   if (typeof window !== 'undefined') {
+         document.cookie = `access_token=${token}; path=/; max-age=86400; SameSite=Strict`;
+   }
+   }
+
+   public setRefreshToken(token: string) {
+      this.refreshToken = token;
+   // Lưu vào cookie
+   if (typeof window !== 'undefined') {
+      document.cookie = `refresh_token=${token}; path=/; max-age=604800; SameSite=Strict`;
+   }
+   }
+
    public clearTokens() {
       this.accessToken = ''
       this.refreshToken = ''

@@ -84,16 +84,22 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private User updateExistingUser(User existingUser, OAuth2UserInfo oAuth2UserInfo, String provider) {
         // Update user information if needed
-        if (oAuth2UserInfo.getFirstName() != null && !oAuth2UserInfo.getFirstName().isEmpty()) {
+        if (existingUser.getSurName() == null || existingUser.getSurName().isEmpty() || oAuth2UserInfo.getFirstName() != null && !oAuth2UserInfo.getFirstName().isEmpty()) {
             existingUser.setSurName(oAuth2UserInfo.getFirstName());
         }
 
-        if (oAuth2UserInfo.getLastName() != null && !oAuth2UserInfo.getLastName().isEmpty()) {
+        if (existingUser.getLastName() == null || existingUser.getLastName().isEmpty() || oAuth2UserInfo.getLastName() != null && !oAuth2UserInfo.getLastName().isEmpty()) {
             existingUser.setLastName(oAuth2UserInfo.getLastName());
         }
 
+        // Kiểm tra xem ảnh hiện tại có phải từ OAuth2 không
+        boolean isCurrentImageFromOAuth = existingUser.getPicture() != null && (existingUser.getPicture().contains("googleusercontent.com") || existingUser.getPicture().contains("cdn.discordapp.com"));
+    
+        // Nếu chưa có ảnh hoặc ảnh hiện tại là từ OAuth2, thì mới cập nhật
+        if (existingUser.getPicture() == null || existingUser.getPicture().isEmpty() || isCurrentImageFromOAuth) {
         if (oAuth2UserInfo.getImageUrl() != null && !oAuth2UserInfo.getImageUrl().isEmpty()) {
             existingUser.setPicture(oAuth2UserInfo.getImageUrl());
+        }
         }
 
         // Increment login times

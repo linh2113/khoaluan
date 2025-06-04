@@ -76,20 +76,30 @@ export interface DiscountType {
 export interface CreateDiscountType {
    name: string
    type: 'PRODUCT' | 'CATEGORY'
-   value: number
-   startDate: string
+   value: number // phần trăm giảm, ví dụ: 25.0 nghĩa là 25%
+   startDate: string // ISO date string, ví dụ: "2024-07-01T00:00:00"
    endDate: string
    isActive: boolean
+   productIds?: number[]
+   discountedPrices?: Record<number, number> // key là productId, value là giá sau khi giảm
+   categoryIds?: number[]
 }
 
 export interface UpdateDiscountType {
    id: number
    name: string
    type: 'PRODUCT' | 'CATEGORY'
-   value: number
-   startDate: string
+   value: number // phần trăm giảm, ví dụ: 25.0 nghĩa là 25%
+   startDate: string // ISO date string, ví dụ: "2024-07-01T00:00:00"
    endDate: string
    isActive: boolean
+   productIds?: number[]
+   discountedPrices?: Record<number, number> // key là productId, value là giá sau khi giảm
+   categoryIds?: number[]
+}
+export interface DeleteDiscountToProductsType {
+   discountId: number
+   productIds: number[]
 }
 // Category
 export interface GetCategoryQueryParamsType {
@@ -102,7 +112,7 @@ export interface GetCategoryQueryParamsType {
 export interface CategoryType {
    id: number
    categoryName: string
-   status: number
+   status: boolean
 }
 
 // Product

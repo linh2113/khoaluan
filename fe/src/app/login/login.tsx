@@ -11,7 +11,7 @@ import { useLogin } from '@/queries/useAuth'
 import { useAppContext } from '@/context/app.context'
 import { Button } from '@/components/ui/button'
 import { get } from 'http'
-import { getGoogleAuthUrl, getDiscordAuthUrl } from '@/apiRequest/auth';
+import { getGoogleAuthUrl, getDiscordAuthUrl } from '@/apiRequest/auth'
 
 export default function Login() {
    const { setUserId } = useAppContext()
@@ -33,11 +33,11 @@ export default function Login() {
    }
 
    const handleGoogleLogin = () => {
-      window.location.href = getGoogleAuthUrl();
+      window.location.href = getGoogleAuthUrl()
    }
 
    const handleDiscordLogin = () => {
-      window.location.href = getDiscordAuthUrl();
+      window.location.href = getDiscordAuthUrl()
    }
 
    return (

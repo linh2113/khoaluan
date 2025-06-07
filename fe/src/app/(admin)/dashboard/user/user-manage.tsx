@@ -1,6 +1,7 @@
 'use client'
 import { useCreateUser, useGetAllUser, useUpdateUser } from '@/queries/useAdmin'
-import React, { useState, useEffect } from 'react'
+import type React from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,12 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import { Edit, Plus, Search } from 'lucide-react'
-import { UserType } from '@/types/admin.type'
+import type { UserType } from '@/types/admin.type'
 import { toast } from 'react-toastify'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import Paginate from '@/components/paginate'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DatePicker } from '@/components/ui/date-picker'
 
 export default function UserManage() {
    const [currentPage, setCurrentPage] = useState<number>(1)
@@ -43,7 +45,9 @@ export default function UserManage() {
       phone: '',
       address: '',
       password: '',
-      userName: ''
+      userName: '',
+      dateOfBirth: '',
+      gender: 'male'
    })
    const [searchTerm, setSearchTerm] = useState('')
 
@@ -159,6 +163,38 @@ export default function UserManage() {
       })
    }
 
+   const handleGenderChange = (value: string) => {
+      if (editingUser) {
+         setEditingUser({
+            ...editingUser,
+            gender: value
+         })
+      }
+   }
+
+   const handleNewUserGenderChange = (value: string) => {
+      setNewUser({
+         ...newUser,
+         gender: value
+      })
+   }
+
+   const handleDateOfBirthChange = (date: Date | undefined) => {
+      if (editingUser) {
+         setEditingUser({
+            ...editingUser,
+            dateOfBirth: date?.toISOString().split('T')[0] || ''
+         })
+      }
+   }
+
+   const handleNewUserDateOfBirthChange = (date: Date | undefined) => {
+      setNewUser({
+         ...newUser,
+         dateOfBirth: date?.toISOString().split('T')[0] || ''
+      })
+   }
+
    const handleStatusChange = (checked: boolean) => {
       if (editingUser) {
          setEditingUser({
@@ -246,7 +282,10 @@ export default function UserManage() {
                email: '',
                phone: '',
                address: '',
-               password: ''
+               password: '',
+               userName: '',
+               dateOfBirth: '',
+               gender: 'male'
             })
             getAllUser.refetch()
          }
@@ -258,6 +297,27 @@ export default function UserManage() {
          return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: vi })
       } catch (error) {
          return 'Không xác định'
+      }
+   }
+
+   const formatDateOfBirth = (dateString: string) => {
+      try {
+         return format(new Date(dateString), 'dd/MM/yyyy', { locale: vi })
+      } catch (error) {
+         return 'Không xác định'
+      }
+   }
+
+   const getGenderLabel = (gender: string) => {
+      switch (gender) {
+         case 'male':
+            return 'Nam'
+         case 'female':
+            return 'Nữ'
+         case 'other':
+            return 'Khác'
+         default:
+            return 'Không xác định'
       }
    }
 
@@ -416,12 +476,12 @@ export default function UserManage() {
 
          {/* Dialog thêm người dùng mới */}
          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogContent className='max-w-md max-h-[90vh] overflow-y-auto p-4 md:p-6'>
+            <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto p-4 md:p-6'>
                <DialogHeader>
                   <DialogTitle>Thêm người dùng mới</DialogTitle>
                </DialogHeader>
                <div className='grid gap-4 py-4'>
-                  <div className='grid grid-cols-2 gap-4'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                      <div>
                         <Label htmlFor='newSurName' className='text-sm'>
                            Họ <span className='text-red-500'>*</span>
@@ -447,74 +507,115 @@ export default function UserManage() {
                         />
                      </div>
                   </div>
-                  <div>
-                     <Label htmlFor='userName' className='text-sm'>
-                        Tên đăng nhập <span className='text-red-500'>*</span>
-                     </Label>
-                     <Input
-                        id='userName'
-                        name='userName'
-                        type='text'
-                        value={newUser.userName || ''}
-                        onChange={handleNewUserInputChange}
-                        className='mt-1'
-                     />
+
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                     <div>
+                        <Label htmlFor='userName' className='text-sm'>
+                           Tên đăng nhập <span className='text-red-500'>*</span>
+                        </Label>
+                        <Input
+                           id='userName'
+                           name='userName'
+                           type='text'
+                           value={newUser.userName || ''}
+                           onChange={handleNewUserInputChange}
+                           className='mt-1'
+                        />
+                     </div>
+
+                     <div>
+                        <Label htmlFor='newEmail' className='text-sm'>
+                           Email <span className='text-red-500'>*</span>
+                        </Label>
+                        <Input
+                           id='newEmail'
+                           name='email'
+                           type='email'
+                           value={newUser.email || ''}
+                           onChange={handleNewUserInputChange}
+                           className='mt-1'
+                        />
+                     </div>
                   </div>
 
-                  <div>
-                     <Label htmlFor='newEmail' className='text-sm'>
-                        Email <span className='text-red-500'>*</span>
-                     </Label>
-                     <Input
-                        id='newEmail'
-                        name='email'
-                        type='email'
-                        value={newUser.email || ''}
-                        onChange={handleNewUserInputChange}
-                        className='mt-1'
-                     />
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                     <div>
+                        <Label htmlFor='newPassword' className='text-sm'>
+                           Mật khẩu <span className='text-red-500'>*</span>
+                        </Label>
+                        <Input
+                           id='newPassword'
+                           name='password'
+                           type='password'
+                           isPassword
+                           value={newUser.password || ''}
+                           onChange={handleNewUserInputChange}
+                           className='mt-1'
+                        />
+                        <p className='text-xs text-gray-500 mt-1'>Mật khẩu phải có ít nhất 6 ký tự</p>
+                     </div>
+
+                     <div>
+                        <Label htmlFor='newPhone' className='text-sm'>
+                           Số điện thoại
+                        </Label>
+                        <Input
+                           id='newPhone'
+                           name='phone'
+                           value={newUser.phone || ''}
+                           onChange={handleNewUserInputChange}
+                           className='mt-1'
+                        />
+                     </div>
                   </div>
 
-                  <div>
-                     <Label htmlFor='newPassword' className='text-sm'>
-                        Mật khẩu <span className='text-red-500'>*</span>
-                     </Label>
-                     <Input
-                        id='newPassword'
-                        name='password'
-                        type='password'
-                        isPassword
-                        value={newUser.password || ''}
-                        onChange={handleNewUserInputChange}
-                        className='mt-1'
-                     />
-                     <p className='text-xs text-gray-500 mt-1'>Mật khẩu phải có ít nhất 6 ký tự</p>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                     <div>
+                        <Label htmlFor='newAddress' className='text-sm'>
+                           Địa chỉ
+                        </Label>
+                        <Input
+                           id='newAddress'
+                           name='address'
+                           value={newUser.address || ''}
+                           onChange={handleNewUserInputChange}
+                           className='mt-1'
+                        />
+                     </div>
+
+                     <div>
+                        <Label className='text-sm'>Ngày sinh</Label>
+                        <DatePicker
+                           value={newUser.dateOfBirth ? new Date(newUser.dateOfBirth) : undefined}
+                           onChange={handleNewUserDateOfBirthChange}
+                        />
+                     </div>
                   </div>
 
-                  <div>
-                     <Label htmlFor='newPhone' className='text-sm'>
-                        Số điện thoại
-                     </Label>
-                     <Input
-                        id='newPhone'
-                        name='phone'
-                        value={newUser.phone || ''}
-                        onChange={handleNewUserInputChange}
-                        className='mt-1'
-                     />
-                  </div>
-
-                  <div>
-                     <Label htmlFor='newAddress' className='text-sm'>
-                        Địa chỉ
-                     </Label>
-                     <Input
-                        id='newAddress'
-                        name='address'
-                        value={newUser.address || ''}
-                        onChange={handleNewUserInputChange}
-                        className='mt-1'
-                     />
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                     <div>
+                        <Label className='text-sm'>Giới tính</Label>
+                        <Select onValueChange={handleNewUserGenderChange} defaultValue={newUser.gender || 'male'}>
+                           <SelectTrigger className='mt-1'>
+                              <SelectValue placeholder='Chọn giới tính' />
+                           </SelectTrigger>
+                           <SelectContent>
+                              <SelectItem value='male'>Nam</SelectItem>
+                              <SelectItem value='female'>Nữ</SelectItem>
+                              <SelectItem value='other'>Khác</SelectItem>
+                           </SelectContent>
+                        </Select>
+                     </div>
+                     <div className='flex items-center mt-5 gap-2'>
+                        <Switch
+                           id='newActive'
+                           checked={newUser.active === 1}
+                           onCheckedChange={handleNewUserStatusChange}
+                        />
+                        <Label htmlFor='newActive' className='text-sm'>
+                           {newUser.active === 1 ? 'Hoạt động' : 'Bị khóa'}
+                        </Label>
+                     </div>
                   </div>
                </div>
 
@@ -531,14 +632,14 @@ export default function UserManage() {
 
          {/* Dialog chỉnh sửa người dùng */}
          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogContent className='max-w-md max-h-[90vh] overflow-auto'>
+            <DialogContent className='max-w-2xl max-h-[90vh] overflow-auto'>
                <DialogHeader>
                   <DialogTitle>Chỉnh sửa thông tin người dùng</DialogTitle>
                </DialogHeader>
 
                {editingUser && (
                   <div className='grid gap-4 py-4'>
-                     <div className='grid grid-cols-2 gap-4'>
+                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                         <div>
                            <Label htmlFor='surName' className='text-sm'>
                               Họ
@@ -564,66 +665,110 @@ export default function UserManage() {
                            />
                         </div>
                      </div>
-                     <div>
-                        <Label htmlFor='userName' className='text-sm'>
-                           Email
-                        </Label>
-                        <Input
-                           id='userName'
-                           name='userName'
-                           value={editingUser.userName || ''}
-                           onChange={handleInputChange}
-                           className='mt-1'
-                        />
-                     </div>
-                     <div>
-                        <Label htmlFor='email' className='text-sm'>
-                           Email
-                        </Label>
-                        <Input
-                           id='email'
-                           name='email'
-                           value={editingUser.email || ''}
-                           onChange={handleInputChange}
-                           className='mt-1'
-                        />
+
+                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div>
+                           <Label htmlFor='editUserName' className='text-sm'>
+                              Tên đăng nhập
+                           </Label>
+                           <Input
+                              id='editUserName'
+                              name='userName'
+                              value={editingUser.userName || ''}
+                              onChange={handleInputChange}
+                              className='mt-1'
+                           />
+                        </div>
+                        <div>
+                           <Label htmlFor='email' className='text-sm'>
+                              Email
+                           </Label>
+                           <Input
+                              id='email'
+                              name='email'
+                              value={editingUser.email || ''}
+                              onChange={handleInputChange}
+                              className='mt-1'
+                           />
+                        </div>
                      </div>
 
-                     <div>
-                        <Label htmlFor='phone' className='text-sm'>
-                           Số điện thoại
-                        </Label>
-                        <Input
-                           id='phone'
-                           name='phone'
-                           value={editingUser.phone || ''}
-                           onChange={handleInputChange}
-                           className='mt-1'
-                        />
+                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div>
+                           <Label htmlFor='phone' className='text-sm'>
+                              Số điện thoại
+                           </Label>
+                           <Input
+                              id='phone'
+                              name='phone'
+                              value={editingUser.phone || ''}
+                              onChange={handleInputChange}
+                              className='mt-1'
+                           />
+                        </div>
+
+                        <div>
+                           <Label htmlFor='address' className='text-sm'>
+                              Địa chỉ
+                           </Label>
+                           <Input
+                              id='address'
+                              name='address'
+                              value={editingUser.address || ''}
+                              onChange={handleInputChange}
+                              className='mt-1'
+                           />
+                        </div>
                      </div>
 
-                     <div>
-                        <Label htmlFor='address' className='text-sm'>
-                           Địa chỉ
-                        </Label>
-                        <Input
-                           id='address'
-                           name='address'
-                           value={editingUser.address || ''}
-                           onChange={handleInputChange}
-                           className='mt-1'
-                        />
+                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div>
+                           <Label className='text-sm'>Ngày sinh</Label>
+                           <DatePicker
+                              value={editingUser.dateOfBirth ? new Date(editingUser.dateOfBirth) : undefined}
+                              onChange={handleDateOfBirthChange}
+                           />
+                        </div>
+
+                        <div>
+                           <Label className='text-sm'>Giới tính</Label>
+                           <Select onValueChange={handleGenderChange} defaultValue={editingUser.gender || 'male'}>
+                              <SelectTrigger className='mt-1'>
+                                 <SelectValue placeholder='Chọn giới tính' />
+                              </SelectTrigger>
+                              <SelectContent>
+                                 <SelectItem value='male'>Nam</SelectItem>
+                                 <SelectItem value='female'>Nữ</SelectItem>
+                                 <SelectItem value='other'>Khác</SelectItem>
+                              </SelectContent>
+                           </Select>
+                        </div>
                      </div>
 
-                     <div className='flex items-center gap-2'>
-                        <Switch
-                           id='active'
-                           checked={editingUser.active === 1 ? true : false}
-                           onCheckedChange={handleStatusChange}
-                        />
-                        <Label htmlFor='active' className='text-sm'>
-                           {editingUser.active ? 'Hoạt động' : 'Bị khóa'}
-                        </Label>
+                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div>
+                           <Label className='text-sm'>Vai trò</Label>
+                           <Select onValueChange={handleRoleChange} defaultValue={editingUser.role ? 'admin' : 'user'}>
+                              <SelectTrigger className='mt-1'>
+                                 <SelectValue placeholder='Chọn vai trò' />
+                              </SelectTrigger>
+                              <SelectContent>
+                                 <SelectItem value='user'>Người dùng</SelectItem>
+                                 <SelectItem value='admin'>Admin</SelectItem>
+                              </SelectContent>
+                           </Select>
+                        </div>
+
+                        <div className='flex items-center gap-2 mt-6'>
+                           <Switch
+                              id='active'
+                              checked={editingUser.active === 1 ? true : false}
+                              onCheckedChange={handleStatusChange}
+                           />
+                           <Label htmlFor='active' className='text-sm'>
+                              {editingUser.active ? 'Hoạt động' : 'Bị khóa'}
+                           </Label>
+                        </div>
                      </div>
                   </div>
                )}

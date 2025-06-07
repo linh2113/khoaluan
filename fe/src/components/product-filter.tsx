@@ -1,16 +1,15 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
-import { GetProductQueryParamsType } from '@/types/product.type'
-import { useState, useEffect } from 'react'
+import type { GetProductQueryParamsType } from '@/types/product.type'
+import { useState, useEffect, useRef } from 'react'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
-import { ChevronDown, ChevronUp, Filter, Search, SlidersHorizontal, Tag } from 'lucide-react'
+import { ChevronDown, ChevronUp, Filter, SlidersHorizontal } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
-import { BrandType, CategoryType } from '@/types/admin.type'
+import type { BrandType, CategoryType } from '@/types/admin.type'
 import { useTranslations } from 'next-intl'
 
 interface ProductFilterProps {
@@ -19,6 +18,19 @@ interface ProductFilterProps {
    brands: BrandType[]
    categories: CategoryType[]
    maxPriceValue?: number
+}
+
+function useDebounce(value: any, duration = 500) {
+   const [debounceValue, setDebounceValue] = useState(value)
+   useEffect(() => {
+      const timer = setTimeout(() => {
+         setDebounceValue(value)
+      }, duration)
+      return () => {
+         clearTimeout(timer)
+      }
+   }, [value])
+   return debounceValue
 }
 
 export default function ProductFilter({
@@ -33,10 +45,37 @@ export default function ProductFilter({
    const [isOpen, setIsOpen] = useState(true) // Mặc định mở filter
    const t = useTranslations('ProductFilter')
 
+   const debouncedFilters = useDebounce(
+      {
+         ...filters,
+         minPrice: priceRange[0],
+         maxPrice: priceRange[1]
+      },
+      500
+   )
+
    // Cập nhật filters khi initialFilters thay đổi
    useEffect(() => {
       setFilters(initialFilters)
    }, [initialFilters])
+
+   const prevFiltersRef = useRef<GetProductQueryParamsType>()
+
+   // Automatically apply filters when debounced values change
+   useEffect(() => {
+      const currentFilters = {
+         ...filters,
+         minPrice: priceRange[0],
+         maxPrice: priceRange[1]
+      }
+
+      // Only call onFilterChange if filters actually changed
+      if (prevFiltersRef.current && JSON.stringify(prevFiltersRef.current) !== JSON.stringify(currentFilters)) {
+         onFilterChange(currentFilters)
+      }
+
+      prevFiltersRef.current = currentFilters
+   }, [debouncedFilters])
 
    // Xử lý khi thay đổi giá trị filter
    const handleFilterChange = (name: keyof GetProductQueryParamsType, value: any) => {
@@ -46,15 +85,6 @@ export default function ProductFilter({
    // Xử lý khi thay đổi khoảng giá
    const handlePriceChange = (value: number[]) => {
       setPriceRange([value[0], value[1]])
-   }
-
-   // Áp dụng filter
-   const applyFilters = () => {
-      onFilterChange({
-         ...filters,
-         minPrice: priceRange[0],
-         maxPrice: priceRange[1]
-      })
    }
 
    // Reset filter
@@ -91,7 +121,7 @@ export default function ProductFilter({
                      <Select
                         value={filters.categoryId?.toString() || 'all'}
                         onValueChange={(value) =>
-                           handleFilterChange('categoryId', value === 'all' ? undefined : parseInt(value))
+                           handleFilterChange('categoryId', value === 'all' ? undefined : Number.parseInt(value))
                         }
                      >
                         <SelectTrigger id='category' className='bg-background w-full'>
@@ -166,7 +196,6 @@ export default function ProductFilter({
                            <SelectItem value='id-desc'>{t('sort.newest')}</SelectItem>
                            <SelectItem value='price-asc'>{t('sort.priceAsc')}</SelectItem>
                            <SelectItem value='price-desc'>{t('sort.priceDesc')}</SelectItem>
-                           <SelectItem value='averageRating-desc'>{t('sort.topRated')}</SelectItem>
                         </SelectContent>
                      </Select>
                   </div>
@@ -231,9 +260,6 @@ export default function ProductFilter({
                         className='border-primaryColor text-primaryColor hover:bg-primaryColor/10 flex-1'
                      >
                         {t('buttons.reset')}
-                     </Button>
-                     <Button onClick={applyFilters} className='bg-primaryColor hover:bg-primaryColor/90 flex-1'>
-                        {t('buttons.apply')}
                      </Button>
                   </div>
                </div>

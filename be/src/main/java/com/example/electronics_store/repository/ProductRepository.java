@@ -115,4 +115,10 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     // Get products ordered by sold quantity (best sellers)
     @Query("SELECT p FROM Product p WHERE p.status = true ORDER BY p.soldQuantity DESC")
     Page<Product> findBestSellingProducts(Pageable pageable);
+
+    @Query("SELECT DISTINCT pd.product.id FROM ProductDiscount pd " +
+       "WHERE pd.discount.isActive = true " +
+       "AND pd.discount.startDate <= :now " +
+       "AND pd.discount.endDate >= :now")
+List<Integer> findProductIdsWithActiveDiscounts(@Param("now") LocalDateTime now);
 }

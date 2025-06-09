@@ -196,8 +196,8 @@ export default function Home() {
                <ProductFilter
                   initialFilters={queryParams}
                   onFilterChange={handleFilterChange}
-                  brands={brands}
-                  categories={categories.filter((item) => item.status === 1)}
+                  brands={brands.filter((item) => item.status)}
+                  categories={categories.filter((item) => item.status)}
                   maxPriceValue={50000000}
                />
             </div>

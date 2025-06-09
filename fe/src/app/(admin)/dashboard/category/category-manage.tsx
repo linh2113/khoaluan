@@ -31,7 +31,7 @@ export default function CategoryManage() {
 
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-   const [newCategory, setNewCategory] = useState<CategoryType>({ id: 0, categoryName: '', status: 1 })
+   const [newCategory, setNewCategory] = useState<CategoryType>({ id: 0, categoryName: '', status: true })
    const [editingCategory, setEditingCategory] = useState<CategoryType | null>(null)
 
    // Cập nhật page trong queryParams khi currentPage thay đổi
@@ -103,7 +103,7 @@ export default function CategoryManage() {
       createCategory.mutate(newCategory, {
          onSuccess: () => {
             setIsAddDialogOpen(false)
-            setNewCategory({ id: 0, categoryName: '', status: 1 })
+            setNewCategory({ id: 0, categoryName: '', status: true })
             getAllCategories.refetch()
          }
       })
@@ -210,7 +210,7 @@ export default function CategoryManage() {
                            <TableCell>{category.id}</TableCell>
                            <TableCell>{category.categoryName}</TableCell>
                            <TableCell>
-                              {category.status === 1 ? (
+                              {category.status ? (
                                  <span className='px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs'>
                                     Hoạt động
                                  </span>
@@ -268,7 +268,9 @@ export default function CategoryManage() {
                      <Label htmlFor='status'>Trạng thái</Label>
                      <Select
                         value={newCategory.status.toString()}
-                        onValueChange={(value) => setNewCategory({ ...newCategory, status: parseInt(value) })}
+                        onValueChange={(value) =>
+                           setNewCategory({ ...newCategory, status: value === '1' ? true : false })
+                        }
                      >
                         <SelectTrigger>
                            <SelectValue placeholder='Chọn trạng thái' />
@@ -313,7 +315,7 @@ export default function CategoryManage() {
                         <Select
                            value={editingCategory.status.toString()}
                            onValueChange={(value) =>
-                              setEditingCategory({ ...editingCategory, status: parseInt(value) })
+                              setEditingCategory({ ...editingCategory, status: value === '1' ? true : false })
                            }
                         >
                            <SelectTrigger>

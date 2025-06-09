@@ -41,8 +41,8 @@ export default function FlashSaleManage() {
       search: ''
    })
    const [searchTerm, setSearchTerm] = useState('')
-   const [productSearch, setProductSearch] = useState('')
 
+   const [productSearch, setProductSearch] = useState('')
    const getAllFlashSales = useGetAllFlashSales(queryParams)
    const createFlashSale = useCreateFlashSale()
    const updateFlashSale = useUpdateFlashSale()

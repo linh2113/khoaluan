@@ -7,6 +7,7 @@ import {
    CreateFlashSaleType,
    CreateProductType,
    DashboardStatisticsType,
+   DeleteDiscountToProductsType,
    DiscountType,
    FlashSaleType,
    GetAllBrandType,
@@ -25,7 +26,7 @@ import {
    UpdateProductToFlashSaleType,
    UserType
 } from '@/types/admin.type'
-import { GetAllProductType, GetProductQueryParamsType } from '@/types/product.type'
+import { GetAllProductType } from '@/types/product.type'
 import { RatingDTO, RatingQueryParamsType } from '@/types/rating.type'
 import { ResponseData, ResponseDataWithPaginate } from '@/types/utils.type'
 import queryString from 'query-string'
@@ -53,6 +54,25 @@ export const getAllDiscount = (queryParams: GetDiscountQueryParamsType) =>
    )
 export const createDiscount = (body: CreateDiscountType) => http.post('/admin/discounts', body)
 export const updateDiscount = (body: UpdateDiscountType) => http.put(`/admin/discounts/${body.id}`, body)
+export const assignDiscountToProducts = (body: any) =>
+   http.post(`/admin/discounts/${body.discountId}/assign-products`, body)
+export const assignDiscountToCategories = (body: any) =>
+   http.post(`/admin/discounts/${body.discountId}/assign-categories`, { categoryIds: body.categoryIds })
+export const deleteDiscountToProducts = (body: DeleteDiscountToProductsType) =>
+   http.delete(`/admin/discounts/${body.discountId}/products`, {
+      data: {
+         productIds: body.productIds // hoặc truyền nguyên body nếu discountId nằm trong URL rồi
+      }
+   })
+export const deleteDiscountToCategories = (body: any) =>
+   http.delete(`/admin/discounts/${body.discountId}/categories`, {
+      data: {
+         categoryIds: body.categoryIds // hoặc truyền nguyên body nếu discountId nằm trong URL rồi
+      }
+   })
+
+export const editPriceDiscountToProducts = (body: any) =>
+   http.put(`/admin/discounts/${body.discountId}/products/prices`, { productPrices: body.productPrices })
 
 // Category
 export const getAllCategories = (queryParams: GetCategoryQueryParamsType) =>

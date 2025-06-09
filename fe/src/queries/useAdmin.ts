@@ -1,5 +1,7 @@
 import {
    addProductToFlashSale,
+   assignDiscountToCategories,
+   assignDiscountToProducts,
    createBrand,
    createCategory,
    createDiscount,
@@ -8,9 +10,12 @@ import {
    createProduct,
    createShippingMethod,
    createUser,
+   deleteDiscountToCategories,
+   deleteDiscountToProducts,
    deleteFlashSale,
    deleteProductImage,
    deleteProductToFlashSale,
+   editPriceDiscountToProducts,
    getAllAdminOrder,
    getAllAdminProduct,
    getAllBrand,
@@ -194,11 +199,65 @@ export const useUpdateDiscount = () => {
          queryClient.invalidateQueries({
             queryKey: ['discount']
          })
-         toast.success('Cập nhật mã giảm giá thành công')
       },
-      onError: () => {
-         toast.error('Cập nhật mã giảm giá thất bại')
-      }
+      onError: () => {}
+   })
+}
+// 1. Hook: Gán mã giảm giá cho danh mục
+export const useAssignDiscountToCategories = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: assignDiscountToCategories,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['discount'] })
+      },
+      onError: () => {}
+   })
+}
+
+// 2. Hook: Xoá mã giảm giá khỏi sản phẩm
+export const useDeleteDiscountToProducts = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: deleteDiscountToProducts,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['discount'] })
+      },
+      onError: () => {}
+   })
+}
+
+// 3. Hook: Xoá mã giảm giá khỏi danh mục
+export const useDeleteDiscountToCategories = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: deleteDiscountToCategories,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['discount'] })
+      },
+      onError: () => {}
+   })
+}
+// 4. Hook: Gán mã giảm giá cho sản phẩm
+export const useAssignDiscountToProducts = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: assignDiscountToProducts,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['discount'] })
+      },
+      onError: () => {}
+   })
+}
+
+export const useEditPriceDiscountToProducts = () => {
+   const queryClient = useQueryClient()
+   return useMutation({
+      mutationFn: editPriceDiscountToProducts,
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['discount'] })
+      },
+      onError: () => {}
    })
 }
 

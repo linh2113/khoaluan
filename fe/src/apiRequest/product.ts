@@ -1,6 +1,7 @@
 import http from '@/lib/http'
+import { BrandType, CategoryType, GetBrandQueryParamsType, GetCategoryQueryParamsType } from '@/types/admin.type'
 import { GetProductQueryParamsType, ProductType, GetAllProductType } from '@/types/product.type'
-import { ResponseData } from '@/types/utils.type'
+import { ResponseData, ResponseDataWithPaginate } from '@/types/utils.type'
 import queryString from 'query-string'
 
 export const getProduct = (id: number) => http.get<ResponseData<ProductType>>(`/products/${id}`)
@@ -10,3 +11,12 @@ export const getAllProducts = (queryParams: GetProductQueryParamsType) =>
 
 export const compareProducts = (productIds: number[]) =>
    http.get<ResponseData<ProductType[]>>(`/products/compare?${productIds.map((id) => `ids=${id}`).join('&')}`)
+
+export const getAllCategoryProducts = (queryParams: GetCategoryQueryParamsType) =>
+   http.get<ResponseData<ResponseDataWithPaginate<CategoryType[]>>>(
+      '/products/allCategories?' + queryString.stringify(queryParams)
+   )
+export const getAllBrandProducts = (queryParams: GetBrandQueryParamsType) =>
+   http.get<ResponseData<ResponseDataWithPaginate<BrandType[]>>>(
+      '/products/allBrands?' + queryString.stringify(queryParams)
+   )

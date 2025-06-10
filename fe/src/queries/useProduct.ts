@@ -1,4 +1,11 @@
-import { getAllProducts, getProduct, compareProducts } from '@/apiRequest/product'
+import {
+   getAllProducts,
+   getProduct,
+   compareProducts,
+   getAllCategoryProducts,
+   getAllBrandProducts
+} from '@/apiRequest/product'
+import { GetBrandQueryParamsType, GetCategoryQueryParamsType } from '@/types/admin.type'
 import { GetProductQueryParamsType } from '@/types/product.type'
 import { useQuery } from '@tanstack/react-query'
 
@@ -22,5 +29,18 @@ export const useCompareProducts = (productIds: number[]) => {
       queryKey: ['products', 'compare', productIds],
       queryFn: () => compareProducts(productIds),
       enabled: productIds.length >= 2 && productIds.length <= 4
+   })
+}
+export const useGetAllCategoryProducts = (queryParams: GetCategoryQueryParamsType) => {
+   return useQuery({
+      queryKey: ['categoryProducts', queryParams],
+      queryFn: () => getAllCategoryProducts(queryParams)
+   })
+}
+
+export const useGetAllBrandProducts = (queryParams: GetBrandQueryParamsType) => {
+   return useQuery({
+      queryKey: ['brandProducts', queryParams],
+      queryFn: () => getAllBrandProducts(queryParams)
    })
 }

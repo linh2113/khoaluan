@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import Image from 'next/image'
-import { useGetAllProducts } from '@/queries/useProduct'
+import { useGetAllBrandProducts, useGetAllCategoryProducts, useGetAllProducts } from '@/queries/useProduct'
 import { GetProductQueryParamsType, ProductType } from '@/types/product.type'
 import Paginate from '@/components/paginate'
 import ProductCard from '@/components/product-card'
@@ -18,6 +18,7 @@ import { useGetAllBrand, useGetAllCategories } from '@/queries/useAdmin'
 import { useTranslations } from 'next-intl'
 import { useAppContext } from '@/context/app.context'
 import FlashSale from '@/components/flash-sale'
+import { getAllBrandProducts } from '@/apiRequest/product'
 
 export default function Home() {
    const router = useRouter()
@@ -25,11 +26,11 @@ export default function Home() {
    const { searchProduct } = useAppContext()
 
    // Lấy danh sách thương hiệu sản phẩm
-   const getAllBrand = useGetAllBrand({})
+   const getAllBrand = useGetAllBrandProducts({ page: 0, size: 1000 })
    const brands = getAllBrand.data?.data.data.content || []
 
    // Lấy danh sách danh mục sản phẩm
-   const getAllCategories = useGetAllCategories({ page: 0, size: 1000 })
+   const getAllCategories = useGetAllCategoryProducts({ page: 0, size: 1000 })
    const categories = getAllCategories.data?.data.data.content || []
    const [currentPage, setCurrentPage] = useState<number>(1)
    const [queryParams, setQueryParams] = useState<GetProductQueryParamsType>({

@@ -410,6 +410,7 @@ export default function FlashSaleManage() {
                      <TableHead>Tên Flash Sale</TableHead>
                      <TableHead>Thời gian bắt đầu</TableHead>
                      <TableHead>Thời gian kết thúc</TableHead>
+                     <TableHead>Mô tả</TableHead>
                      <TableHead>Sản phẩm</TableHead>
                      <TableHead>Trạng thái</TableHead>
                      <TableHead className='text-right'>Thao tác</TableHead>
@@ -429,6 +430,7 @@ export default function FlashSaleManage() {
                            <TableCell className='font-medium'>{flashSale.name}</TableCell>
                            <TableCell className='text-sm'>{formatDateTime(flashSale.startTime)}</TableCell>
                            <TableCell className='text-sm'>{formatDateTime(flashSale.endTime)}</TableCell>
+                           <TableCell className='text-sm'>{flashSale.description}</TableCell>
                            <TableCell>
                               <span className='px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs'>
                                  {flashSale.items.length} sản phẩm

@@ -74,7 +74,7 @@ export default function DiscountManage() {
 
    const [categorySearch, setCategorySearch] = useState('')
    const getAllCategories = useGetAllCategories({ search: categorySearch })
-   const categories = getAllCategories.data?.data.data.content || []
+   const categories = getAllCategories.data?.data.data.content.filter((item) => item.status) || []
 
    // Cập nhật page trong queryParams khi currentPage thay đổi
    useEffect(() => {

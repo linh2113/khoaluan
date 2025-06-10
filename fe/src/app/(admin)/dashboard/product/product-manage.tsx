@@ -73,13 +73,13 @@ export default function ProductManage() {
    const isLoading = getAllAdminProduct.isLoading
 
    const getAllCategories = useGetAllCategories({})
-   const categories = getAllCategories.data?.data.data.content || []
+   const categories = getAllCategories.data?.data.data.content.filter((item) => item.status) || []
 
    const getAllDiscount = useGetAllDiscount({})
    const discounts = getAllDiscount.data?.data.data.content || []
 
    const getAllBrand = useGetAllBrand({})
-   const brands = getAllBrand.data?.data.data.content || []
+   const brands = getAllBrand.data?.data.data.content.filter((item) => item.status) || []
 
    const createProduct = useCreateProduct()
    const uploadProductImage = useUploadProductImage()

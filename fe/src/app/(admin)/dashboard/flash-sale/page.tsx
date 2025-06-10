@@ -1,4 +1,4 @@
-import FlashSale from '@/app/(admin)/dashboard/flash-sale/flash-sale'
+import FlashSale from '@/app/(admin)/dashboard/flash-sale/flash-sale-manage'
 import { Metadata } from 'next'
 import React from 'react'
 export const metadata: Metadata = {

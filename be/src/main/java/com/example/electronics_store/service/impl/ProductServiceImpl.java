@@ -314,54 +314,21 @@ public class ProductServiceImpl implements ProductService {
 
     private Page<ProductDTO> handleDiscountedProducts(Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
-        // Sử dụng Specification để xây dựng query động
+        List<Integer> productIds = productRepository.findProductIdsWithActiveDiscounts(now);
+        if (productIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+    
+        // Sử dụng Specification đơn giản
         Specification<Product> spec = (root, query, cb) -> {
-            // Join với các bảng liên quan
-            Join<Product, ProductDiscount> productDiscountJoin = root.join("productDiscounts", JoinType.LEFT);
-            Join<ProductDiscount, Discount> discountJoin = productDiscountJoin.join("discount", JoinType.LEFT);
-
-            Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
-            Join<Category, CategoryDiscount> categoryDiscountJoin = categoryJoin.join("categoryDiscounts", JoinType.LEFT);
-            Join<CategoryDiscount, Discount> categoryDiscountJoin2 = categoryDiscountJoin.join("discount", JoinType.LEFT);
-
-            // Điều kiện cho product discount
-            Predicate productDiscountActive = cb.and(
-                    cb.isTrue(discountJoin.get("isActive")),
-                    cb.lessThanOrEqualTo(discountJoin.get("startDate"), now),
-                    cb.greaterThanOrEqualTo(discountJoin.get("endDate"), now)
-            );
-
-            // Điều kiện cho category discount
-            Predicate categoryDiscountActive = cb.and(
-                    cb.isTrue(categoryDiscountJoin2.get("isActive")),
-                    cb.lessThanOrEqualTo(categoryDiscountJoin2.get("startDate"), now),
-                    cb.greaterThanOrEqualTo(categoryDiscountJoin2.get("endDate"), now)
-            );
-
-            // Sản phẩm phải có ít nhất một loại discount (product hoặc category)
-            Predicate hasDiscount = cb.or(productDiscountActive, categoryDiscountActive);
-
-            // Sản phẩm không được nằm trong flash sale
-            Subquery<Integer> flashSaleSubquery = query.subquery(Integer.class);
-            Root<FlashSaleItem> flashSaleItemRoot = flashSaleSubquery.from(FlashSaleItem.class);
-            Join<FlashSaleItem, FlashSale> flashSaleJoin = flashSaleItemRoot.join("flashSale");
-
-            flashSaleSubquery.select(flashSaleItemRoot.get("product").get("id"))
-                    .where(
-                            cb.equal(flashSaleItemRoot.get("product").get("id"), root.get("id")),
-                            cb.lessThanOrEqualTo(flashSaleJoin.get("startTime"), now),
-                            cb.greaterThanOrEqualTo(flashSaleJoin.get("endTime"), now)
-                    );
-
-            Predicate notInFlashSale = cb.not(cb.exists(flashSaleSubquery));
-
+            List<Predicate> predicates = new ArrayList<>();
+        
             // Sản phẩm phải active
-            Predicate isActive = cb.isTrue(root.get("status"));
-
-            // Kết hợp tất cả điều kiện
-            return cb.and(isActive, hasDiscount, notInFlashSale);
-        };
-
+            predicates.add(cb.isTrue(root.get("status")));
+            predicates.add(root.get("id").in(productIds));
+        
+            return cb.and(predicates.toArray(new Predicate[0]));
+    };
         return productRepository.findAll(spec, pageable).map(this::mapProductToDTO);
     }
     private Page<ProductDTO> handleFlashSaleProducts(Pageable pageable) {

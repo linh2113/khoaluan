@@ -2,11 +2,13 @@ package com.example.electronics_store.repository;
 
 import com.example.electronics_store.model.Brand;
 import com.example.electronics_store.model.Category;
+import com.example.electronics_store.model.Order;
 import com.example.electronics_store.model.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Integer> {
+public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSpecificationExecutor<Product> {
     List<Product> findByCategory(Category category);
 
     List<Product> findByNameContaining(String name);

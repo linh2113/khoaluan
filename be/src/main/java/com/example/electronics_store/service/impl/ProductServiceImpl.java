@@ -14,6 +14,7 @@ import jakarta.persistence.criteria.Subquery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,9 @@ public class ProductServiceImpl implements ProductService {
     private final RatingRepository ratingRepository;
     private final BrandRepository brandRepository;
     private final DiscountService discountService;
+    private final FlashSaleItemRepository flashSaleItemRepository;
+    private final ProductDiscountRepository productDiscountRepository;
+    private final CategoryDiscountRepository categoryDiscountRepository;
     @Autowired
     private Cloudinary cloudinary;
     @Value("${app.upload.dir:${user.home}/techstore/uploads}")
@@ -52,7 +56,9 @@ public class ProductServiceImpl implements ProductService {
             CategoryRepository categoryRepository,
             ProductDetailRepository productDetailRepository,
             ProductImageRepository productImageRepository,
-            RatingRepository ratingRepository, BrandRepository brandRepository, DiscountService discountService) {
+            RatingRepository ratingRepository, BrandRepository brandRepository, DiscountService discountService,
+            FlashSaleItemRepository flashSaleItemRepository, ProductDiscountRepository productDiscountRepository,
+            CategoryDiscountRepository categoryDiscountRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.productDetailRepository = productDetailRepository;
@@ -60,6 +66,9 @@ public class ProductServiceImpl implements ProductService {
         this.ratingRepository = ratingRepository;
         this.brandRepository = brandRepository;
         this.discountService = discountService;
+        this.flashSaleItemRepository = flashSaleItemRepository;
+        this.productDiscountRepository = productDiscountRepository;
+        this.categoryDiscountRepository = categoryDiscountRepository;
 
     }
 
@@ -248,6 +257,7 @@ public class ProductServiceImpl implements ProductService {
 
 
     private Page<ProductDTO> handleDefaultFilter(ProductFilterRequest filter, Pageable pageable) {
+        // Lấy danh sách sản phẩm theo các điều kiện cơ bản
         Specification<Product> spec = (root, query, cb) -> {
             List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
 
@@ -271,16 +281,6 @@ public class ProductServiceImpl implements ProductService {
                 predicates.add(cb.equal(root.get("brand").get("brandName"), filter.getBrand()));
             }
 
-            // Lọc theo khoảng giá
-            if (filter.getMinPrice() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("price"),
-                        filter.getMinPrice()));
-            }
-            if (filter.getMaxPrice() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("price"),
-                        filter.getMaxPrice()));
-            }
-
             // Lọc sản phẩm đang giảm giá
             if (Boolean.TRUE.equals(filter.getIsDiscount())) {
                 predicates.add(cb.isNotNull(root.get("discount")));
@@ -294,7 +294,72 @@ public class ProductServiceImpl implements ProductService {
             return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
 
-        return productRepository.findAll(spec, pageable).map(this::mapProductToDTO);
+        // Nếu không có lọc theo giá, trả về kết quả trực tiếp
+        if (filter.getMinPrice() == null && filter.getMaxPrice() == null) {
+            return productRepository.findAll(spec, pageable).map(this::mapProductToDTO);
+        }
+
+        // Nếu có lọc theo giá, lấy tất cả sản phẩm phù hợp với các điều kiện khác
+        // và xử lý phân trang thủ công
+        List<Product> allFilteredProducts = productRepository.findAll(spec);
+        
+        // Lọc theo khoảng giá và áp dụng phân trang thủ công
+        LocalDateTime now = LocalDateTime.now();
+        List<ProductDTO> priceFilteredProducts = allFilteredProducts.stream()
+            .map(product -> {
+                // Tính giá đã giảm cho sản phẩm
+                Float discountedPrice = null;
+                
+                // Kiểm tra flash sale
+                Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(product.getId(), now);
+                if (flashSaleItem.isPresent()) {
+                    discountedPrice = flashSaleItem.get().getFlashPrice().floatValue();
+                } else {
+                    // Kiểm tra product discount
+                    List<ProductDiscount> productDiscounts = productDiscountRepository.findEffectiveDiscountsByProduct(product, now);
+                    if (!productDiscounts.isEmpty()) {
+                        ProductDiscount productDiscount = productDiscounts.get(0);
+                        if (productDiscount.getDiscountedPrice() != null) {
+                            discountedPrice = productDiscount.getDiscountedPrice().floatValue();
+                        } else {
+                            double discountValue = productDiscount.getDiscount().getValue();
+                            discountedPrice = (float) (product.getPrice() * (1 - discountValue / 100));
+                        }
+                    } else {
+                        // Kiểm tra category discount
+                        List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findEffectiveDiscountsByCategory(product.getCategory(), now);
+                        if (!categoryDiscounts.isEmpty()) {
+                            CategoryDiscount categoryDiscount = categoryDiscounts.get(0);
+                            double discountValue = categoryDiscount.getDiscount().getValue();
+                            discountedPrice = (float) (product.getPrice() * (1 - discountValue / 100));
+                        } else {
+                            discountedPrice = product.getPrice().floatValue();
+                        }
+                    }
+                }
+                
+                // Kiểm tra nếu giá nằm trong khoảng lọc
+                if ((filter.getMinPrice() == null || discountedPrice >= filter.getMinPrice()) &&
+                    (filter.getMaxPrice() == null || discountedPrice <= filter.getMaxPrice())) {
+                    ProductDTO dto = mapProductToDTO(product);
+                    dto.setDiscountedPrice(discountedPrice.intValue());
+                    return dto;
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+        
+        // Áp dụng phân trang thủ công
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), priceFilteredProducts.size());
+        
+        if (start > priceFilteredProducts.size()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, priceFilteredProducts.size());
+        }
+    
+        List<ProductDTO> pageContent = priceFilteredProducts.subList(start, end);
+        return new PageImpl<>(pageContent, pageable, priceFilteredProducts.size());
     }
 
     private Page<ProductDTO> handleTopSellingProducts(Pageable pageable) {

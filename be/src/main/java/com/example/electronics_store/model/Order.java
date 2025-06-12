@@ -45,6 +45,9 @@ public class Order {
     
     @Column(name = "create_at", updatable = false)
     private LocalDateTime createAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
     
     @Column(name = "payment_status")
     private String paymentStatus;
@@ -58,5 +61,9 @@ public class Order {
     @PrePersist
     protected void onCreate() {
         createAt = LocalDateTime.now();
+    }
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

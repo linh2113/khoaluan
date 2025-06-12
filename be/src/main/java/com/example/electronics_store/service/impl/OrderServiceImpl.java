@@ -279,6 +279,7 @@ public class OrderServiceImpl implements OrderService {
         Page<Order> orderPage = orderRepository.findAll(pageable);
         return orderPage.map(this::mapOrderToDTO);
     }
+    
     @Override
     @Transactional
     public OrderDTO updateOrderStatus(Integer id, Integer status) {
@@ -289,22 +290,54 @@ public class OrderServiceImpl implements OrderService {
         if (status < 0 || status > 5) {
             throw new RuntimeException("Invalid order status");
         }
+        
+        // Kiểm tra logic chuyển trạng thái
+        if (status == 5) { // Nếu đang hủy đơn hàng
+            // Chỉ cho phép hủy đơn hàng ở trạng thái Pending hoặc Processing
+            if (order.getOrderStatus() != 0 && order.getOrderStatus() != 1) {
+                throw new RuntimeException("Only pending or processing orders can be cancelled");
+            }
+        } else if (status == 4) { // Nếu đang xác nhận hoàn thành
+            // Chỉ cho phép xác nhận hoàn thành đơn hàng ở trạng thái Delivered
+            if (order.getOrderStatus() != 3) {
+                throw new RuntimeException("Only delivered orders can be completed");
+            }
+        } else if (status <= order.getOrderStatus() && order.getOrderStatus() != 5) {
+            // Không cho phép chuyển về trạng thái trước đó (trừ khi đơn hàng đã bị hủy)
+            throw new RuntimeException("Cannot change to a previous status");
+        }
 
         // If cancelling order, restore product stock and decrease sold quantity
         if (status == 5 && order.getOrderStatus() != 5) {
             List<OrderDetail> orderDetails = orderDetailRepository.findByOrder(order);
             for (OrderDetail orderDetail : orderDetails) {
                 Product product = orderDetail.getProduct();
+                
+                // Khôi phục số lượng sản phẩm trong kho
                 product.setStock(product.getStock() + orderDetail.getQuantity());
                 productRepository.save(product);
-
-                // Decrease sold quantity if it was previously completed
+                
+                // Giảm số lượng đã bán nếu đơn hàng đã được tính vào số lượng bán
                 if (order.getOrderStatus() == 4) {
-                    productSalesService.updateSoldQuantity(product.getId(), -orderDetail.getQuantity());
+                    // Nếu đơn hàng đã hoàn thành, giảm số lượng đã bán
+                    if (product.getSoldQuantity() != null && product.getSoldQuantity() >= orderDetail.getQuantity()) {
+                        product.setSoldQuantity(product.getSoldQuantity() - orderDetail.getQuantity());
+                        productRepository.save(product);
+                    }
+                }
+                
+                // Nếu sản phẩm đang trong flash sale, cập nhật lại số lượng đã bán
+                Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(
+                        product.getId(), LocalDateTime.now());
+                if (flashSaleItem.isPresent() && flashSaleItem.get().getSoldCount() >= orderDetail.getQuantity()) {
+                    // Giảm số lượng đã bán trong flash sale
+                    FlashSaleItem item = flashSaleItem.get();
+                    item.setSoldCount(item.getSoldCount() - orderDetail.getQuantity());
+                    flashSaleItemRepository.save(item);
                 }
             }
         }
-
+        
         // If completing order, update sold quantity
         if (status == 4 && order.getOrderStatus() != 4) {
             List<OrderDetail> orderDetails = orderDetailRepository.findByOrder(order);
@@ -313,9 +346,10 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
+        // Update order status
         order.setOrderStatus(status);
         Order updatedOrder = orderRepository.save(order);
-
+        
         return mapOrderToDTO(updatedOrder);
     }
 

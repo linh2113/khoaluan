@@ -41,4 +41,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpeci
             "GROUP BY DATE(o.create_at) " +
             "ORDER BY order_date", nativeQuery = true)
     List<Object[]> getSalesByDay(@Param("startDate") String startDate, @Param("endDate") String endDate);
+
+    @Query("SELECT o FROM Order o WHERE o.orderStatus = 3 AND o.updatedAt <= :cutoffDate")
+    List<Order> findOrdersToAutoComplete(@Param("cutoffDate") LocalDateTime cutoffDate);
+
 }

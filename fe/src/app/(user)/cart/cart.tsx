@@ -123,7 +123,7 @@ export default function Cart() {
    const totalCheckedAmount = checkedCartItems.reduce((sum, item) => sum + item.totalPrice, 0)
 
    const totalSavedAmount = checkedCartItems.reduce((sum, item) => {
-      const originalPrice = item.price + 300000 // Giá gốc (price + 300000 như trong UI)
+      const originalPrice = item.originalPrice
       const savedPerItem = (originalPrice - item.price) * item.quantity
       return sum + savedPerItem
    }, 0)
@@ -196,7 +196,9 @@ export default function Cart() {
                            <div className='col-span-6 grid grid-cols-5 items-center'>
                               <div className='col-span-2'>
                                  <div className='flex items-center gap-x-3 justify-center'>
-                                    <span className='text-gray-400 line-through'>{formatCurrency(cart.price)}</span>
+                                    <span className='text-gray-400 line-through'>
+                                       {formatCurrency(cart.originalPrice)}
+                                    </span>
                                     <span>{formatCurrency(cart.price)}</span>
                                  </div>
                               </div>

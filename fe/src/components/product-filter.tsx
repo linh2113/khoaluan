@@ -228,17 +228,6 @@ export default function ProductFilter({
                   <div>
                      <div className='flex items-center space-x-2 bg-muted/30 p-3 rounded-lg'>
                         <Switch
-                           id='isDiscount'
-                           checked={filters.isDiscount || false}
-                           onCheckedChange={(value) => handleFilterChange('isDiscount', value)}
-                           className='data-[state=checked]:bg-secondaryColor'
-                        />
-                        <Label htmlFor='isDiscount' className='cursor-pointer'>
-                           {t('options.showDiscounted')}
-                        </Label>
-                     </div>
-                     <div className='flex items-center space-x-2 bg-muted/30 p-3 rounded-lg'>
-                        <Switch
                            id='inStock'
                            checked={filters.inStock || false}
                            onCheckedChange={(value) => handleFilterChange('inStock', value)}

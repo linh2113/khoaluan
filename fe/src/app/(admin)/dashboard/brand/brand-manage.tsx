@@ -39,7 +39,7 @@ export default function BrandManage() {
    const [newBrand, setNewBrand] = useState<Partial<BrandType>>({
       brandName: '',
       description: '',
-      status: 1
+      status: true
    })
    const [editingBrand, setEditingBrand] = useState<BrandType | null>(null)
 
@@ -115,7 +115,7 @@ export default function BrandManage() {
             setNewBrand({
                brandName: '',
                description: '',
-               status: 1
+               status: true
             })
             // Refresh data sau khi thêm thành công
             getAllBrand.refetch()
@@ -308,8 +308,8 @@ export default function BrandManage() {
                   <div className='flex items-center gap-2'>
                      <Switch
                         id='status'
-                        checked={newBrand.status === 1 ? true : false}
-                        onCheckedChange={(checked) => setNewBrand({ ...newBrand, status: checked ? 1 : 0 })}
+                        checked={newBrand.status}
+                        onCheckedChange={(checked) => setNewBrand({ ...newBrand, status: checked })}
                      />
                      <Label htmlFor='status'>Kích hoạt</Label>
                   </div>
@@ -355,8 +355,8 @@ export default function BrandManage() {
                      <div className='flex items-center gap-2'>
                         <Switch
                            id='editStatus'
-                           checked={editingBrand.status === 1 ? true : false}
-                           onCheckedChange={(checked) => setEditingBrand({ ...editingBrand, status: checked ? 1 : 0 })}
+                           checked={editingBrand.status}
+                           onCheckedChange={(checked) => setEditingBrand({ ...editingBrand, status: checked })}
                         />
                         <Label htmlFor='editStatus'>Kích hoạt</Label>
                      </div>

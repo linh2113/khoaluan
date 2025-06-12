@@ -1,14 +1,16 @@
 'use client'
 import { useCreateCategory, useGetAllCategories, useUpdateCategory } from '@/queries/useAdmin'
-import React, { useState, useEffect } from 'react'
+import type React from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { Edit, Plus, Search } from 'lucide-react'
-import { CategoryType, GetCategoryQueryParamsType } from '@/types/admin.type'
+import type { CategoryType, GetCategoryQueryParamsType } from '@/types/admin.type'
 import { toast } from 'react-toastify'
 import Paginate from '@/components/paginate'
 
@@ -264,22 +266,18 @@ export default function CategoryManage() {
                         placeholder='Nhập tên danh mục'
                      />
                   </div>
-                  <div className='grid gap-2'>
-                     <Label htmlFor='status'>Trạng thái</Label>
-                     <Select
-                        value={newCategory.status.toString()}
-                        onValueChange={(value) =>
-                           setNewCategory({ ...newCategory, status: value === '1' ? true : false })
-                        }
-                     >
-                        <SelectTrigger>
-                           <SelectValue placeholder='Chọn trạng thái' />
-                        </SelectTrigger>
-                        <SelectContent>
-                           <SelectItem value='1'>Hoạt động</SelectItem>
-                           <SelectItem value='0'>Không hoạt động</SelectItem>
-                        </SelectContent>
-                     </Select>
+                  <div className='flex items-center justify-between'>
+                     <div className='space-y-0.5'>
+                        <Label htmlFor='status'>Trạng thái</Label>
+                        <div className='text-sm text-muted-foreground'>
+                           {newCategory.status ? 'Hoạt động' : 'Không hoạt động'}
+                        </div>
+                     </div>
+                     <Switch
+                        id='status'
+                        checked={newCategory.status}
+                        onCheckedChange={(checked) => setNewCategory({ ...newCategory, status: checked })}
+                     />
                   </div>
                </div>
                <DialogFooter>
@@ -310,22 +308,18 @@ export default function CategoryManage() {
                            placeholder='Nhập tên danh mục'
                         />
                      </div>
-                     <div className='grid gap-2'>
-                        <Label htmlFor='editStatus'>Trạng thái</Label>
-                        <Select
-                           value={editingCategory.status.toString()}
-                           onValueChange={(value) =>
-                              setEditingCategory({ ...editingCategory, status: value === '1' ? true : false })
-                           }
-                        >
-                           <SelectTrigger>
-                              <SelectValue placeholder='Chọn trạng thái' />
-                           </SelectTrigger>
-                           <SelectContent>
-                              <SelectItem value='1'>Hoạt động</SelectItem>
-                              <SelectItem value='0'>Không hoạt động</SelectItem>
-                           </SelectContent>
-                        </Select>
+                     <div className='flex items-center justify-between'>
+                        <div className='space-y-0.5'>
+                           <Label htmlFor='editStatus'>Trạng thái</Label>
+                           <div className='text-sm text-muted-foreground'>
+                              {editingCategory.status ? 'Hoạt động' : 'Không hoạt động'}
+                           </div>
+                        </div>
+                        <Switch
+                           id='editStatus'
+                           checked={editingCategory.status}
+                           onCheckedChange={(checked) => setEditingCategory({ ...editingCategory, status: checked })}
+                        />
                      </div>
                   </div>
                )}

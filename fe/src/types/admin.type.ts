@@ -39,7 +39,7 @@ export interface BrandType {
    logo: string
    createdAt: string
    updatedAt: string
-   status: number
+   status: boolean
    productCount: number
 }
 

@@ -20,4 +20,5 @@ export interface CartItem {
    createAt: string
    stock: number
    selected: boolean
+   originalPrice: number
 }

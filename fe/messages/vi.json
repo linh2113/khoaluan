@@ -208,5 +208,90 @@
       "highestRating": "Đánh giá cao nhất",
       "lowestRating": "Đánh giá thấp nhất",
       "addImage": "Thêm hình ảnh"
+   },
+   "ProductCard": {
+      "loginRequired": "Vui lòng đăng nhập để thêm vào danh sách yêu thích",
+      "productName": "Tên sản phẩm",
+      "category": "Danh mục",
+      "brand": "Thương hiệu",
+      "addToCart": "Thêm vào giỏ",
+      "outOfStock": "Hết hàng",
+      "lowStock": "Sắp hết",
+      "quickView": "Xem nhanh",
+      "compare": "So sánh",
+      "selected": "Đã chọn"
+   },
+   "ProductFilter": {
+      "title": "Bộ lọc sản phẩm",
+      "activeFilters": "bộ lọc đang áp dụng",
+      "category": {
+         "label": "Danh mục sản phẩm",
+         "all": "Tất cả danh mục"
+      },
+      "brand": {
+         "label": "Thương hiệu",
+         "all": "Tất cả thương hiệu"
+      },
+      "filterType": {
+         "label": "Loại sản phẩm",
+         "all": "Tất cả sản phẩm",
+         "topSelling": "Bán chạy nhất",
+         "newArrivals": "Hàng mới về",
+         "topRated": "Đánh giá cao",
+         "discounted": "Đang giảm giá"
+      },
+      "sort": {
+         "label": "Sắp xếp theo",
+         "newest": "Mới nhất",
+         "priceAsc": "Giá thấp đến cao",
+         "priceDesc": "Giá cao đến thấp"
+      },
+      "priceRange": {
+         "label": "Khoảng giá",
+         "min": "Giá tối thiểu",
+         "max": "Giá tối đa"
+      },
+      "options": {
+         "title": "Tùy chọn bổ sung",
+         "showInStock": "Chỉ hiển thị hàng còn trong kho"
+      },
+      "buttons": {
+         "reset": "Đặt lại bộ lọc"
+      }
+   },
+   "Home": {
+      "banners": {
+         "banner": "Banner quảng cáo",
+         "banner1": "Banner khuyến mãi 1",
+         "banner2": "Banner khuyến mãi 2",
+         "banner3": "Banner khuyến mãi 3",
+         "banner4": "Banner khuyến mãi 4"
+      },
+      "filterTypes": {
+         "ALL": "Tất cả sản phẩm",
+         "TOP_SELLING": "Sản phẩm bán chạy",
+         "NEW_ARRIVALS": "Hàng mới về",
+         "TOP_RATED": "Đánh giá cao nhất",
+         "DISCOUNTED": "Đang giảm giá"
+      },
+      "results": {
+         "showing": "Hiển thị",
+         "products": "sản phẩm",
+         "noResults": "Không tìm thấy sản phẩm nào"
+      },
+      "noProducts": {
+         "title": "Không tìm thấy sản phẩm",
+         "description": "Thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác",
+         "resetFilters": "Đặt lại bộ lọc"
+      },
+      "compare": {
+         "title": "So sánh sản phẩm",
+         "selected": "đã chọn",
+         "maxProducts": "Chỉ có thể so sánh tối đa 4 sản phẩm",
+         "sameCategory": "Chỉ có thể so sánh các sản phẩm cùng danh mục",
+         "minProducts": "Vui lòng chọn ít nhất 2 sản phẩm để so sánh",
+         "clearAll": "Xóa tất cả",
+         "compareNow": "So sánh ngay"
+      }
    }
 }

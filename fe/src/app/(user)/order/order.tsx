@@ -149,7 +149,6 @@ export default function Order() {
                            className='border-primary'
                            type='text'
                            value={user?.surName + ' ' + user?.lastName || ''}
-                           readOnly
                         />
                      </div>
                      <div>

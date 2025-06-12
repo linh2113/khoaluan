@@ -23,7 +23,7 @@ export const renderOrderStatusBadge = (status: number) => {
          )
       case ORDER_STATUS.SHIPPED:
          return (
-            <Badge variant='outline' className='bg-indigo-50 text-indigo-600 border-indigo-300'>
+            <Badge variant='outline' className='bg-purple-50 text-purple-600 border-purple-300'>
                Đang giao
             </Badge>
          )

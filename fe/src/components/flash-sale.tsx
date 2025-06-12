@@ -117,7 +117,7 @@ export default function FlashSale() {
    const t = useTranslations('ProductCard')
    const addToCart = useAddToCart()
    const productFlashSale = data?.data.data[0]
-
+   if (!productFlashSale) return
    return (
       <div className='mb-10'>
          <div className='text-2xl font-bold mb-5'>

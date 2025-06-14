@@ -17,7 +17,7 @@ public class DiscountUpdateDTO {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Boolean isActive;
-    
+    private String bannerUrl;
     // Trường cho product discount
     private Integer discountedPrice;
     

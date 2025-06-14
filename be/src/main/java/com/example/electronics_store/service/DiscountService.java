@@ -5,6 +5,7 @@ import com.example.electronics_store.dto.DiscountUpdateDTO;
 import com.example.electronics_store.model.Discount;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,4 +39,5 @@ public interface DiscountService {
     List<DiscountDTO> getCategoryDiscountsByCategoryId(Integer categoryId);
     List<DiscountDTO> getActiveCategoryDiscountsByCategoryId(Integer categoryId);
     List<DiscountDTO> getAllCategoryDiscounts();
+    String uploadDiscountImage(Integer discountId, MultipartFile file);
 }

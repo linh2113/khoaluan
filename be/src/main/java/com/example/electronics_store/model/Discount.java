@@ -33,6 +33,9 @@ public class Discount {
     @Column(name = "is_active")
     private Boolean isActive;
 
+    @Column(name = "banner_url")
+    private String bannerUrl;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

@@ -43,7 +43,7 @@ public class DiscountDTO {
     private Boolean isActive;
 
     private Boolean isEffective;
-
+    private String bannerUrl;
     // Trường cho nhiều sản phẩm
     private List<Integer> productIds;
     private List<String> productNames;

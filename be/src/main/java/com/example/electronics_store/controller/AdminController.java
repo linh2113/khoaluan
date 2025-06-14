@@ -835,6 +835,24 @@ public class AdminController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
+
+    @PostMapping("/discounts/{id}/banner")
+    public ResponseEntity<ApiResponse<?>> uploadDiscountBanner(
+            @PathVariable Integer id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Please select a file to upload"));
+            }
+
+            String imageUrl = discountService.uploadDiscountImage(id, file);
+            return ResponseEntity.ok(ApiResponse.success("Banner uploaded successfully", imageUrl));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
      /**
      * Tạo flash sale mới (Admin only)
      */

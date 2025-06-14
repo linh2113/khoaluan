@@ -1,5 +1,7 @@
 package com.example.electronics_store.service.impl;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.electronics_store.dto.DiscountDTO;
 import com.example.electronics_store.dto.DiscountUpdateDTO;
 import com.example.electronics_store.model.*;
@@ -13,7 +15,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,14 +32,14 @@ public class DiscountServiceImpl implements DiscountService {
     private final CategoryRepository categoryRepository;
     private final FlashSaleItemRepository flashSaleItemRepository;
     private final DiscountEligibilityService discountEligibilityService;
-
+    private Cloudinary cloudinary;
     @Autowired
     public DiscountServiceImpl(
             DiscountRepository discountRepository,
             ProductDiscountRepository productDiscountRepository,
             CategoryDiscountRepository categoryDiscountRepository,
             ProductRepository productRepository,
-            CategoryRepository categoryRepository, FlashSaleItemRepository flashSaleItemRepository, DiscountEligibilityService discountEligibilityService) {
+            CategoryRepository categoryRepository, FlashSaleItemRepository flashSaleItemRepository, DiscountEligibilityService discountEligibilityService, Cloudinary cloudinary) {
         this.discountRepository = discountRepository;
         this.productDiscountRepository = productDiscountRepository;
         this.categoryDiscountRepository = categoryDiscountRepository;
@@ -43,6 +47,7 @@ public class DiscountServiceImpl implements DiscountService {
         this.categoryRepository = categoryRepository;
         this.flashSaleItemRepository = flashSaleItemRepository;
         this.discountEligibilityService = discountEligibilityService;
+        this.cloudinary = cloudinary;
     }
 
     @Override
@@ -56,7 +61,6 @@ public class DiscountServiceImpl implements DiscountService {
         discount.setStartDate(discountDTO.getStartDate());
         discount.setEndDate(discountDTO.getEndDate());
         discount.setIsActive(discountDTO.getIsActive() != null ? discountDTO.getIsActive() : true);
-
         Discount savedDiscount = discountRepository.save(discount);
 
         DiscountDTO resultDTO = mapToBasicDTO(savedDiscount);
@@ -119,7 +123,6 @@ public class DiscountServiceImpl implements DiscountService {
         discount.setIsActive(discountUpdateDTO.getIsActive());
         updateDiscount = true;
     }
-    
     if (updateDiscount) {
         discount.setUpdatedAt(LocalDateTime.now());
         discountRepository.save(discount);
@@ -711,8 +714,32 @@ public class DiscountServiceImpl implements DiscountService {
     }
     return successCount;
     }
-    
 
+    @Override
+    @Transactional
+    public String uploadDiscountImage(Integer discountId, MultipartFile file) {
+        try {
+            Discount discount = discountRepository.findById(discountId)
+                    .orElseThrow(() -> new RuntimeException("Discount not found"));
+
+            // Upload to Cloudinary
+            Map<String, Object> uploadParams = ObjectUtils.asMap(
+                    "folder", "discounts/" + discountId,
+                    "resource_type", "auto"
+            );
+
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
+            String imageUrl = uploadResult.get("secure_url").toString();
+
+            // Update discount with new image URL
+            discount.setBannerUrl(imageUrl);
+            discountRepository.save(discount);
+
+            return imageUrl;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload image: " + e.getMessage());
+        }
+    }
 
 
     private boolean isDiscountEffective(Discount discount, LocalDateTime time) {
@@ -820,6 +847,7 @@ public class DiscountServiceImpl implements DiscountService {
             .endDate(discount.getEndDate())
             .isActive(isActive)
             .isEffective(isActive)
+            .bannerUrl(discount.getBannerUrl())
             .createdAt(productDiscount.getCreatedAt())
             .productIds(productIds)
             .discountedPrices(discountedPrices)
@@ -849,6 +877,7 @@ public class DiscountServiceImpl implements DiscountService {
             .endDate(discount.getEndDate())
             .isActive(discount.getIsActive())
             .isEffective(isDiscountEffective)
+            .bannerUrl(discount.getBannerUrl())
             .createdAt(categoryDiscount.getCreatedAt())
             .categoryIds(categoryIds)
             .build();
@@ -865,7 +894,7 @@ public class DiscountServiceImpl implements DiscountService {
             .startDate(discount.getStartDate())
             .endDate(discount.getEndDate())
             .isActive(discount.getIsActive())
-            .isEffective(isEffective)
+            .isEffective(isEffective).bannerUrl(discount.getBannerUrl())
             .createdAt(discount.getCreatedAt())
             .updatedAt(discount.getUpdatedAt())
             .build();

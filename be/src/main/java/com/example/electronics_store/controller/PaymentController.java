@@ -27,15 +27,15 @@ public class PaymentController {
     @PostMapping("/create-payment")
     public ResponseEntity<ApiResponse<?>> createPayment(
             @RequestParam Integer orderId,
-            @RequestParam Long amount,
+            @RequestParam Double amount,
             @RequestParam String orderInfo,
             HttpServletRequest request) {
         try {
             // Lấy địa chỉ IP của người dùng
             String ipAddress = request.getRemoteAddr();
-            
+            Long amountLong = amount.longValue();
             // Tạo URL thanh toán VNPay
-            String paymentUrl = vnPayService.createPaymentUrl(orderId, amount, orderInfo, ipAddress);
+            String paymentUrl = vnPayService.createPaymentUrl(orderId, amountLong, orderInfo, ipAddress);
             
             Map<String, String> response = new HashMap<>();
             response.put("paymentUrl", paymentUrl);

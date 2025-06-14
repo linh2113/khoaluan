@@ -121,6 +121,7 @@ public class OrderServiceImpl implements OrderService {
         order.setPhoneNumber(orderCreateDTO.getPhoneNumber());
         order.setShippingMethod(shippingMethod);
         order.setPaymentMethod(paymentMethod);
+
         order.setPaymentStatus("Pending");
         order.setOrderStatus(0); // 0: Pending, 1: Processing, 2: Shipped, 3: Delivered, 4: Completed, 5: Cancelled
 

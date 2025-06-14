@@ -96,7 +96,9 @@ public class SecurityConfig {
                         "/flash-sales/**",
                         "/categories/**",
                         "/swagger-ui/**",
-                        "/api-docs/**"
+                        "/api-docs/**",
+                            "/payment/vnpay-return",
+                            "/payment/vnpay-ipn"
                     ).permitAll()
                     .requestMatchers("/admin/**").hasRole("ADMIN").requestMatchers("/users/**").authenticated()
                     .anyRequest().authenticated()

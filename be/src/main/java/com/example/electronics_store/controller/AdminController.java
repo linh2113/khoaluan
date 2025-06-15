@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -175,9 +176,14 @@ public class AdminController {
     }
 
     // Category Management
-    @PostMapping("/categories")
-    public ResponseEntity<ApiResponse<?>> createCategory(@Valid @RequestBody CategoryDTO categoryDTO) {
+    @PostMapping(value = "/categories", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<?>> createCategory(
+            @RequestPart("category") @Valid CategoryDTO categoryDTO,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
+            // Gán file vào DTO
+            categoryDTO.setImageFile(image);
+
             CategoryDTO category = categoryService.createCategory(categoryDTO);
             return ResponseEntity.ok(ApiResponse.success("Category created successfully", category));
         } catch (Exception e) {
@@ -186,15 +192,21 @@ public class AdminController {
         }
     }
 
-    @PutMapping("/categories/{id}")
+    @PutMapping(value = "/categories/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> updateCategory(
             @PathVariable Integer id,
-            @RequestBody CategoryUpdateDTO categoryUpdateDTO) {
+            @RequestPart("category") @Valid CategoryUpdateDTO categoryUpdateDTO,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
+            // Gán file vào DTO
+            categoryUpdateDTO.setImageFile(image);
+
             // Convert CategoryUpdateDTO to CategoryDTO
             CategoryDTO categoryDTO = new CategoryDTO();
             categoryDTO.setCategoryName(categoryUpdateDTO.getCategoryName());
             categoryDTO.setStatus(categoryUpdateDTO.getStatus());
+            categoryDTO.setImageUrl(categoryUpdateDTO.getImageUrl());
+            categoryDTO.setImageFile(categoryUpdateDTO.getImageFile());
 
             CategoryDTO category = categoryService.updateCategory(id, categoryDTO);
             return ResponseEntity.ok(ApiResponse.success("Category updated successfully", category));

@@ -22,6 +22,10 @@ public class Category {
 
     @Column(columnDefinition = "boolean default true")
     private Boolean status;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

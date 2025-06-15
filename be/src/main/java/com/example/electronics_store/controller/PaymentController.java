@@ -33,7 +33,7 @@ public class PaymentController {
         try {
             // Lấy địa chỉ IP của người dùng
             String ipAddress = request.getRemoteAddr();
-            Long amountLong = amount.longValue();
+            Long amountLong = Math.round(amount);
             // Tạo URL thanh toán VNPay
             String paymentUrl = vnPayService.createPaymentUrl(orderId, amountLong, orderInfo, ipAddress);
             

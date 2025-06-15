@@ -22,7 +22,8 @@ public class Brand {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private String logo;
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

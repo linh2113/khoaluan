@@ -1,11 +1,14 @@
 package com.example.electronics_store.dto;
 
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -19,8 +22,9 @@ public class BrandDTO {
     private String brandName;
 
     private String description;
-
-    private String logo;
+    private String imageUrl;
+    @Transient
+    private transient MultipartFile imageFile;
 
     private LocalDateTime createdAt;
 

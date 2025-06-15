@@ -464,24 +464,32 @@ public class AdminController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
-    @PostMapping("/brands")
-    public ResponseEntity<ApiResponse<?>> createBrand(@Valid @RequestBody BrandDTO brandDTO) {
+    @PostMapping(value = "/brands", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<?>> createBrand(
+            @RequestPart("brand") @Valid BrandDTO brandDTO,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
-            BrandDTO createdBrand = brandService.createBrand(brandDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success("Brand created successfully", createdBrand));
+            // Gán file vào DTO
+            brandDTO.setImageFile(image);
+
+            BrandDTO brand = brandService.createBrand(brandDTO);
+            return ResponseEntity.ok(ApiResponse.success("Brand created successfully", brand));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
-    @PutMapping("/brands/{id}")
+    @PutMapping(value = "/brands/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> updateBrand(
             @PathVariable Integer id,
-            @Valid @RequestBody BrandDTO brandDTO) {
+            @RequestPart("brand") @Valid BrandDTO brandDTO,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
         try {
-            BrandDTO updatedBrand = brandService.updateBrand(id, brandDTO);
-            return ResponseEntity.ok(ApiResponse.success("Brand updated successfully", updatedBrand));
+            // Gán file vào DTO
+            brandDTO.setImageFile(image);
+
+            BrandDTO brand = brandService.updateBrand(id, brandDTO);
+            return ResponseEntity.ok(ApiResponse.success("Brand updated successfully", brand));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));

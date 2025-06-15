@@ -37,6 +37,7 @@ public class CategoryServiceImpl implements CategoryService {
             throw new RuntimeException("Category name already exists");
         }
         // Upload ảnh nếu có
+        System.out.println(categoryDTO.getImageFile());
         if (categoryDTO.getImageFile() != null && !categoryDTO.getImageFile().isEmpty()) {
             try {
                 String imageUrl = CloudinaryUtils.uploadImage(cloudinary, categoryDTO.getImageFile(), "categories");
@@ -48,7 +49,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = new Category();
         category.setCategoryName(categoryDTO.getCategoryName());
         category.setStatus(categoryDTO.getStatus());
-        category.setImageUrl(category.getImageUrl());
+        category.setImageUrl(categoryDTO.getImageUrl());
         Category savedCategory = categoryRepository.save(category);
         return mapCategoryToDTO(savedCategory);
     }

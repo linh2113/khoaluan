@@ -262,11 +262,15 @@ public class AdminController {
     }
 
 
-    @PutMapping("/discounts/{id}")
+    @PutMapping(value = "/discounts/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> updateDiscount(
             @PathVariable Integer id,
-            @Valid @RequestBody DiscountUpdateDTO discountUpdateDTO) {
+            @RequestPart("discount") @Valid DiscountUpdateDTO discountUpdateDTO,
+            @RequestParam(value = "banner", required = false) MultipartFile banner) {
         try {
+            // Gán file vào DTO
+            discountUpdateDTO.setBannerFile(banner);
+
             DiscountDTO discount = discountService.updateDiscount(id, discountUpdateDTO);
             return ResponseEntity.ok(ApiResponse.success("Discount updated successfully", discount));
         } catch (Exception e) {
@@ -620,9 +624,14 @@ public class AdminController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
-    @PostMapping("/discounts")
-    public ResponseEntity<ApiResponse<?>> createDiscount(@Valid @RequestBody DiscountDTO discountDTO) {
+    @PostMapping(value = "/discounts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<?>> createDiscount(
+            @RequestPart("discount") @Valid DiscountDTO discountDTO,
+            @RequestParam(value = "banner", required = false) MultipartFile banner) {
         try {
+            // Gán file vào DTO
+            discountDTO.setBannerFile(banner);
+
             DiscountDTO discount = discountService.createDiscount(discountDTO);
             return ResponseEntity.ok(ApiResponse.success("Discount created successfully", discount));
         } catch (Exception e) {
@@ -856,23 +865,6 @@ public class AdminController {
         }
     }
 
-    @PostMapping("/discounts/{id}/banner")
-    public ResponseEntity<ApiResponse<?>> uploadDiscountBanner(
-            @PathVariable Integer id,
-            @RequestParam("file") MultipartFile file) {
-        try {
-            if (file.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Please select a file to upload"));
-            }
-
-            String imageUrl = discountService.uploadDiscountImage(id, file);
-            return ResponseEntity.ok(ApiResponse.success("Banner uploaded successfully", imageUrl));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
      /**
      * Tạo flash sale mới (Admin only)
      */

@@ -1,9 +1,11 @@
 package com.example.electronics_store.dto;
 
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +22,7 @@ public class DiscountUpdateDTO {
     private String bannerUrl;
     // Trường cho product discount
     private Integer discountedPrice;
-    
+    @Transient
+    private transient MultipartFile bannerFile;
 
 }

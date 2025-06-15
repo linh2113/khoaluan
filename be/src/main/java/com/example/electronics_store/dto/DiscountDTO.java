@@ -3,6 +3,7 @@ package com.example.electronics_store.dto;
 import com.example.electronics_store.model.Discount;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -10,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,6 +46,8 @@ public class DiscountDTO {
 
     private Boolean isEffective;
     private String bannerUrl;
+    @Transient
+    private transient MultipartFile bannerFile;
     // Trường cho nhiều sản phẩm
     private List<Integer> productIds;
     private List<String> productNames;

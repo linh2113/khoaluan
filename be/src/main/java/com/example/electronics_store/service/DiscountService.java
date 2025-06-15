@@ -38,6 +38,5 @@ public interface DiscountService {
    Integer removeCategoriesFromDiscount(Integer discountId, List<Integer> categoryIds);
     List<DiscountDTO> getCategoryDiscountsByCategoryId(Integer categoryId);
     List<DiscountDTO> getActiveCategoryDiscountsByCategoryId(Integer categoryId);
-    List<DiscountDTO> getAllCategoryDiscounts();
-    String uploadDiscountImage(Integer discountId, MultipartFile file);
+    List<DiscountDTO> getAllCategoryDiscounts();;
 }

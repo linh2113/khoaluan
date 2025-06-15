@@ -53,6 +53,19 @@ public class DiscountServiceImpl implements DiscountService {
     @Override
     @Transactional
     public DiscountDTO createDiscount(DiscountDTO discountDTO) {
+        if (discountDTO.getBannerFile() != null && !discountDTO.getBannerFile().isEmpty()) {
+            try {
+                Map<String, Object> uploadParams = ObjectUtils.asMap(
+                        "folder", "discounts",
+                        "resource_type", "auto"
+                );
+                Map uploadResult = cloudinary.uploader().upload(discountDTO.getBannerFile().getBytes(), uploadParams);
+                String bannerUrl = uploadResult.get("secure_url").toString();
+                discountDTO.setBannerUrl(bannerUrl);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to upload banner image: " + e.getMessage());
+            }
+        }
         // Tạo discount
         Discount discount = new Discount();
         discount.setName(discountDTO.getName());
@@ -61,6 +74,7 @@ public class DiscountServiceImpl implements DiscountService {
         discount.setStartDate(discountDTO.getStartDate());
         discount.setEndDate(discountDTO.getEndDate());
         discount.setIsActive(discountDTO.getIsActive() != null ? discountDTO.getIsActive() : true);
+        discount.setBannerUrl(discountDTO.getBannerUrl());
         Discount savedDiscount = discountRepository.save(discount);
 
         DiscountDTO resultDTO = mapToBasicDTO(savedDiscount);
@@ -95,10 +109,28 @@ public class DiscountServiceImpl implements DiscountService {
     // Tìm discount trong bảng Discount chính
     Discount discount = discountRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Discount not found with ID: " + id));
-    
-    // Cập nhật các trường cơ bản của discount
     boolean updateDiscount = false;
-    
+    if (discountUpdateDTO.getBannerFile() != null && !discountUpdateDTO.getBannerFile().isEmpty()) {
+        try {
+            // Xóa ảnh cũ nếu có
+            if (discount.getBannerUrl() != null && !discount.getBannerUrl().isEmpty()) {
+                deleteCloudinaryImage(discount.getBannerUrl());
+            }
+            // Upload ảnh mới
+            Map<String, Object> uploadParams = ObjectUtils.asMap(
+                    "folder", "discounts",
+                    "resource_type", "auto"
+            );
+            Map uploadResult = cloudinary.uploader().upload(discountUpdateDTO.getBannerFile().getBytes(), uploadParams);
+            String bannerUrl = uploadResult.get("secure_url").toString();
+            discount.setBannerUrl(bannerUrl);
+            updateDiscount = true;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload banner image: " + e.getMessage());
+        }
+    } else if (discountUpdateDTO.getBannerUrl() != null) {
+        discount.setBannerUrl(discountUpdateDTO.getBannerUrl());
+    }
     if (discountUpdateDTO.getName() != null && !discountUpdateDTO.getName().equals(discount.getName())) {
         discount.setName(discountUpdateDTO.getName());
         updateDiscount = true;
@@ -131,6 +163,21 @@ public class DiscountServiceImpl implements DiscountService {
     return mapToDTO(discount);
     }
 
+    private void deleteCloudinaryImage(String imageUrl) {
+        try {
+            // Trích xuất public_id từ URL Cloudinary
+            String[] urlParts = imageUrl.split("/");
+            String publicId = String.join("/",
+                            Arrays.copyOfRange(urlParts, urlParts.length - 2, urlParts.length))
+                    .replaceFirst("[.][^.]+$", ""); // Loại bỏ phần mở rộng file
+
+            // Xóa hình ảnh từ Cloudinary
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (Exception e) {
+            // Chỉ log lỗi, không throw exception để không ảnh hưởng đến luồng chính
+            System.err.println("Failed to delete image from Cloudinary: " + e.getMessage());
+        }
+    }
 
     @Override
     public DiscountDTO getDiscountById(Integer id) {
@@ -715,31 +762,6 @@ public class DiscountServiceImpl implements DiscountService {
     return successCount;
     }
 
-    @Override
-    @Transactional
-    public String uploadDiscountImage(Integer discountId, MultipartFile file) {
-        try {
-            Discount discount = discountRepository.findById(discountId)
-                    .orElseThrow(() -> new RuntimeException("Discount not found"));
-
-            // Upload to Cloudinary
-            Map<String, Object> uploadParams = ObjectUtils.asMap(
-                    "folder", "discounts/" + discountId,
-                    "resource_type", "auto"
-            );
-
-            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
-            String imageUrl = uploadResult.get("secure_url").toString();
-
-            // Update discount with new image URL
-            discount.setBannerUrl(imageUrl);
-            discountRepository.save(discount);
-
-            return imageUrl;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to upload image: " + e.getMessage());
-        }
-    }
 
 
     private boolean isDiscountEffective(Discount discount, LocalDateTime time) {

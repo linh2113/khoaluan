@@ -6,6 +6,7 @@ import com.example.electronics_store.dto.CategoryDTO;
 import com.example.electronics_store.model.Category;
 import com.example.electronics_store.repository.CategoryRepository;
 import com.example.electronics_store.service.CategoryService;
+import com.example.electronics_store.util.CloudinaryUtils;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,14 +36,10 @@ public class CategoryServiceImpl implements CategoryService {
         if (categoryRepository.existsByCategoryName(categoryDTO.getCategoryName())) {
             throw new RuntimeException("Category name already exists");
         }
+        // Upload ảnh nếu có
         if (categoryDTO.getImageFile() != null && !categoryDTO.getImageFile().isEmpty()) {
             try {
-                Map<String, Object> uploadParams = ObjectUtils.asMap(
-                        "folder", "categories",
-                        "resource_type", "auto"
-                );
-                Map uploadResult = cloudinary.uploader().upload(categoryDTO.getImageFile().getBytes(), uploadParams);
-                String imageUrl = uploadResult.get("secure_url").toString();
+                String imageUrl = CloudinaryUtils.uploadImage(cloudinary, categoryDTO.getImageFile(), "categories");
                 categoryDTO.setImageUrl(imageUrl);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to upload image: " + e.getMessage());
@@ -73,17 +70,12 @@ public class CategoryServiceImpl implements CategoryService {
         // Upload ảnh mới nếu có
         if (categoryDTO.getImageFile() != null && !categoryDTO.getImageFile().isEmpty()) {
             try {
-                // Xóa ảnh cũ nếu có
-                if (category.getImageUrl() != null && !category.getImageUrl().isEmpty()) {
-                    deleteCloudinaryImage(category.getImageUrl());
-                }
-                // Upload ảnh mới
-                Map<String, Object> uploadParams = ObjectUtils.asMap(
-                        "folder", "categories",
-                        "resource_type", "auto"
+                String imageUrl = CloudinaryUtils.replaceImage(
+                        cloudinary,
+                        categoryDTO.getImageFile(),
+                        category.getImageUrl(),
+                        "categories"
                 );
-                Map uploadResult = cloudinary.uploader().upload(categoryDTO.getImageFile().getBytes(), uploadParams);
-                String imageUrl = uploadResult.get("secure_url").toString();
                 category.setImageUrl(imageUrl);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to upload image: " + e.getMessage());
@@ -98,22 +90,6 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category updatedCategory = categoryRepository.save(category);
         return mapCategoryToDTO(updatedCategory);
-    }
-
-    private void deleteCloudinaryImage(String imageUrl) {
-        try {
-            // Trích xuất public_id từ URL Cloudinary
-            String[] urlParts = imageUrl.split("/");
-            String publicId = String.join("/",
-                            Arrays.copyOfRange(urlParts, urlParts.length - 2, urlParts.length))
-                    .replaceFirst("[.][^.]+$", ""); // Loại bỏ phần mở rộng file
-
-            // Xóa hình ảnh từ Cloudinary
-            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-        } catch (Exception e) {
-            // Chỉ log lỗi, không throw exception để không ảnh hưởng đến luồng chính
-            System.err.println("Failed to delete image from Cloudinary: " + e.getMessage());
-        }
     }
 
     @Override

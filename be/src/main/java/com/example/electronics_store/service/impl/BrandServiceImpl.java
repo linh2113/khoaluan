@@ -7,6 +7,7 @@ import com.example.electronics_store.dto.BrandDTO;
 import com.example.electronics_store.model.Brand;
 import com.example.electronics_store.repository.BrandRepository;
 import com.example.electronics_store.service.BrandService;
+import com.example.electronics_store.util.CloudinaryUtils;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,12 +41,7 @@ public class BrandServiceImpl implements BrandService {
         // Upload ảnh nếu có
         if (brandDTO.getImageFile() != null && !brandDTO.getImageFile().isEmpty()) {
             try {
-                Map<String, Object> uploadParams = ObjectUtils.asMap(
-                        "folder", "brands",
-                        "resource_type", "auto"
-                );
-                Map uploadResult = cloudinary.uploader().upload(brandDTO.getImageFile().getBytes(), uploadParams);
-                String imageUrl = uploadResult.get("secure_url").toString();
+                String imageUrl = CloudinaryUtils.uploadImage(cloudinary, brandDTO.getImageFile(), "brands");
                 brandDTO.setImageUrl(imageUrl);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to upload image: " + e.getMessage());
@@ -81,18 +77,12 @@ public class BrandServiceImpl implements BrandService {
         // Upload ảnh mới nếu có
         if (brandDTO.getImageFile() != null && !brandDTO.getImageFile().isEmpty()) {
             try {
-                // Xóa ảnh cũ nếu có
-                if (brand.getImageUrl() != null && !brand.getImageUrl().isEmpty()) {
-                    deleteCloudinaryImage(brand.getImageUrl());
-                }
-
-                // Upload ảnh mới
-                Map<String, Object> uploadParams = ObjectUtils.asMap(
-                        "folder", "brands",
-                        "resource_type", "auto"
+                String imageUrl = CloudinaryUtils.replaceImage(
+                        cloudinary,
+                        brandDTO.getImageFile(),
+                        brand.getImageUrl(),
+                        "brands"
                 );
-                Map uploadResult = cloudinary.uploader().upload(brandDTO.getImageFile().getBytes(), uploadParams);
-                String imageUrl = uploadResult.get("secure_url").toString();
                 brand.setImageUrl(imageUrl);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to upload image: " + e.getMessage());
@@ -100,6 +90,7 @@ public class BrandServiceImpl implements BrandService {
         } else if (brandDTO.getImageUrl() != null) {
             brand.setImageUrl(brandDTO.getImageUrl());
         }
+
         if (brandDTO.getStatus() != null) {
             brand.setStatus(brandDTO.getStatus());
         }
@@ -108,21 +99,6 @@ public class BrandServiceImpl implements BrandService {
         return mapBrandToDTO(updatedBrand);
     }
 
-    private void deleteCloudinaryImage(String imageUrl) {
-        try {
-            // Trích xuất public_id từ URL Cloudinary
-            String[] urlParts = imageUrl.split("/");
-            String publicId = String.join("/",
-                            Arrays.copyOfRange(urlParts, urlParts.length - 2, urlParts.length))
-                    .replaceFirst("[.][^.]+$", ""); // Loại bỏ phần mở rộng file
-
-            // Xóa hình ảnh từ Cloudinary
-            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-        } catch (Exception e) {
-            // Chỉ log lỗi, không throw exception để không ảnh hưởng đến luồng chính
-            System.err.println("Failed to delete image from Cloudinary: " + e.getMessage());
-        }
-    }
     @Override
     public BrandDTO getBrandById(Integer id) {
         Brand brand = brandRepository.findById(id)

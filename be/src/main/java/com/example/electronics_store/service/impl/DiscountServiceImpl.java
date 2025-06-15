@@ -8,6 +8,7 @@ import com.example.electronics_store.model.*;
 import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.DiscountService;
 import com.example.electronics_store.service.domain.DiscountEligibilityService;
+import com.example.electronics_store.util.CloudinaryUtils;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -55,12 +56,7 @@ public class DiscountServiceImpl implements DiscountService {
     public DiscountDTO createDiscount(DiscountDTO discountDTO) {
         if (discountDTO.getBannerFile() != null && !discountDTO.getBannerFile().isEmpty()) {
             try {
-                Map<String, Object> uploadParams = ObjectUtils.asMap(
-                        "folder", "discounts",
-                        "resource_type", "auto"
-                );
-                Map uploadResult = cloudinary.uploader().upload(discountDTO.getBannerFile().getBytes(), uploadParams);
-                String bannerUrl = uploadResult.get("secure_url").toString();
+                String bannerUrl = CloudinaryUtils.uploadImage(cloudinary, discountDTO.getBannerFile(), "discounts");
                 discountDTO.setBannerUrl(bannerUrl);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to upload banner image: " + e.getMessage());
@@ -112,19 +108,13 @@ public class DiscountServiceImpl implements DiscountService {
     boolean updateDiscount = false;
     if (discountUpdateDTO.getBannerFile() != null && !discountUpdateDTO.getBannerFile().isEmpty()) {
         try {
-            // Xóa ảnh cũ nếu có
-            if (discount.getBannerUrl() != null && !discount.getBannerUrl().isEmpty()) {
-                deleteCloudinaryImage(discount.getBannerUrl());
-            }
-            // Upload ảnh mới
-            Map<String, Object> uploadParams = ObjectUtils.asMap(
-                    "folder", "discounts",
-                    "resource_type", "auto"
+            String bannerUrl = CloudinaryUtils.replaceImage(
+                    cloudinary,
+                    discountUpdateDTO.getBannerFile(),
+                    discount.getBannerUrl(),
+                    "discounts"
             );
-            Map uploadResult = cloudinary.uploader().upload(discountUpdateDTO.getBannerFile().getBytes(), uploadParams);
-            String bannerUrl = uploadResult.get("secure_url").toString();
             discount.setBannerUrl(bannerUrl);
-            updateDiscount = true;
         } catch (IOException e) {
             throw new RuntimeException("Failed to upload banner image: " + e.getMessage());
         }
@@ -159,24 +149,7 @@ public class DiscountServiceImpl implements DiscountService {
         discount.setUpdatedAt(LocalDateTime.now());
         discountRepository.save(discount);
     }
-    
     return mapToDTO(discount);
-    }
-
-    private void deleteCloudinaryImage(String imageUrl) {
-        try {
-            // Trích xuất public_id từ URL Cloudinary
-            String[] urlParts = imageUrl.split("/");
-            String publicId = String.join("/",
-                            Arrays.copyOfRange(urlParts, urlParts.length - 2, urlParts.length))
-                    .replaceFirst("[.][^.]+$", ""); // Loại bỏ phần mở rộng file
-
-            // Xóa hình ảnh từ Cloudinary
-            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-        } catch (Exception e) {
-            // Chỉ log lỗi, không throw exception để không ảnh hưởng đến luồng chính
-            System.err.println("Failed to delete image from Cloudinary: " + e.getMessage());
-        }
     }
 
     @Override

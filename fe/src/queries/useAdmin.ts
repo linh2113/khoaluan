@@ -42,6 +42,8 @@ import {
    uploadProductImage
 } from '@/apiRequest/admin'
 import {
+   BrandType,
+   CategoryType,
    GetBrandQueryParamsType,
    GetCategoryQueryParamsType,
    GetDiscountQueryParamsType,
@@ -156,7 +158,8 @@ export const useCreateBrand = () => {
 export const useUpdateBrand = () => {
    const queryClient = useQueryClient()
    return useMutation({
-      mutationFn: updateBrand,
+      mutationFn: ({ body, id }: { body: BrandType; id: number }) => updateBrand(body, id),
+
       onSuccess: () => {
          queryClient.invalidateQueries({
             queryKey: ['brand']
@@ -287,7 +290,7 @@ export const useCreateCategory = () => {
 export const useUpdateCategory = () => {
    const queryClient = useQueryClient()
    return useMutation({
-      mutationFn: updateCategory,
+      mutationFn: ({ body, id }: { body: CategoryType; id: number }) => updateCategory(body, id),
       onSuccess: () => {
          queryClient.invalidateQueries({
             queryKey: ['categories']

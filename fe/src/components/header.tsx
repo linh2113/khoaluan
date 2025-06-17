@@ -126,8 +126,6 @@ export default function Header() {
          <header className='bg-primaryColor py-3'>
             <div className='container flex justify-end gap-4 items-center mb-2'>
                <ModeToggle />
-               {/* <SwitchLanguage /> */}
-
                <div className='flex items-center gap-1 text-white'>
                   {userInfo ? (
                      <>

@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useGetAllPaymentMethod, useGetAllShippingMethod } from '@/queries/useAdmin'
 import { useTranslations } from 'next-intl'
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table'
+import { createPayment } from '@/apiRequest/payment'
 
 export default function Order() {
    const t = useTranslations('Order')
@@ -23,9 +24,10 @@ export default function Order() {
    const [formData, setFormData] = useState<OrderCreateDTO>({
       address: '',
       phoneNumber: '',
-      shippingMethodId: 1, // Mặc định là phương thức vận chuyển đầu tiên
-      paymentMethodId: 1 // Mặc định là phương thức thanh toán đầu tiên
+      shippingMethodId: 1,
+      paymentMethodId: 1
    })
+   const [isProcessingPayment, setIsProcessingPayment] = useState(false) // Trạng thái xử lý thanh toán
 
    // Lấy thông tin phương thức giao hàng
    const getAllShippingMethod = useGetAllShippingMethod()
@@ -92,13 +94,14 @@ export default function Order() {
       }))
    }
 
-   // Xử lý đặt hàng
-   const handlePlaceOrder = () => {
+   // Xử lý đặt hàng và thanh toán VNPay nếu được chọn
+   const handlePlaceOrder = async () => {
       if (!isLoadingCart && cartItems.length === 0) {
          toast.warning(t('validation.selectProducts'))
          router.push('/cart')
          return
       }
+
       // Kiểm tra thông tin đầu vào
       if (!formData.address.trim()) {
          toast.error(t('validation.addressRequired'))
@@ -118,10 +121,45 @@ export default function Order() {
       }
 
       // Gửi yêu cầu tạo đơn hàng
-      createOrderMutation.mutate({
-         userId: userId!,
-         orderData: formData
-      })
+      createOrderMutation.mutate(
+         {
+            userId: userId!,
+            orderData: formData
+         },
+         {
+            onSuccess: async (response) => {
+               const orderId = response.data.data.id // Giả sử API trả về ID đơn hàng
+               const selectedPaymentMethod = paymentMethods.find((method) => method.id === formData.paymentMethodId)
+
+               // Kiểm tra nếu phương thức thanh toán là VNPay
+               if (selectedPaymentMethod?.methodName.toLowerCase().includes('vnpay')) {
+                  try {
+                     setIsProcessingPayment(true)
+                     const orderInfo = `Thanh toan don hang ${orderId}`
+                     const paymentResponse = await createPayment({
+                        orderId,
+                        amount: total,
+                        orderInfo
+                     })
+
+                     if (paymentResponse.data.success) {
+                        // Chuyển hướng đến URL thanh toán VNPay
+                        window.location.href = paymentResponse.data.data.paymentUrl
+                        console.log(paymentResponse.data.data.paymentUrl)
+                     } else {
+                        setIsProcessingPayment(false)
+                     }
+                  } catch (error) {
+                     setIsProcessingPayment(false)
+                  }
+               } else {
+                  // Xử lý các phương thức thanh toán khác (ví dụ: COD)
+                  router.push('/') // Chuyển hướng đến trang thành công
+               }
+            },
+            onError: () => {}
+         }
+      )
    }
 
    if (isLoadingCart || isLoadingUser) {
@@ -149,6 +187,7 @@ export default function Order() {
                            className='border-primary'
                            type='text'
                            value={user?.surName + ' ' + user?.lastName || ''}
+                           disabled
                         />
                      </div>
                      <div>
@@ -239,7 +278,7 @@ export default function Order() {
                               </TableCell>
                               <TableCell className='text-center'>
                                  <span className='text-gray-400 line-through block text-sm'>
-                                    {formatCurrency(299999)}
+                                    {formatCurrency(item.originalPrice)}
                                  </span>
                                  <span>{formatCurrency(item.price)}</span>
                               </TableCell>
@@ -304,10 +343,10 @@ export default function Order() {
                </Link>
                <button
                   onClick={handlePlaceOrder}
-                  disabled={createOrderMutation.isPending}
+                  disabled={createOrderMutation.isPending || isProcessingPayment}
                   className='w-full py-3 bg-secondaryColor text-white rounded hover:bg-secondaryColor/90 disabled:opacity-70'
                >
-                  {createOrderMutation.isPending ? t('loading') : t('placeOrder')}
+                  {createOrderMutation.isPending || isProcessingPayment ? t('loading') : t('placeOrder')}
                </button>
             </div>
          </div>

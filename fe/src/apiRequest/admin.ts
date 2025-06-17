@@ -45,7 +45,12 @@ export const updatePaymentMethod = (body: PaymentMethodType) => http.put(`/admin
 export const getAllBrand = (queryParams: GetBrandQueryParamsType) =>
    http.get<GetAllBrandType>(`/admin/brands?` + queryString.stringify(queryParams))
 export const createBrand = (body: BrandType) => http.post(`/admin/brands`, body)
-export const updateBrand = (body: BrandType) => http.put(`/admin/brands/${body.id}`, body)
+export const updateBrand = (body: BrandType, id: number) =>
+   http.put(`/admin/brands/${id}`, body, {
+      headers: {
+         'Content-Type': 'multipart/form-data'
+      }
+   })
 
 // Discount
 export const getAllDiscount = (queryParams: GetDiscountQueryParamsType) =>
@@ -79,8 +84,18 @@ export const getAllCategories = (queryParams: GetCategoryQueryParamsType) =>
    http.get<ResponseData<ResponseDataWithPaginate<CategoryType[]>>>(
       '/admin/categories?' + queryString.stringify(queryParams)
    )
-export const createCategory = (body: CategoryType) => http.post('/admin/categories', body)
-export const updateCategory = (body: CategoryType) => http.put(`/admin/categories/${body.id}`, body)
+export const createCategory = (body: CategoryType) =>
+   http.post('/admin/categories', body, {
+      headers: {
+         'Content-Type': 'multipart/form-data'
+      }
+   })
+export const updateCategory = (body: CategoryType, id: number) =>
+   http.put(`/admin/categories/${id}`, body, {
+      headers: {
+         'Content-Type': 'multipart/form-data'
+      }
+   })
 
 // Product
 export const getAllAdminProduct = (queryParams: GetProductAdminQueryParamsType) =>

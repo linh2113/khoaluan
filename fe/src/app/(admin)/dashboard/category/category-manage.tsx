@@ -13,6 +13,7 @@ import { Edit, Plus, Search } from 'lucide-react'
 import type { CategoryType, GetCategoryQueryParamsType } from '@/types/admin.type'
 import { toast } from 'react-toastify'
 import Paginate from '@/components/paginate'
+import Image from 'next/image'
 
 export default function CategoryManage() {
    const [currentPage, setCurrentPage] = useState<number>(1)
@@ -34,7 +35,11 @@ export default function CategoryManage() {
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
    const [newCategory, setNewCategory] = useState<CategoryType>({ id: 0, categoryName: '', status: true })
+   const [newCategoryImage, setNewCategoryImage] = useState<File | null>(null)
    const [editingCategory, setEditingCategory] = useState<CategoryType | null>(null)
+   const [editingCategoryImage, setEditingCategoryImage] = useState<File | null>(null)
+   const [newCategoryImagePreview, setNewCategoryImagePreview] = useState<string | null>(null)
+   const [editingCategoryImagePreview, setEditingCategoryImagePreview] = useState<string | null>(null)
 
    // Cập nhật page trong queryParams khi currentPage thay đổi
    useEffect(() => {
@@ -102,10 +107,30 @@ export default function CategoryManage() {
          return
       }
 
-      createCategory.mutate(newCategory, {
+      const formData = new FormData()
+      formData.append(
+         'category',
+         JSON.stringify({
+            categoryName: newCategory.categoryName,
+            status: newCategory.status
+         })
+      )
+
+      if (newCategoryImage) {
+         formData.append('image', newCategoryImage)
+      }
+
+      //@ts-ignore
+      createCategory.mutate(formData, {
          onSuccess: () => {
             setIsAddDialogOpen(false)
             setNewCategory({ id: 0, categoryName: '', status: true })
+            setNewCategoryImage(null)
+            // Clean up preview URL
+            if (newCategoryImagePreview) {
+               URL.revokeObjectURL(newCategoryImagePreview)
+               setNewCategoryImagePreview(null)
+            }
             getAllCategories.refetch()
          }
       })
@@ -117,17 +142,45 @@ export default function CategoryManage() {
          return
       }
 
-      updateCategory.mutate(editingCategory, {
-         onSuccess: () => {
-            setIsEditDialogOpen(false)
-            setEditingCategory(null)
-            getAllCategories.refetch()
+      const formData = new FormData()
+      formData.append(
+         'category',
+         JSON.stringify({
+            categoryName: editingCategory.categoryName,
+            status: editingCategory.status
+         })
+      )
+
+      if (editingCategoryImage) {
+         formData.append('image', editingCategoryImage)
+      }
+      //@ts-ignore
+      updateCategory.mutate(
+         { body: formData, id: editingCategory.id },
+         {
+            onSuccess: () => {
+               setIsEditDialogOpen(false)
+               setEditingCategory(null)
+               setEditingCategoryImage(null)
+               // Clean up preview URL
+               if (editingCategoryImagePreview) {
+                  URL.revokeObjectURL(editingCategoryImagePreview)
+                  setEditingCategoryImagePreview(null)
+               }
+               getAllCategories.refetch()
+            }
          }
-      })
+      )
    }
 
    const openEditDialog = (category: CategoryType) => {
       setEditingCategory({ ...category })
+      setEditingCategoryImage(null)
+      // Clean up any existing preview
+      if (editingCategoryImagePreview) {
+         URL.revokeObjectURL(editingCategoryImagePreview)
+         setEditingCategoryImagePreview(null)
+      }
       setIsEditDialogOpen(true)
    }
 
@@ -194,6 +247,7 @@ export default function CategoryManage() {
                <TableHeader>
                   <TableRow>
                      <TableHead className='w-[100px]'>ID</TableHead>
+                     <TableHead className='w-[100px]'>Hình ảnh</TableHead>
                      <TableHead>Tên danh mục</TableHead>
                      <TableHead>Trạng thái</TableHead>
                      <TableHead className='text-right'>Thao tác</TableHead>
@@ -210,6 +264,15 @@ export default function CategoryManage() {
                      categories.map((category) => (
                         <TableRow key={category.id}>
                            <TableCell>{category.id}</TableCell>
+                           <TableCell>
+                              {/* @ts-ignore */}
+                              <Image
+                                 src={category.imageUrl || '/placeholder.svg'}
+                                 alt={category.categoryName}
+                                 width={40}
+                                 height={40}
+                              />
+                           </TableCell>
                            <TableCell>{category.categoryName}</TableCell>
                            <TableCell>
                               {category.status ? (
@@ -251,7 +314,19 @@ export default function CategoryManage() {
          )}
 
          {/* Dialog thêm danh mục */}
-         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+         <Dialog
+            open={isAddDialogOpen}
+            onOpenChange={(open) => {
+               setIsAddDialogOpen(open)
+               if (!open) {
+                  // Clean up preview when dialog closes
+                  if (newCategoryImagePreview) {
+                     URL.revokeObjectURL(newCategoryImagePreview)
+                     setNewCategoryImagePreview(null)
+                  }
+               }
+            }}
+         >
             <DialogContent>
                <DialogHeader>
                   <DialogTitle>Thêm danh mục mới</DialogTitle>
@@ -265,6 +340,48 @@ export default function CategoryManage() {
                         onChange={(e) => setNewCategory({ ...newCategory, categoryName: e.target.value })}
                         placeholder='Nhập tên danh mục'
                      />
+                  </div>
+                  <div className='grid gap-2'>
+                     <Label htmlFor='categoryImage'>Hình ảnh danh mục</Label>
+                     <Input
+                        id='categoryImage'
+                        type='file'
+                        accept='image/*'
+                        onChange={(e) => {
+                           const file = e.target.files?.[0] || null
+                           setNewCategoryImage(file)
+
+                           // Clean up previous preview URL
+                           if (newCategoryImagePreview) {
+                              URL.revokeObjectURL(newCategoryImagePreview)
+                           }
+
+                           // Create new preview URL
+                           if (file) {
+                              const previewUrl = URL.createObjectURL(file)
+                              setNewCategoryImagePreview(previewUrl)
+                           } else {
+                              setNewCategoryImagePreview(null)
+                           }
+                        }}
+                     />
+                     {newCategoryImage && (
+                        <div className='text-sm text-muted-foreground'>Đã chọn: {newCategoryImage.name}</div>
+                     )}
+                     {newCategoryImagePreview && (
+                        <div className='mt-2'>
+                           <Label>Xem trước:</Label>
+                           <div className='mt-1 border rounded-lg p-2 bg-gray-50'>
+                              <Image
+                                 src={newCategoryImagePreview || '/placeholder.svg'}
+                                 alt='Preview'
+                                 width={200}
+                                 height={200}
+                                 className='rounded-lg object-cover mx-auto'
+                              />
+                           </div>
+                        </div>
+                     )}
                   </div>
                   <div className='flex items-center justify-between'>
                      <div className='space-y-0.5'>
@@ -292,7 +409,19 @@ export default function CategoryManage() {
          </Dialog>
 
          {/* Dialog chỉnh sửa danh mục */}
-         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+         <Dialog
+            open={isEditDialogOpen}
+            onOpenChange={(open) => {
+               setIsEditDialogOpen(open)
+               if (!open) {
+                  // Clean up preview when dialog closes
+                  if (editingCategoryImagePreview) {
+                     URL.revokeObjectURL(editingCategoryImagePreview)
+                     setEditingCategoryImagePreview(null)
+                  }
+               }
+            }}
+         >
             <DialogContent>
                <DialogHeader>
                   <DialogTitle>Chỉnh sửa danh mục</DialogTitle>
@@ -307,6 +436,68 @@ export default function CategoryManage() {
                            onChange={(e) => setEditingCategory({ ...editingCategory, categoryName: e.target.value })}
                            placeholder='Nhập tên danh mục'
                         />
+                     </div>
+                     <div className='grid gap-2'>
+                        <Label htmlFor='editCategoryImage'>Hình ảnh danh mục</Label>
+                        <Input
+                           id='editCategoryImage'
+                           type='file'
+                           accept='image/*'
+                           onChange={(e) => {
+                              const file = e.target.files?.[0] || null
+                              setEditingCategoryImage(file)
+
+                              // Clean up previous preview URL
+                              if (editingCategoryImagePreview) {
+                                 URL.revokeObjectURL(editingCategoryImagePreview)
+                              }
+
+                              // Create new preview URL
+                              if (file) {
+                                 const previewUrl = URL.createObjectURL(file)
+                                 setEditingCategoryImagePreview(previewUrl)
+                              } else {
+                                 setEditingCategoryImagePreview(null)
+                              }
+                           }}
+                        />
+                        {editingCategoryImage && (
+                           <div className='text-sm text-muted-foreground'>Đã chọn: {editingCategoryImage.name}</div>
+                        )}
+
+                        {/* Show current image if available */}
+                        {/* @ts-ignore */}
+                        {editingCategory?.imageUrl && !editingCategoryImagePreview && (
+                           <div className='mt-2'>
+                              <Label>Hình ảnh hiện tại:</Label>
+                              <div className='mt-1 border rounded-lg p-2 bg-gray-50'>
+                                 <Image
+                                    /* @ts-ignore */
+                                    src={editingCategory.imageUrl || '/placeholder.svg'}
+                                    alt={editingCategory.categoryName}
+                                    width={200}
+                                    height={200}
+                                    className='rounded-lg object-cover mx-auto'
+                                 />
+                              </div>
+                           </div>
+                        )}
+
+                        {/* Show preview of new image */}
+                        {editingCategoryImagePreview && (
+                           <div className='mt-2'>
+                              <Label>Xem trước hình ảnh mới:</Label>
+                              <div className='mt-1 border rounded-lg p-2 bg-gray-50'>
+                                 <Image
+                                    src={editingCategoryImagePreview || '/placeholder.svg'}
+                                    alt='Preview'
+                                    width={200}
+                                    height={200}
+                                    className='rounded-lg object-cover mx-auto'
+                                 />
+                              </div>
+                           </div>
+                        )}
                      </div>
                      <div className='flex items-center justify-between'>
                         <div className='space-y-0.5'>

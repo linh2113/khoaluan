@@ -203,7 +203,7 @@ export default function Header() {
                   onSubmit={(e) => {
                      e.preventDefault()
                      setSearchProduct(searchValue)
-                     router.push('/')
+                     router.push(`/products?keyword=${searchValue}`)
                   }}
                   className='sm:w-3/5 flex-1 flex items-center'
                >

@@ -63,8 +63,8 @@ public interface StatisticsRepository extends JpaRepository<Order, Integer> {
             "JOIN products p ON od.id_product = p.id " +
             "JOIN categories c ON p.id_category = c.id " +
             "WHERE o.order_status = 4 " +
-            "AND (:startDate IS NULL OR o.create_at >= :startDate) " +
-            "AND (:endDate IS NULL OR o.create_at <= :endDate) " +
+            "AND (:startDate IS NULL OR o.create_at >= CAST(:startDate AS timestamp)) " +
+            "AND (:endDate IS NULL OR o.create_at <= CAST(:endDate AS timestamp)) " +
             "GROUP BY c.category_name " +
             "ORDER BY total_revenue DESC", nativeQuery = true)
     List<Object[]> getRevenueByCategoryPieChart(@Param("startDate") String startDate, @Param("endDate") String endDate);

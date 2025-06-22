@@ -41,6 +41,7 @@ export interface BrandType {
    updatedAt: string
    status: boolean
    productCount: number
+   imageUrl?: string
 }
 
 // Discount
@@ -113,6 +114,7 @@ export interface CategoryType {
    id: number
    categoryName: string
    status: boolean
+   imageUrl?: string
 }
 
 // Product

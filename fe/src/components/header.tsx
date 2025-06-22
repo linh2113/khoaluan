@@ -126,8 +126,6 @@ export default function Header() {
          <header className='bg-primaryColor py-3'>
             <div className='container flex justify-end gap-4 items-center mb-2'>
                <ModeToggle />
-               {/* <SwitchLanguage /> */}
-
                <div className='flex items-center gap-1 text-white'>
                   {userInfo ? (
                      <>
@@ -205,7 +203,7 @@ export default function Header() {
                   onSubmit={(e) => {
                      e.preventDefault()
                      setSearchProduct(searchValue)
-                     router.push('/')
+                     router.push(`/products?keyword=${searchValue}`)
                   }}
                   className='sm:w-3/5 flex-1 flex items-center'
                >

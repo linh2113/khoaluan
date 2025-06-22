@@ -1,5 +1,6 @@
 package com.example.electronics_store.config;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -15,7 +16,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-@Configuration
+
+ @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
     private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
@@ -48,3 +50,4 @@ public class WebConfig implements WebMvcConfigurer {
         return converter;
     }
 }
+

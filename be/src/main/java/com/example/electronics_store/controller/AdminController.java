@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -1028,11 +1029,15 @@ public class AdminController {
     }
     @GetMapping("/revenue-by-interval")
     public ResponseEntity<ApiResponse<?>> getRevenueByTimeInterval(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "day") String interval) {
         try {
-            Map<String, Object> statistics = statisticsService.getRevenueByTimeInterval(startDate, endDate, interval);
+            // Chuyển đổi LocalDate sang LocalDateTime
+            LocalDateTime startDateTime = startDate.atStartOfDay();
+            LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+
+            Map<String, Object> statistics = statisticsService.getRevenueByTimeInterval(startDateTime, endDateTime, interval);
             return ResponseEntity.ok(ApiResponse.success(statistics));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -1042,10 +1047,12 @@ public class AdminController {
 
     @GetMapping("/revenue-by-category-pie")
     public ResponseEntity<ApiResponse<?>> getRevenueByCategoryPieChart(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         try {
-            Map<String, Object> statistics = statisticsService.getRevenueByCategoryPieChart(startDate, endDate);
+            LocalDateTime startDateTime = startDate.atStartOfDay();
+            LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+            Map<String, Object> statistics = statisticsService.getRevenueByCategoryPieChart(startDateTime, endDateTime);
             return ResponseEntity.ok(ApiResponse.success(statistics));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

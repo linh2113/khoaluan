@@ -18,7 +18,7 @@ public interface StatisticsRepository extends JpaRepository<Order, Integer> {
      */
     @Query(value = "SELECT DATE(o.create_at) as order_date, SUM(o.total_price) as total_sales " +
             "FROM orders o " +
-            "WHERE o.create_at BETWEEN :startDate AND :endDate AND o.order_status = 4 " +
+            "WHERE o.create_at BETWEEN TO_TIMESTAMP(:startDate, 'YYYY-MM-DD') AND TO_TIMESTAMP(:endDate, 'YYYY-MM-DD') AND o.order_status = 4 " +
             "GROUP BY DATE(o.create_at) " +
             "ORDER BY order_date", nativeQuery = true)
     List<Object[]> getRevenueByDay(@Param("startDate") String startDate, @Param("endDate") String endDate);
@@ -28,7 +28,7 @@ public interface StatisticsRepository extends JpaRepository<Order, Integer> {
      */
     @Query(value = "SELECT TO_CHAR(o.create_at, 'YYYY-IW') as week, SUM(o.total_price) as total_sales " +
             "FROM orders o " +
-            "WHERE o.create_at BETWEEN :startDate AND :endDate AND o.order_status = 4 " +
+            "WHERE o.create_at BETWEEN TO_TIMESTAMP(:startDate, 'YYYY-MM-DD') AND TO_TIMESTAMP(:endDate, 'YYYY-MM-DD') AND o.order_status = 4 " +
             "GROUP BY TO_CHAR(o.create_at, 'YYYY-IW') " +
             "ORDER BY week", nativeQuery = true)
     List<Object[]> getRevenueByWeek(@Param("startDate") String startDate, @Param("endDate") String endDate);
@@ -38,7 +38,7 @@ public interface StatisticsRepository extends JpaRepository<Order, Integer> {
      */
     @Query(value = "SELECT TO_CHAR(o.create_at, 'YYYY-MM') as month, SUM(o.total_price) as total_sales " +
             "FROM orders o " +
-            "WHERE o.create_at BETWEEN :startDate AND :endDate AND o.order_status = 4 " +
+            "WHERE o.create_at BETWEEN TO_TIMESTAMP(:startDate, 'YYYY-MM-DD') AND TO_TIMESTAMP(:endDate, 'YYYY-MM-DD') AND o.order_status = 4 " +
             "GROUP BY TO_CHAR(o.create_at, 'YYYY-MM') " +
             "ORDER BY month", nativeQuery = true)
     List<Object[]> getRevenueByMonth(@Param("startDate") String startDate, @Param("endDate") String endDate);
@@ -48,11 +48,10 @@ public interface StatisticsRepository extends JpaRepository<Order, Integer> {
      */
     @Query(value = "SELECT TO_CHAR(o.create_at, 'YYYY') as year, SUM(o.total_price) as total_sales " +
             "FROM orders o " +
-            "WHERE o.create_at BETWEEN :startDate AND :endDate AND o.order_status = 4 " +
+            "WHERE o.create_at BETWEEN TO_TIMESTAMP(:startDate, 'YYYY-MM-DD') AND TO_TIMESTAMP(:endDate, 'YYYY-MM-DD') AND o.order_status = 4 " +
             "GROUP BY TO_CHAR(o.create_at, 'YYYY') " +
             "ORDER BY year", nativeQuery = true)
     List<Object[]> getRevenueByYear(@Param("startDate") String startDate, @Param("endDate") String endDate);
-
 
 
     /**

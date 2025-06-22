@@ -22,10 +22,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final OrderDetailRepository orderDetailRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
-    private final PaymentMethodRepository paymentMethodRepository;
-    private final ShippingMethodRepository shippingMethodRepository;
-    private final OrderService orderService;
+    private final StatisticsRepository statisticsRepository;
 
     @Autowired
     public StatisticsServiceImpl(
@@ -33,18 +30,13 @@ public class StatisticsServiceImpl implements StatisticsService {
             OrderDetailRepository orderDetailRepository,
             UserRepository userRepository,
             ProductRepository productRepository,
-            CategoryRepository categoryRepository,
-            PaymentMethodRepository paymentMethodRepository,
-            ShippingMethodRepository shippingMethodRepository,
-            OrderService orderService) {
+            StatisticsRepository statisticsRepository
+           ) {
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
-        this.categoryRepository = categoryRepository;
-        this.paymentMethodRepository = paymentMethodRepository;
-        this.shippingMethodRepository = shippingMethodRepository;
-        this.orderService = orderService;
+        this.statisticsRepository = statisticsRepository;
     }
 
     @Override
@@ -481,6 +473,109 @@ public class StatisticsServiceImpl implements StatisticsService {
         result.put("endDate", endDateStr);
         result.put("revenueByDay", salesByDayMap);
         
+        return result;
+    }
+    @Override
+    public Map<String, Object> getRevenueByTimeInterval(LocalDateTime startDate, LocalDateTime endDate, String interval) {
+        // Validate interval
+        if (!Arrays.asList("day", "week", "month", "year").contains(interval)) {
+            throw new IllegalArgumentException("Interval must be one of: day, week, month, year");
+        }
+
+        // Format dates for SQL query
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String startDateStr = startDate.format(formatter);
+        String endDateStr = endDate.format(formatter);
+
+        // Get revenue data from repository based on interval
+        List<Object[]> revenueData;
+
+        switch (interval) {
+            case "day":
+                revenueData = statisticsRepository.getRevenueByDay(startDateStr, endDateStr);
+                break;
+            case "week":
+                revenueData = statisticsRepository.getRevenueByWeek(startDateStr, endDateStr);
+                break;
+            case "month":
+                revenueData = statisticsRepository.getRevenueByMonth(startDateStr, endDateStr);
+                break;
+            case "year":
+                revenueData = statisticsRepository.getRevenueByYear(startDateStr, endDateStr);
+                break;
+            default:
+                revenueData = statisticsRepository.getRevenueByDay(startDateStr, endDateStr);
+        }
+
+        // Process data
+        Map<String, Float> revenueByPeriod = new LinkedHashMap<>();
+
+        for (Object[] row : revenueData) {
+            String period = row[0].toString();
+            Float revenue = ((Number) row[1]).floatValue();
+            revenueByPeriod.put(period, revenue);
+        }
+
+        Float totalRevenue = revenueByPeriod.values().stream().reduce(0f, Float::sum);
+        Float avgRevenue = revenueByPeriod.isEmpty() ? 0f : totalRevenue / revenueByPeriod.size();
+
+        // Build response
+        Map<String, Object> result = new HashMap<>();
+        result.put("startDate", startDateStr);
+        result.put("endDate", endDateStr);
+        result.put("interval", interval);
+        result.put("revenueData", revenueByPeriod);
+        result.put("totalRevenue", totalRevenue);
+        result.put("averageRevenue", avgRevenue);
+
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> getRevenueByCategoryPieChart(LocalDateTime startDate, LocalDateTime endDate) {
+        // Format dates for SQL query if provided
+        String startDateStr = null;
+        String endDateStr = null;
+
+        if (startDate != null && endDate != null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            startDateStr = startDate.format(formatter);
+            endDateStr = endDate.format(formatter);
+        }
+
+        // Get revenue by category data
+        List<Object[]> results = statisticsRepository.getRevenueByCategoryPieChart(startDateStr, endDateStr);
+
+        // Process data
+        Map<String, Float> revenueByCategoryMap = new HashMap<>();
+        for (Object[] row : results) {
+            String categoryName = (String) row[0];
+            Float revenue = ((Number) row[1]).floatValue();
+            revenueByCategoryMap.put(categoryName, revenue);
+        }
+
+        // Calculate total revenue
+        Float totalRevenue = revenueByCategoryMap.values().stream().reduce(0f, Float::sum);
+
+        // Calculate percentage for each category
+        List<Map<String, Object>> categoryData = new ArrayList<>();
+        for (Map.Entry<String, Float> entry : revenueByCategoryMap.entrySet()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("category", entry.getKey());
+            item.put("revenue", entry.getValue());
+            item.put("percentage", totalRevenue > 0 ? (entry.getValue() / totalRevenue) * 100 : 0);
+            categoryData.add(item);
+        }
+
+        // Build response
+        Map<String, Object> result = new HashMap<>();
+        if (startDate != null && endDate != null) {
+            result.put("startDate", startDateStr);
+            result.put("endDate", endDateStr);
+        }
+        result.put("totalRevenue", totalRevenue);
+        result.put("categoryData", categoryData);
+
         return result;
     }
 }

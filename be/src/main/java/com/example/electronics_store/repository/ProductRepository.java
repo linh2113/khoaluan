@@ -45,9 +45,18 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
             "ON p.id = od.id_product WHERE p.status = true", nativeQuery = true)
     List<Product> findTopSellingProducts();
 
-    @Query(value = "SELECT p.* FROM products p " +
-            "JOIN (SELECT id_product, AVG(rating) as avg_rating FROM rating GROUP BY id_product ORDER BY avg_rating DESC LIMIT 10) r " +
-            "ON p.id = r.id_product WHERE p.status = 1", nativeQuery = true)
+    @Query(value = """
+    SELECT p.* FROM products p
+    JOIN (
+        SELECT id_product, AVG(rating) as avg_rating 
+        FROM rating 
+        GROUP BY id_product
+        HAVING AVG(rating) >= 4
+    ) r ON p.id = r.id_product
+    WHERE p.status = true
+    ORDER BY r.avg_rating DESC
+    LIMIT 10
+    """, nativeQuery = true)
     List<Product> findTopRatedProducts();
 
     @Query(value = """
@@ -60,14 +69,27 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
             countQuery = "SELECT COUNT(DISTINCT p.id) FROM products p LEFT JOIN order_details od ON p.id = od.id_product WHERE p.status = true",
             nativeQuery = true)
     Page<Product> findTopSellingProducts(Pageable pageable);
+
     @Query(value = """
-        SELECT p.* FROM products p
-        LEFT JOIN rating r ON p.id = r.id_product
-        WHERE p.status = true
-        GROUP BY p.id
-        ORDER BY AVG(r.rating) DESC
-        """,
-            countQuery = "SELECT COUNT(*) FROM products p WHERE p.status = true",
+    SELECT p.* FROM products p
+    JOIN (
+        SELECT id_product, AVG(rating) as avg_rating 
+        FROM rating 
+        GROUP BY id_product
+        HAVING AVG(rating) >= 4
+    ) r ON p.id = r.id_product
+    WHERE p.status = true
+    ORDER BY r.avg_rating DESC
+    """,
+            countQuery = """
+    SELECT COUNT(p.id) FROM products p
+    JOIN (
+        SELECT id_product FROM rating 
+        GROUP BY id_product
+        HAVING AVG(rating) >= 4
+    ) r ON p.id = r.id_product
+    WHERE p.status = true
+    """,
             nativeQuery = true)
     Page<Product> findTopRatedProducts(Pageable pageable);
 

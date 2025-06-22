@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -1020,6 +1021,32 @@ public class AdminController {
         try {
             Long count = flashSaleService.countActiveFlashSales();
             return ResponseEntity.ok(ApiResponse.success("Active flash sales count retrieved", count));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    @GetMapping("/revenue-by-interval")
+    public ResponseEntity<ApiResponse<?>> getRevenueByTimeInterval(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(defaultValue = "day") String interval) {
+        try {
+            Map<String, Object> statistics = statisticsService.getRevenueByTimeInterval(startDate, endDate, interval);
+            return ResponseEntity.ok(ApiResponse.success(statistics));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/revenue-by-category-pie")
+    public ResponseEntity<ApiResponse<?>> getRevenueByCategoryPieChart(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        try {
+            Map<String, Object> statistics = statisticsService.getRevenueByCategoryPieChart(startDate, endDate);
+            return ResponseEntity.ok(ApiResponse.success(statistics));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(e.getMessage()));

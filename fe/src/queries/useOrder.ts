@@ -21,14 +21,10 @@ export const useCreateOrder = () => {
    return useMutation({
       mutationFn: ({ userId, orderData }: { userId: number; orderData: OrderCreateDTO }) =>
          createOrder(userId, orderData),
-      onSuccess: (data) => {
+      onSuccess: () => {
          queryClient.invalidateQueries({ queryKey: ['orders'] })
          queryClient.invalidateQueries({ queryKey: ['cart'] })
-         toast.success('Đặt hàng thành công')
 
-         // Chuyển hướng đến trang chi tiết đơn hàng
-         const orderId = data.data.data.id
-         router.push(`/`)
          // router.push(`/account/orders/${orderId}`)
       },
       onError: () => {

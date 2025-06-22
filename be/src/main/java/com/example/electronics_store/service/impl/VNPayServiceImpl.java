@@ -44,7 +44,7 @@ public class VNPayServiceImpl implements VNPayService {
             vnp_Params.put("vnp_Locale", "vn");
             
             // URL trả về sau khi thanh toán
-            vnp_Params.put("vnp_ReturnUrl", vnPayConfig.getBackendUrl() + "/api/payment/vnpay-return");
+            vnp_Params.put("vnp_ReturnUrl", "http://localhost:3000/vnpay-return");
             vnp_Params.put("vnp_IpAddr", ipAddress);
             
             // Thời gian giao dịch

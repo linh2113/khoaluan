@@ -145,7 +145,6 @@ export default function Order() {
                      if (paymentResponse.data.success) {
                         // Chuyển hướng đến URL thanh toán VNPay
                         window.location.href = paymentResponse.data.data.paymentUrl
-                        console.log(paymentResponse.data.data.paymentUrl)
                      } else {
                         setIsProcessingPayment(false)
                      }
@@ -154,6 +153,7 @@ export default function Order() {
                   }
                } else {
                   // Xử lý các phương thức thanh toán khác (ví dụ: COD)
+                  toast.success('Đặt hàng thành công')
                   router.push('/') // Chuyển hướng đến trang thành công
                }
             },

@@ -22,19 +22,55 @@ import {
 } from 'recharts'
 import { Users, Package, ShoppingCart, DollarSign, TrendingUp, Clock, Truck, CheckCircle, XCircle } from 'lucide-react'
 import { DashboardStatisticsType } from '@/types/admin.type'
+import { DatePicker } from '@/components/ui/date-picker'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { getRevenueByCategoryPie, getRevenueByInterval } from '@/apiRequest/admin'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 export default function Statistics() {
    const { data } = useGetDashboardStatistics()
    const statistics = data?.data.data as DashboardStatisticsType
 
-   // Dữ liệu cho biểu đồ trạng thái đơn hàng
-   const orderStatusData = [
-      { name: 'Chờ xác nhận', value: statistics?.pendingOrders || 0, color: '#f59e0b' },
-      { name: 'Đang xử lý', value: statistics?.processingOrders || 0, color: '#3b82f6' },
-      { name: 'Đang giao', value: statistics?.shippedOrders || 0, color: '#10b981' },
-      { name: 'Đã giao', value: statistics?.deliveredOrders || 0, color: '#16a34a' },
-      { name: 'Đã hủy', value: statistics?.cancelledOrders || 0, color: '#ef4444' }
-   ]
+   const [revenueStartDate, setRevenueStartDate] = React.useState<Date>(new Date(new Date().getFullYear(), 0, 1))
+   const [revenueEndDate, setRevenueEndDate] = React.useState<Date>(new Date())
+   const [interval, setInterval] = React.useState<'day' | 'week' | 'month' | 'year'>('day')
+   const [categoryStartDate, setCategoryStartDate] = React.useState<Date>(new Date(new Date().getFullYear(), 0, 1))
+   const [categoryEndDate, setCategoryEndDate] = React.useState<Date>(new Date())
+
+   // API calls for revenue data
+   const [revenueData, setRevenueData] = React.useState<any>(null)
+   const [categoryData, setCategoryData] = React.useState<any>(null)
+
+   const fetchRevenueByInterval = async () => {
+      try {
+         const startDateStr = revenueStartDate.toISOString().split('T')[0]
+         const endDateStr = revenueEndDate.toISOString().split('T')[0]
+         const response = await getRevenueByInterval(startDateStr, endDateStr, interval)
+         setRevenueData(response.data.data)
+      } catch (error) {
+         console.error('Error fetching revenue by interval:', error)
+      }
+   }
+
+   const fetchRevenueByCategoryPie = async () => {
+      try {
+         const startDateStr = categoryStartDate.toISOString().split('T')[0]
+         const endDateStr = categoryEndDate.toISOString().split('T')[0]
+         const response = await getRevenueByCategoryPie(startDateStr, endDateStr)
+         setCategoryData(response.data.data)
+      } catch (error) {
+         console.error('Error fetching revenue by category:', error)
+      }
+   }
+
+   React.useEffect(() => {
+      fetchRevenueByInterval()
+   }, [revenueStartDate, revenueEndDate, interval])
+
+   React.useEffect(() => {
+      fetchRevenueByCategoryPie()
+   }, [categoryStartDate, categoryEndDate])
 
    // Format ngày tháng
    const formatDate = (dateString: string) => {
@@ -61,6 +97,22 @@ export default function Statistics() {
          default:
             return <span className='px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs'>Không xác định</span>
       }
+   }
+
+   // Format revenue chart data
+   const formatRevenueChartData = (data: any) => {
+      if (!data?.revenueData) return []
+
+      return Object.entries(data.revenueData).map(([key, value]) => ({
+         period: key,
+         revenue: value as number
+      }))
+   }
+
+   // Generate colors for pie chart
+   const generateColors = (count: number) => {
+      const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00', '#ff00ff', '#00ffff', '#ff0000']
+      return colors.slice(0, count)
    }
 
    return (
@@ -175,6 +227,8 @@ export default function Statistics() {
                <TabsTrigger value='products'>Sản phẩm bán chạy</TabsTrigger>
                <TabsTrigger value='customers'>Khách hàng hàng đầu</TabsTrigger>
                <TabsTrigger value='charts'>Biểu đồ</TabsTrigger>
+               <TabsTrigger value='revenue-interval'>Doanh thu theo thời gian</TabsTrigger>
+               <TabsTrigger value='revenue-category'>Doanh thu theo danh mục</TabsTrigger>
             </TabsList>
 
             {/* Tab đơn hàng gần đây */}
@@ -301,34 +355,6 @@ export default function Statistics() {
                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                   <Card>
                      <CardHeader>
-                        <CardTitle>Trạng thái đơn hàng</CardTitle>
-                     </CardHeader>
-                     <CardContent className='h-80'>
-                        <ResponsiveContainer width='100%' height='100%'>
-                           <PieChart>
-                              <Pie
-                                 data={orderStatusData.filter((item) => item.value > 0)}
-                                 cx='50%'
-                                 cy='50%'
-                                 labelLine={false}
-                                 outerRadius={80}
-                                 fill='#8884d8'
-                                 dataKey='value'
-                                 label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                              >
-                                 {orderStatusData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                 ))}
-                              </Pie>
-                              <Tooltip formatter={(value) => [`${value} đơn hàng`, '']} />
-                              <Legend />
-                           </PieChart>
-                        </ResponsiveContainer>
-                     </CardContent>
-                  </Card>
-
-                  <Card>
-                     <CardHeader>
                         <CardTitle>Sản phẩm bán chạy</CardTitle>
                      </CardHeader>
                      <CardContent className='h-80'>
@@ -348,6 +374,182 @@ export default function Statistics() {
                      </CardContent>
                   </Card>
                </div>
+            </TabsContent>
+
+            {/* Tab doanh thu theo thời gian */}
+            <TabsContent value='revenue-interval'>
+               <Card>
+                  <CardHeader>
+                     <CardTitle>Doanh thu theo thời gian</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                     <div className='mb-6 space-y-4'>
+                        <div className='flex flex-wrap gap-4 items-end'>
+                           <div className='space-y-2'>
+                              <Label>Ngày bắt đầu</Label>
+                              <DatePicker
+                                 value={revenueStartDate}
+                                 onChange={(date) => date && setRevenueStartDate(date)}
+                              />
+                           </div>
+                           <div className='space-y-2'>
+                              <Label>Ngày kết thúc</Label>
+                              <DatePicker value={revenueEndDate} onChange={(date) => date && setRevenueEndDate(date)} />
+                           </div>
+                        </div>
+
+                        <div className='space-y-2'>
+                           <Label>Đơn vị thời gian</Label>
+                           <RadioGroup
+                              value={interval}
+                              onValueChange={(value: 'day' | 'week' | 'month' | 'year') => setInterval(value)}
+                              className='flex flex-wrap gap-4'
+                           >
+                              <div className='flex items-center space-x-2'>
+                                 <RadioGroupItem value='day' id='day' />
+                                 <Label htmlFor='day'>Ngày</Label>
+                              </div>
+                              <div className='flex items-center space-x-2'>
+                                 <RadioGroupItem value='week' id='week' />
+                                 <Label htmlFor='week'>Tuần</Label>
+                              </div>
+                              <div className='flex items-center space-x-2'>
+                                 <RadioGroupItem value='month' id='month' />
+                                 <Label htmlFor='month'>Tháng</Label>
+                              </div>
+                              <div className='flex items-center space-x-2'>
+                                 <RadioGroupItem value='year' id='year' />
+                                 <Label htmlFor='year'>Năm</Label>
+                              </div>
+                           </RadioGroup>
+                        </div>
+                     </div>
+
+                     <div className='h-96'>
+                        <ResponsiveContainer width='100%' height='100%'>
+                           <BarChart data={formatRevenueChartData(revenueData)}>
+                              <CartesianGrid strokeDasharray='3 3' />
+                              <XAxis dataKey='period' />
+                              <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                              <Tooltip formatter={(value) => [formatCurrency(value as number), 'Doanh thu']} />
+                              <Bar dataKey='revenue' fill='#8884d8' />
+                           </BarChart>
+                        </ResponsiveContainer>
+                     </div>
+
+                     {revenueData && (
+                        <div className='mt-4 grid grid-cols-1 md:grid-cols-3 gap-4'>
+                           <Card>
+                              <CardContent className='p-4'>
+                                 <p className='text-sm text-muted-foreground'>Tổng doanh thu</p>
+                                 <p className='text-2xl font-bold'>{formatCurrency(revenueData.totalRevenue)}</p>
+                              </CardContent>
+                           </Card>
+                           <Card>
+                              <CardContent className='p-4'>
+                                 <p className='text-sm text-muted-foreground'>Doanh thu trung bình</p>
+                                 <p className='text-2xl font-bold'>{formatCurrency(revenueData.averageRevenue)}</p>
+                              </CardContent>
+                           </Card>
+                           <Card>
+                              <CardContent className='p-4'>
+                                 <p className='text-sm text-muted-foreground'>Khoảng thời gian</p>
+                                 <p className='text-sm'>
+                                    {revenueData.startDate} - {revenueData.endDate}
+                                 </p>
+                              </CardContent>
+                           </Card>
+                        </div>
+                     )}
+                  </CardContent>
+               </Card>
+            </TabsContent>
+
+            {/* Tab doanh thu theo danh mục */}
+            <TabsContent value='revenue-category'>
+               <Card>
+                  <CardHeader>
+                     <CardTitle>Doanh thu theo danh mục</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                     <div className='mb-6 flex flex-wrap gap-4 items-end'>
+                        <div className='space-y-2'>
+                           <Label>Ngày bắt đầu</Label>
+                           <DatePicker
+                              value={categoryStartDate}
+                              onChange={(date) => date && setCategoryStartDate(date)}
+                           />
+                        </div>
+                        <div className='space-y-2'>
+                           <Label>Ngày kết thúc</Label>
+                           <DatePicker value={categoryEndDate} onChange={(date) => date && setCategoryEndDate(date)} />
+                        </div>
+                     </div>
+
+                     <div className='h-96'>
+                        <ResponsiveContainer width='100%' height='100%'>
+                           <PieChart>
+                              <Pie
+                                 data={categoryData?.categoryData || []}
+                                 cx='50%'
+                                 cy='50%'
+                                 labelLine={false}
+                                 outerRadius={120}
+                                 fill='#8884d8'
+                                 dataKey='revenue'
+                                 label={({ category, percentage }) => `${category}: ${percentage}%`}
+                              >
+                                 {(categoryData?.categoryData || []).map((entry: any, index: number) => (
+                                    <Cell
+                                       key={`cell-${index}`}
+                                       fill={generateColors(categoryData?.categoryData?.length || 0)[index]}
+                                    />
+                                 ))}
+                              </Pie>
+                              <Tooltip formatter={(value) => [formatCurrency(value as number), 'Doanh thu']} />
+                              <Legend />
+                           </PieChart>
+                        </ResponsiveContainer>
+                     </div>
+
+                     {categoryData && (
+                        <div className='mt-4'>
+                           <Card>
+                              <CardContent className='p-4'>
+                                 <p className='text-sm text-muted-foreground mb-2'>Chi tiết doanh thu theo danh mục</p>
+                                 <div className='space-y-2'>
+                                    {categoryData.categoryData?.map((item: any, index: number) => (
+                                       <div key={index} className='flex justify-between items-center'>
+                                          <div className='flex items-center gap-2'>
+                                             <div
+                                                className='w-4 h-4 rounded'
+                                                style={{
+                                                   backgroundColor: generateColors(categoryData.categoryData.length)[
+                                                      index
+                                                   ]
+                                                }}
+                                             />
+                                             <span>{item.category}</span>
+                                          </div>
+                                          <div className='text-right'>
+                                             <p className='font-semibold'>{formatCurrency(item.revenue)}</p>
+                                             <p className='text-sm text-muted-foreground'>{item.percentage}%</p>
+                                          </div>
+                                       </div>
+                                    ))}
+                                 </div>
+                                 <div className='mt-4 pt-4 border-t'>
+                                    <div className='flex justify-between items-center font-bold'>
+                                       <span>Tổng cộng</span>
+                                       <span>{formatCurrency(categoryData.totalRevenue)}</span>
+                                    </div>
+                                 </div>
+                              </CardContent>
+                           </Card>
+                        </div>
+                     )}
+                  </CardContent>
+               </Card>
             </TabsContent>
          </Tabs>
       </div>

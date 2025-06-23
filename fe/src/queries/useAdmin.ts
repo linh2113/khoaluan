@@ -27,6 +27,7 @@ import {
    getAllShippingMethod,
    getAllUser,
    getDashboardStatistics,
+   getRevenueByInterval,
    updateBrand,
    updateCategory,
    updateDiscount,
@@ -566,5 +567,11 @@ export const useDeleteProductFromFlashSale = () => {
       onError: () => {
          toast.error('Xóa sản phẩm khỏi Flash Sale thất bại')
       }
+   })
+}
+
+export const useGetRevenueByInterval = (startDate: string, endDate: string) => {
+   return useMutation({
+      mutationFn: () => getRevenueByInterval(startDate, endDate)
    })
 }

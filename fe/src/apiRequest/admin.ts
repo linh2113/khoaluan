@@ -152,3 +152,12 @@ export const addProductToFlashSale = (body: AddProductToFlashSaleType) =>
 export const updateProductToFlashSale = (body: UpdateProductToFlashSaleType) =>
    http.put(`admin/flash-sales/items/${body.id}`, body)
 export const deleteProductToFlashSale = (id: number) => http.delete(`admin/flash-sales/items/${id}`)
+
+export const getRevenueByInterval = (
+   startDate: string, // ví dụ 2025-01-22
+   endDate: string,
+   interval: 'day' | 'week' | 'month' | 'year' = 'day'
+) => http.get(`/admin/revenue-by-interval?startDate=${startDate}&endDate=${endDate}&interval=${interval}`)
+
+export const getRevenueByCategoryPie = (startDate: string, endDate: string) =>
+   http.get(`/admin/revenue-by-category-pie?startDate=${startDate}&endDate=${endDate}`)

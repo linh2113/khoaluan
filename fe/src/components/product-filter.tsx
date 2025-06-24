@@ -4,7 +4,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
-import { Checkbox } from '@/components/ui/checkbox'
 import type { GetProductQueryParamsType } from '@/types/product.type'
 import { useState, useEffect, useRef } from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -25,6 +24,7 @@ import { Badge } from '@/components/ui/badge'
 import type { BrandType, CategoryType } from '@/types/admin.type'
 import { useTranslations } from 'next-intl'
 import Image from 'next/image'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 interface ProductFilterProps {
    initialFilters: GetProductQueryParamsType
@@ -56,8 +56,8 @@ export default function ProductFilter({
 }: ProductFilterProps) {
    const [filters, setFilters] = useState<GetProductQueryParamsType>(initialFilters)
    const [priceRange, setPriceRange] = useState<[number, number]>([0, maxPriceValue])
-   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
-   const [selectedCategories, setSelectedCategories] = useState<number[]>([])
+   const [selectedBrand, setSelectedBrand] = useState<string>('')
+   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
 
    // Trạng thái mở/đóng của từng section
    const [openSections, setOpenSections] = useState({
@@ -108,26 +108,14 @@ export default function ProductFilter({
       setPriceRange([value[0], value[1]])
    }
 
-   const handleBrandChange = (brandName: string, checked: boolean) => {
-      let newSelectedBrands: string[]
-      if (checked) {
-         newSelectedBrands = [...selectedBrands, brandName]
-      } else {
-         newSelectedBrands = selectedBrands.filter((b) => b !== brandName)
-      }
-      setSelectedBrands(newSelectedBrands)
-      handleFilterChange('brand', newSelectedBrands.length > 0 ? newSelectedBrands.join(',') : undefined)
+   const handleBrandChange = (brandName: string) => {
+      setSelectedBrand(brandName)
+      handleFilterChange('brand', brandName || undefined)
    }
 
-   const handleCategoryChange = (categoryId: number, checked: boolean) => {
-      let newSelectedCategories: number[]
-      if (checked) {
-         newSelectedCategories = [...selectedCategories, categoryId]
-      } else {
-         newSelectedCategories = selectedCategories.filter((c) => c !== categoryId)
-      }
-      setSelectedCategories(newSelectedCategories)
-      handleFilterChange('categoryId', newSelectedCategories.length > 0 ? newSelectedCategories[0] : undefined)
+   const handleCategoryChange = (categoryId: number) => {
+      setSelectedCategory(categoryId)
+      handleFilterChange('categoryId', categoryId)
    }
 
    const resetFilters = () => {
@@ -139,8 +127,8 @@ export default function ProductFilter({
       }
       setFilters(defaultFilters)
       setPriceRange([0, maxPriceValue])
-      setSelectedBrands([])
-      setSelectedCategories([])
+      setSelectedBrand('')
+      setSelectedCategory(null)
       onFilterChange(defaultFilters)
    }
 
@@ -154,8 +142,8 @@ export default function ProductFilter({
 
    const getActiveFiltersCount = () => {
       let count = 0
-      if (selectedBrands.length > 0) count++
-      if (selectedCategories.length > 0) count++
+      if (selectedBrand) count++
+      if (selectedCategory) count++
       if (priceRange[0] > 0 || priceRange[1] < maxPriceValue) count++
       if (filters.filterType && filters.filterType !== 'ALL') count++
       if (filters.inStock) count++
@@ -171,11 +159,6 @@ export default function ProductFilter({
                   <div className='flex items-center gap-2'>
                      <SlidersHorizontal className='h-5 w-5 text-primary' />
                      <CardTitle className='text-lg'>Bộ lọc sản phẩm</CardTitle>
-                     {getActiveFiltersCount() > 0 && (
-                        <Badge variant='secondary' className='bg-primary/10 text-primary'>
-                           {getActiveFiltersCount()}
-                        </Badge>
-                     )}
                   </div>
                   <Button
                      variant='ghost'
@@ -199,11 +182,6 @@ export default function ProductFilter({
                         <div className='flex items-center gap-2'>
                            <Tag className='h-4 w-4 text-primary' />
                            <CardTitle className='text-base'>Danh mục </CardTitle>
-                           {selectedCategories.length > 0 && (
-                              <Badge variant='outline' className='text-xs'>
-                                 {selectedCategories.length}
-                              </Badge>
-                           )}
                         </div>
                         {openSections.category ? (
                            <ChevronUp className='h-4 w-4' />
@@ -215,33 +193,34 @@ export default function ProductFilter({
                </CollapsibleTrigger>
                <CollapsibleContent>
                   <CardContent className='pt-0 space-y-3'>
-                     {categories.slice(0, 8).map((category) => (
-                        <div
-                           key={category.id}
-                           className='flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/30 transition-colors'
-                        >
-                           <Checkbox
-                              id={`category-${category.id}`}
-                              checked={selectedCategories.includes(category.id)}
-                              onCheckedChange={(checked) => handleCategoryChange(category.id, checked as boolean)}
-                           />
-                           <Label
-                              htmlFor={`category-${category.id}`}
-                              className='cursor-pointer flex-1 flex items-center gap-1 text-sm font-medium'
+                     <RadioGroup
+                        value={selectedCategory?.toString() || ''}
+                        onValueChange={(value) => handleCategoryChange(Number.parseInt(value))}
+                     >
+                        {categories.slice(0, 8).map((category) => (
+                           <div
+                              key={category.id}
+                              className='flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/30 transition-colors'
                            >
-                              {category.imageUrl && (
-                                 <Image
-                                    src={category.imageUrl || ''}
-                                    alt={category.categoryName}
-                                    className='w-8 h-8 rounded'
-                                    width={32}
-                                    height={32}
-                                 />
-                              )}
-                              {category.categoryName}
-                           </Label>
-                        </div>
-                     ))}
+                              <RadioGroupItem value={category.id.toString()} id={`category-${category.id}`} />
+                              <Label
+                                 htmlFor={`category-${category.id}`}
+                                 className='cursor-pointer flex-1 flex items-center gap-1 text-sm font-medium'
+                              >
+                                 {category.imageUrl && (
+                                    <Image
+                                       src={category.imageUrl || ''}
+                                       alt={category.categoryName}
+                                       className='w-8 h-8 rounded'
+                                       width={32}
+                                       height={32}
+                                    />
+                                 )}
+                                 {category.categoryName}
+                              </Label>
+                           </div>
+                        ))}
+                     </RadioGroup>
                      {categories.length > 8 && (
                         <Button variant='ghost' size='sm' className='w-full text-primary'>
                            Xem thêm {categories.length - 8} danh mục
@@ -261,11 +240,6 @@ export default function ProductFilter({
                         <div className='flex items-center gap-2'>
                            <Smartphone className='h-4 w-4 text-primary' />
                            <CardTitle className='text-base'>Thương hiệu</CardTitle>
-                           {selectedBrands.length > 0 && (
-                              <Badge variant='outline' className='text-xs'>
-                                 {selectedBrands.length}
-                              </Badge>
-                           )}
                         </div>
                         {openSections.brand ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
                      </div>
@@ -273,17 +247,13 @@ export default function ProductFilter({
                </CollapsibleTrigger>
                <CollapsibleContent>
                   <CardContent className='pt-0 space-y-3'>
-                     <div className='grid grid-cols-1 gap-2'>
+                     <RadioGroup value={selectedBrand} onValueChange={(value) => handleBrandChange(value)}>
                         {brands.slice(0, 10).map((brand) => (
                            <div
                               key={brand.id}
                               className='flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/30 transition-colors'
                            >
-                              <Checkbox
-                                 id={`brand-${brand.id}`}
-                                 checked={selectedBrands.includes(brand.brandName)}
-                                 onCheckedChange={(checked) => handleBrandChange(brand.brandName, checked as boolean)}
-                              />
+                              <RadioGroupItem value={brand.brandName} id={`brand-${brand.id}`} />
                               <Label
                                  htmlFor={`brand-${brand.id}`}
                                  className='cursor-pointer flex items-center gap-1 flex-1 text-sm font-medium'
@@ -301,7 +271,7 @@ export default function ProductFilter({
                               </Label>
                            </div>
                         ))}
-                     </div>
+                     </RadioGroup>
                      {brands.length > 10 && (
                         <Button variant='ghost' size='sm' className='w-full text-primary'>
                            Xem thêm {brands.length - 10} thương hiệu

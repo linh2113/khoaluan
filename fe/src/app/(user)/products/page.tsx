@@ -47,7 +47,7 @@ function ProductsPageContent() {
    const getInitialFilters = (): GetProductQueryParamsType => {
       const filters: GetProductQueryParamsType = {
          page: 0,
-         size: 12,
+         size: 2,
          sortBy: 'id',
          sortDir: 'desc'
       }
@@ -79,7 +79,10 @@ function ProductsPageContent() {
    const [queryParams, setQueryParams] = useState<GetProductQueryParamsType>(getInitialFilters())
 
    // Fetch products
-   const { data, isLoading } = useGetAllProducts(queryParams)
+   const { data, isLoading } = useGetAllProducts({
+      ...queryParams,
+      page: currentPage - 1
+   })
    const products = data?.data.data.content || []
    const totalPages = data?.data.data.totalPages || 0
    const totalElements = data?.data.data.totalElements || 0
@@ -88,7 +91,6 @@ function ProductsPageContent() {
    useEffect(() => {
       const newFilters = getInitialFilters()
       setQueryParams(newFilters)
-      setCurrentPage(1)
    }, [searchParams])
 
    // Update page in queryParams when currentPage changes
@@ -105,7 +107,6 @@ function ProductsPageContent() {
    }
 
    const handleFilterChange = (newFilters: GetProductQueryParamsType) => {
-      setCurrentPage(1)
       setQueryParams({
          ...newFilters,
          page: 0

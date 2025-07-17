@@ -108,7 +108,7 @@ export default function Home() {
             <FlashSale />
 
             {/* Sản phẩm đang khuyến mãi */}
-            <ProductSection
+            {/* <ProductSection
                title='🔥 Đang khuyến mãi'
                subtitle='Giảm giá sốc - Số lượng có hạn'
                icon={<Percent className='h-6 w-6 text-red-500' />}
@@ -118,7 +118,7 @@ export default function Home() {
                viewAllLink='/products?filterType=DISCOUNTED'
                onSelectForCompare={handleSelectProductForCompare}
                selectedProducts={selectedProducts}
-            />
+            /> */}
 
             {/* Sản phẩm bán chạy */}
             <ProductSection

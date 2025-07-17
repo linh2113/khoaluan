@@ -80,7 +80,7 @@ function CountdownTimer({ startDate, endDate }: { startDate: string; endDate: st
 
    // Render different content based on discount status
    return (
-      <div className='text-center'>
+      <div className='text-center mb-3'>
          <div className='inline-flex flex-col items-center bg-background p-4 rounded-md border border-amber-200'>
             <div className='text-red-600 font-medium mb-1 flex items-center gap-1'>
                <Zap size={16} className='animate-pulse' />
@@ -120,9 +120,11 @@ export default function FlashSale() {
    if (!productFlashSale) return
    return (
       <div className='mb-10'>
-         <div className='text-2xl font-bold mb-5'>
-            <Image src={'/flashsale.png'} alt='' className='w-[200px] h-[89px]' width={200} height={89} />
+         <div className='inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl shadow-lg'>
+            <span className='text-2xl'>⚡</span>
+            <span className='font-bold text-lg uppercase'>Flash Sale – Giá Sốc!</span>
          </div>
+
          <CountdownTimer startDate={productFlashSale?.startTime!} endDate={productFlashSale?.endTime!} />
          <Carousel
             plugins={[

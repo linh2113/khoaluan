@@ -145,8 +145,8 @@ export const getAllFlashSale = (queryParams: GetFlashSaleQueryParamsType) =>
       `/admin/flash-sales?` + queryString.stringify(queryParams)
    )
 export const createFlashSale = (body: CreateFlashSaleType) => http.post(`/admin/flash-sales`, body)
-export const updateFlashSale = (body: UpdateFlashSaleType) => http.put(`/admin/flash-sales/${body.id}`, body)
-export const deleteFlashSale = (id: number) => http.delete(`admin/flash-sales/${id}`)
+export const updateFlashSale = (body: UpdateFlashSaleType) => http.put(`/admin/flash-sale/${body.id}`, body)
+export const deleteFlashSale = (id: number) => http.delete(`admin/flash-sale/${id}`)
 export const addProductToFlashSale = (body: AddProductToFlashSaleType) =>
    http.post(`admin/flash-sales/${body.id}/products`, body)
 export const updateProductToFlashSale = (body: UpdateProductToFlashSaleType) =>

@@ -154,7 +154,7 @@ export default function ProductFilter({
       <div className='space-y-4'>
          {/* Header với số lượng filter đang active */}
          <Card className='border-2 border-primary/20'>
-            <CardHeader className='pb-3'>
+            <CardHeader className='p-2'>
                <div className='flex items-center justify-between'>
                   <div className='flex items-center gap-2'>
                      <SlidersHorizontal className='h-5 w-5 text-primary' />
@@ -401,8 +401,8 @@ export default function ProductFilter({
                         { value: 'ALL', label: 'Tất cả sản phẩm', icon: '📱' },
                         { value: 'TOP_SELLING', label: 'Bán chạy nhất', icon: '🔥' },
                         { value: 'NEW_ARRIVALS', label: 'Hàng mới về', icon: '✨' },
-                        { value: 'TOP_RATED', label: 'Đánh giá cao', icon: '⭐' },
-                        { value: 'DISCOUNTED', label: 'Đang giảm giá', icon: '💰' }
+                        { value: 'TOP_RATED', label: 'Đánh giá cao', icon: '⭐' }
+                        // { value: 'FLASH_SALE', label: 'Đang giảm giá', icon: '💰' }
                      ].map((type) => (
                         <div
                            key={type.value}
@@ -426,7 +426,7 @@ export default function ProductFilter({
          </Card>
 
          {/* Sắp xếp */}
-         <Card>
+         {/* <Card>
             <Collapsible open={openSections.sort} onOpenChange={() => toggleSection('sort')}>
                <CollapsibleTrigger asChild>
                   <CardHeader className='cursor-pointer hover:bg-muted/50 transition-colors pb-3'>
@@ -463,10 +463,10 @@ export default function ProductFilter({
                   </CardContent>
                </CollapsibleContent>
             </Collapsible>
-         </Card>
+         </Card> */}
 
          {/* Tùy chọn khác */}
-         <Card>
+         {/* <Card>
             <Collapsible open={openSections.options} onOpenChange={() => toggleSection('options')}>
                <CollapsibleTrigger asChild>
                   <CardHeader className='cursor-pointer hover:bg-muted/50 transition-colors pb-3'>
@@ -499,7 +499,7 @@ export default function ProductFilter({
                   </CardContent>
                </CollapsibleContent>
             </Collapsible>
-         </Card>
+         </Card> */}
       </div>
    )
 }

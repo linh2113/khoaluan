@@ -236,7 +236,7 @@ export default function ProductCard({
                   src={imageError ? '/placeholder.svg' : product.image || '/placeholder.svg'}
                   alt={product.name || t('productName')}
                   fill
-                  className='object-cover aspect-square transition-transform group-hover:scale-105'
+                  className='object-contain aspect-square transition-transform group-hover:scale-105'
                   onError={() => setImageError(true)}
                />
             </div>

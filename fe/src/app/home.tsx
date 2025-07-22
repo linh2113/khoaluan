@@ -98,6 +98,20 @@ export default function Home() {
                            <div className='absolute inset-0 bg-gradient-to-r from-black/20 to-transparent' />
                         </div>
                      </CarouselItem>
+                     <CarouselItem className='basis-full md:basis-1/2 aspect-[3/1]'>
+                        <div className='relative w-full h-full'>
+                           <Image
+                              src={
+                                 'https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:format(webp):quality(75)/H2_614x212_e97abfb675.png'
+                              }
+                              alt='Banner sản phẩm mới'
+                              fill
+                              className='object-cover'
+                              priority
+                           />
+                           <div className='absolute inset-0 bg-gradient-to-r from-black/20 to-transparent' />
+                        </div>
+                     </CarouselItem>
                   </CarouselContent>
                   <CarouselPrevious className='left-4' />
                   <CarouselNext className='right-4' />

@@ -35,7 +35,7 @@ export default function FlashSaleManage() {
    const [currentPage, setCurrentPage] = useState<number>(1)
    const [queryParams, setQueryParams] = useState<GetFlashSaleQueryParamsType>({
       page: currentPage - 1,
-      size: 10,
+      size: 5,
       sortBy: 'id',
       sortDir: 'desc',
       search: ''

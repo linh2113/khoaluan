@@ -196,9 +196,11 @@ export default function Cart() {
                            <div className='col-span-6 grid grid-cols-5 items-center'>
                               <div className='col-span-2'>
                                  <div className='flex items-center gap-x-3 justify-center'>
-                                    <span className='text-gray-400 line-through'>
-                                       {formatCurrency(cart.originalPrice)}
-                                    </span>
+                                    {cart.originalPrice !== cart.price && (
+                                       <span className='text-gray-400 line-through'>
+                                          {formatCurrency(cart.originalPrice)}
+                                       </span>
+                                    )}
                                     <span>{formatCurrency(cart.price)}</span>
                                  </div>
                               </div>

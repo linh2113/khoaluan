@@ -164,7 +164,7 @@ export default function FlashSale() {
                                  alt={item.productName || t('productName')}
                                  width={300}
                                  height={300}
-                                 className='w-full h-full object-cover aspect-square transition-transform group-hover:scale-105'
+                                 className='w-full h-full object-contain aspect-square transition-transform group-hover:scale-105'
                               />
                            </div>
                         </Link>

@@ -35,7 +35,7 @@ export default function FlashSaleManage() {
    const [currentPage, setCurrentPage] = useState<number>(1)
    const [queryParams, setQueryParams] = useState<GetFlashSaleQueryParamsType>({
       page: currentPage - 1,
-      size: 10,
+      size: 5,
       sortBy: 'id',
       sortDir: 'desc',
       search: ''
@@ -246,13 +246,11 @@ export default function FlashSaleManage() {
    }
 
    const handleDeleteFlashSale = (id: number) => {
-      if (confirm('Bạn có chắc chắn muốn xóa Flash Sale này?')) {
-         deleteFlashSale.mutate(id, {
-            onSuccess: () => {
-               getAllFlashSales.refetch()
-            }
-         })
-      }
+      deleteFlashSale.mutate(id, {
+         onSuccess: () => {
+            getAllFlashSales.refetch()
+         }
+      })
    }
 
    const handleAddProduct = () => {
@@ -445,9 +443,9 @@ export default function FlashSaleManage() {
                                  <Button variant='outline' size='icon' onClick={() => openProductDialog(flashSale)}>
                                     <Package className='h-4 w-4' />
                                  </Button>
-                                 <Button variant='outline' size='icon' onClick={() => openEditDialog(flashSale)}>
+                                 {/* <Button variant='outline' size='icon' onClick={() => openEditDialog(flashSale)}>
                                     <Edit className='h-4 w-4' />
-                                 </Button>
+                                 </Button> */}
                                  <Button
                                     variant='outline'
                                     size='icon'
@@ -671,13 +669,13 @@ export default function FlashSaleManage() {
                                        <TableCell>{item.soldCount}</TableCell>
                                        <TableCell>
                                           <div className='flex gap-2'>
-                                             <Button
+                                             {/* <Button
                                                 variant='outline'
                                                 size='sm'
                                                 onClick={() => openEditProductDialog(item)}
                                              >
                                                 <Edit className='h-3 w-3' />
-                                             </Button>
+                                             </Button> */}
                                              <Button
                                                 variant='outline'
                                                 size='sm'

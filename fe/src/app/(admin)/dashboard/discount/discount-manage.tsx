@@ -9,7 +9,7 @@ import {
    useDeleteDiscountToCategories,
    useGetAllAdminProduct,
    useGetAllCategories,
-   useEditPriceDiscountToProducts // Thêm hook mới
+   useEditPriceDiscountToProducts
 } from '@/queries/useAdmin'
 import type React from 'react'
 import { useState, useEffect } from 'react'
@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Edit, Plus, Search } from 'lucide-react'
+import { Edit, Plus, Search, X } from 'lucide-react'
 import type {
    DiscountType,
    GetDiscountQueryParamsType,
@@ -48,13 +48,17 @@ export default function DiscountManage() {
    const assignDiscountToCategories = useAssignDiscountToCategories()
    const deleteDiscountToProducts = useDeleteDiscountToProducts()
    const deleteDiscountToCategories = useDeleteDiscountToCategories()
-   const editPriceDiscountToProducts = useEditPriceDiscountToProducts() // Thêm mutation để chỉnh sửa giá
+   const editPriceDiscountToProducts = useEditPriceDiscountToProducts()
+
    const getAllDiscount = useGetAllDiscount(queryParams)
    const discounts = getAllDiscount.data?.data.data.content || []
    const totalPages = getAllDiscount.data?.data.data.totalPages || 0
 
    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+   const [bannerFile, setBannerFile] = useState<File | null>(null)
+   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+
    const [newDiscount, setNewDiscount] = useState<CreateDiscountType>({
       name: '',
       type: 'PRODUCT',
@@ -66,8 +70,8 @@ export default function DiscountManage() {
       discountedPrices: {},
       categoryIds: []
    })
-   const [editingDiscount, setEditingDiscount] = useState<UpdateDiscountType | null>(null)
 
+   const [editingDiscount, setEditingDiscount] = useState<UpdateDiscountType | null>(null)
    const [productSearch, setProductSearch] = useState('')
    const getAllAdminProduct = useGetAllAdminProduct({ search: productSearch })
    const products = getAllAdminProduct.data?.data.data.content || []
@@ -134,6 +138,23 @@ export default function DiscountManage() {
       })
    }
 
+   const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) {
+         setBannerFile(file)
+         const reader = new FileReader()
+         reader.onload = (e) => {
+            setBannerPreview(e.target?.result as string)
+         }
+         reader.readAsDataURL(file)
+      }
+   }
+
+   const removeBannerFile = () => {
+      setBannerFile(null)
+      setBannerPreview(null)
+   }
+
    const formatDateTime = (dateTimeString: string) => {
       if (!dateTimeString) return ''
       const date = new Date(dateTimeString)
@@ -167,18 +188,40 @@ export default function DiscountManage() {
          toast.error('Ngày giờ bắt đầu phải nhỏ hơn ngày giờ kết thúc')
          return
       }
-
       if (newDiscount.type === 'PRODUCT' && newDiscount?.productIds?.length === 0) {
          toast.error('Vui lòng chọn ít nhất một sản phẩm')
          return
       }
-
       if (newDiscount.type === 'CATEGORY' && newDiscount?.categoryIds?.length === 0) {
          toast.error('Vui lòng chọn ít nhất một danh mục')
          return
       }
 
-      createDiscount.mutate(newDiscount, {
+      // Tạo FormData để gửi multipart request
+      const formData = new FormData()
+
+      // Tạo discount object theo format backend mong đợi
+      const discountData = {
+         name: newDiscount.name,
+         type: newDiscount.type,
+         value: newDiscount.value,
+         startDate: newDiscount.startDate,
+         endDate: newDiscount.endDate,
+         isActive: newDiscount.isActive,
+         productIds: newDiscount.productIds,
+         discountedPrices: newDiscount.discountedPrices,
+         categoryIds: newDiscount.categoryIds
+      }
+
+      // Append discount data as JSON string
+      formData.append('discount', JSON.stringify(discountData))
+
+      // Append banner file if exists
+      if (bannerFile) {
+         formData.append('banner', bannerFile)
+      }
+
+      createDiscount.mutate(formData, {
          onSuccess: () => {
             setIsAddDialogOpen(false)
             setNewDiscount({
@@ -192,6 +235,12 @@ export default function DiscountManage() {
                discountedPrices: {},
                categoryIds: []
             })
+            setBannerFile(null)
+            setBannerPreview(null)
+            toast.success('Tạo mã giảm giá thành công!')
+         },
+         onError: (error: any) => {
+            toast.error(error?.message || 'Có lỗi xảy ra khi tạo mã giảm giá')
          }
       })
    }
@@ -237,7 +286,6 @@ export default function DiscountManage() {
 
             // Tìm sản phẩm cần thêm
             const productsToAdd = newProductIds.filter((id) => !originalProductIds.includes(id))
-
             // Tìm sản phẩm cần xóa
             const productsToRemove = originalProductIds.filter((id: any) => !newProductIds.includes(id))
 
@@ -278,7 +326,6 @@ export default function DiscountManage() {
 
             // Tìm danh mục cần thêm
             const categoriesToAdd = newCategoryIds.filter((id) => !originalCategoryIds.includes(id))
-
             // Tìm danh mục cần xóa
             const categoriesToRemove: number[] = (originalCategoryIds as number[]).filter(
                (id: number) => !(newCategoryIds as number[]).includes(id)
@@ -336,7 +383,6 @@ export default function DiscountManage() {
             name: string
             price: number
          }
-
          const updatedDiscountedPrices: Record<number, number> = {}
          ;(newDiscount.productIds ?? []).forEach((productId: number) => {
             const product: Product | undefined = products.find((p: Product) => p.id === productId)
@@ -346,7 +392,6 @@ export default function DiscountManage() {
                updatedDiscountedPrices[productId] = newDiscount.discountedPrices[productId]
             }
          })
-
          setNewDiscount((prev) => ({
             ...prev,
             discountedPrices: updatedDiscountedPrices
@@ -366,7 +411,6 @@ export default function DiscountManage() {
                updatedDiscountedPrices[productId] = editingDiscount.discountedPrices[productId]
             }
          })
-
          setEditingDiscount((prev) =>
             prev
                ? {
@@ -376,7 +420,7 @@ export default function DiscountManage() {
                : null
          )
       }
-   }, [editingDiscount?.value, editingDiscount?.productIds, products])
+   }, [editingDiscount, editingDiscount?.value, products])
 
    return (
       <div className='container mx-auto p-6'>
@@ -447,6 +491,7 @@ export default function DiscountManage() {
                      <TableHead>Tên</TableHead>
                      <TableHead>Loại</TableHead>
                      <TableHead>Giá trị</TableHead>
+                     <TableHead>Banner</TableHead>
                      <TableHead>Ngày giờ bắt đầu</TableHead>
                      <TableHead>Ngày giờ kết thúc</TableHead>
                      <TableHead>Trạng thái</TableHead>
@@ -456,7 +501,7 @@ export default function DiscountManage() {
                <TableBody>
                   {discounts.length === 0 ? (
                      <TableRow>
-                        <TableCell colSpan={8} className='text-center'>
+                        <TableCell colSpan={9} className='text-center'>
                            Không có mã giảm giá nào
                         </TableCell>
                      </TableRow>
@@ -477,6 +522,19 @@ export default function DiscountManage() {
                               </span>
                            </TableCell>
                            <TableCell className='font-medium'>{formatDiscountValue(discount.value)}</TableCell>
+                           <TableCell>
+                              {discount.bannerUrl ? (
+                                 <Image
+                                    src={discount.bannerUrl || '/placeholder.svg'}
+                                    alt='Banner'
+                                    width={60}
+                                    height={40}
+                                    className='rounded object-cover'
+                                 />
+                              ) : (
+                                 <span className='text-muted-foreground text-sm'>Không có</span>
+                              )}
+                           </TableCell>
                            <TableCell className='text-sm'>{formatDateTime(discount.startDate)}</TableCell>
                            <TableCell className='text-sm'>{formatDateTime(discount.endDate)}</TableCell>
                            <TableCell>
@@ -520,7 +578,7 @@ export default function DiscountManage() {
 
          {/* Dialog thêm mã giảm giá */}
          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogContent className='max-w-md'>
+            <DialogContent className='max-w-md max-h-[90vh] overflow-y-auto'>
                <DialogHeader>
                   <DialogTitle>Thêm mã giảm giá mới</DialogTitle>
                </DialogHeader>
@@ -534,6 +592,40 @@ export default function DiscountManage() {
                         placeholder='Nhập tên mã giảm giá'
                      />
                   </div>
+
+                  <div className='grid gap-2'>
+                     <Label htmlFor='banner'>Banner (tùy chọn)</Label>
+                     <div className='space-y-2'>
+                        <Input
+                           id='banner'
+                           type='file'
+                           accept='image/*'
+                           onChange={handleBannerFileChange}
+                           className='cursor-pointer'
+                        />
+                        {bannerPreview && (
+                           <div className='relative inline-block'>
+                              <Image
+                                 src={bannerPreview || '/placeholder.svg'}
+                                 alt='Banner preview'
+                                 width={200}
+                                 height={120}
+                                 className='rounded border object-cover'
+                              />
+                              <Button
+                                 type='button'
+                                 variant='destructive'
+                                 size='icon'
+                                 className='absolute -top-2 -right-2 h-6 w-6'
+                                 onClick={removeBannerFile}
+                              >
+                                 <X className='h-4 w-4' />
+                              </Button>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+
                   <div className='grid gap-2'>
                      <Label htmlFor='type'>Loại áp dụng</Label>
                      <Select
@@ -551,6 +643,7 @@ export default function DiscountManage() {
                         </SelectContent>
                      </Select>
                   </div>
+
                   <div className='grid gap-2'>
                      <Label htmlFor='value'>Giá trị (%)</Label>
                      <Input
@@ -563,6 +656,7 @@ export default function DiscountManage() {
                         placeholder='Nhập giá trị phần trăm'
                      />
                   </div>
+
                   {newDiscount.type === 'PRODUCT' && (
                      <div className='grid gap-2'>
                         <Label>Chọn sản phẩm áp dụng</Label>
@@ -584,7 +678,6 @@ export default function DiscountManage() {
                                     const discountedPrice =
                                        newDiscount.discountedPrices?.[product.id] ||
                                        product.price * (1 - newDiscount.value / 100)
-
                                     return (
                                        <div
                                           key={product.id}
@@ -627,7 +720,7 @@ export default function DiscountManage() {
                                           <label htmlFor={`product-${product.id}`} className='flex-1 cursor-pointer'>
                                              <div className='flex gap-1 items-center'>
                                                 <Image
-                                                   src={product.image}
+                                                   src={product.image || '/placeholder.svg'}
                                                    alt=''
                                                    width={50}
                                                    height={50}
@@ -676,7 +769,6 @@ export default function DiscountManage() {
                               ) : (
                                  categories.map((category) => {
                                     const isSelected = newDiscount.categoryIds?.includes(category.id) || false
-
                                     return (
                                        <div
                                           key={category.id}
@@ -722,6 +814,7 @@ export default function DiscountManage() {
                         </div>
                      </div>
                   )}
+
                   <div className='grid grid-cols-1 gap-4'>
                      <div className='grid gap-2'>
                         <Label htmlFor='startDate'>Ngày giờ bắt đầu</Label>
@@ -765,9 +858,7 @@ export default function DiscountManage() {
 
          {/* Dialog chỉnh sửa mã giảm giá */}
          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogContent className='max-w-lg'>
-               {' '}
-               {/* Tăng max-width để chứa input giá */}
+            <DialogContent className='max-w-lg max-h-[90vh] overflow-y-auto'>
                <DialogHeader>
                   <DialogTitle>Chỉnh sửa mã giảm giá</DialogTitle>
                </DialogHeader>
@@ -782,7 +873,6 @@ export default function DiscountManage() {
                            placeholder='Nhập tên mã giảm giá'
                         />
                      </div>
-
                      <div className='grid gap-2'>
                         <Label htmlFor='editValue'>Giá trị (%)</Label>
                         <Input
@@ -795,6 +885,7 @@ export default function DiscountManage() {
                            placeholder='Nhập giá trị phần trăm'
                         />
                      </div>
+
                      {editingDiscount.type === 'PRODUCT' && (
                         <div className='grid gap-2'>
                            <Label>Chọn sản phẩm áp dụng</Label>
@@ -816,7 +907,6 @@ export default function DiscountManage() {
                                        const discountedPrice =
                                           editingDiscount.discountedPrices?.[product.id] ||
                                           product.price * (1 - editingDiscount.value / 100)
-
                                        return (
                                           <div
                                              key={product.id}
@@ -864,7 +954,7 @@ export default function DiscountManage() {
                                              >
                                                 <div className='flex gap-1 items-center'>
                                                    <Image
-                                                      src={product.image}
+                                                      src={product.image || '/placeholder.svg'}
                                                       alt=''
                                                       width={50}
                                                       height={50}
@@ -918,6 +1008,7 @@ export default function DiscountManage() {
                            </div>
                         </div>
                      )}
+
                      {editingDiscount.type === 'CATEGORY' && (
                         <div className='grid gap-2'>
                            <Label>Chọn danh mục áp dụng</Label>
@@ -936,7 +1027,6 @@ export default function DiscountManage() {
                                  ) : (
                                     categories.map((category) => {
                                        const isSelected = editingDiscount.categoryIds?.includes(category.id) || false
-
                                        return (
                                           <div
                                              key={category.id}
@@ -985,6 +1075,7 @@ export default function DiscountManage() {
                            </div>
                         </div>
                      )}
+
                      <div className='grid grid-cols-1 gap-4'>
                         <div className='grid gap-2'>
                            <Label htmlFor='editStartDate'>Ngày giờ bắt đầu</Label>

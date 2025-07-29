@@ -82,11 +82,11 @@ export default function DashboardLayout({
          href: '/dashboard/category',
          icon: <Tag className='h-5 w-5' />
       },
-      {
-         title: 'Mã giảm giá',
-         href: '/dashboard/discount',
-         icon: <BadgeDollarSign className='h-5 w-5' />
-      },
+      // {
+      //    title: 'Mã giảm giá',
+      //    href: '/dashboard/discount',
+      //    icon: <BadgeDollarSign className='h-5 w-5' />
+      // },
       {
          title: 'Flash Sale',
          href: '/dashboard/flash-sale',
@@ -248,7 +248,7 @@ export default function DashboardLayout({
                </nav>
 
                {/* Sidebar footer */}
-               <div className='p-4 border-t mt-auto'>
+               {/* <div className='p-4 border-t mt-auto'>
                   {userInfo ? (
                      <div className='flex items-center gap-3'>
                         <Avatar>
@@ -318,7 +318,7 @@ export default function DashboardLayout({
                         </Link>
                      </div>
                   )}
-               </div>
+               </div> */}
             </div>
          </aside>
 

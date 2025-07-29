@@ -15,7 +15,6 @@ public interface ProductService {
     ProductDTO updateProduct(Integer id, ProductUpdateDTO productUpdateDTO);
     
     ProductDTO getProductById(Integer id);
-
     //for user
     Page<ProductDTO> getAllProducts(ProductFilterRequest filterRequest);
     //for admin
@@ -61,5 +60,5 @@ public interface ProductService {
     List<ProductDTO> compareProducts(List<Integer> productIds);
     
     Page<ProductDTO> getProductsWithSearch(String search, Pageable pageable);
-
+    ProductDTO getProductByProductIdString(String productIdString);
 }

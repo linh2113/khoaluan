@@ -16,6 +16,9 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(name = "product_id_string", unique = true)
+    private String productIdString;
+
     @ManyToOne
     @JoinColumn(name = "id_category")
     private Category category;

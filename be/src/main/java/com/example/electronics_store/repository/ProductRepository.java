@@ -16,6 +16,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSpecificationExecutor<Product> {
@@ -145,4 +146,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
        "AND pd.discount.startDate <= :now " +
        "AND pd.discount.endDate >= :now")
 List<Integer> findProductIdsWithActiveDiscounts(@Param("now") LocalDateTime now);
+    @Query("SELECT p FROM Product p WHERE p.productIdString = :productIdString AND p.status = true")
+    Optional<Product> findActiveProductByProductIdString(@Param("productIdString") String productIdString);
+
 }

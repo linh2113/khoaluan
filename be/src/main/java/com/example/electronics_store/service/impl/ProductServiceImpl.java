@@ -721,7 +721,13 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toList());
     }
 
-
+    @Override
+    @Transactional(readOnly = true)
+    public ProductDTO getProductByProductIdString(String productIdString) {
+        Product product = productRepository.findActiveProductByProductIdString(productIdString)
+                .orElseThrow(() -> new RuntimeException("Product not found with productIdString: " + productIdString));
+        return mapProductToDTO(product);
+    }
 
     private ProductDTO mapProductToDTO(Product product) {
         ProductDTO dto = new ProductDTO();
@@ -733,7 +739,7 @@ public class ProductServiceImpl implements ProductService {
         dto.setName(product.getName());
         dto.setImage(product.getImage());
         dto.setPrice(product.getPrice());
-
+        dto.setProductIdString(product.getProductIdString());
         Map<String, Object> discountInfo = discountService.getProductDiscountInfo(product.getId());
         dto.setDiscountedPrice((Integer) discountInfo.get("discountedPrice"));
         dto.setDiscountPercentage((Double) discountInfo.get("discountPercentage"));

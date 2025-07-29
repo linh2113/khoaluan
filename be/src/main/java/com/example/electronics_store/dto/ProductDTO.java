@@ -28,7 +28,7 @@ public class ProductDTO {
     private String discountType;
     private Double discountPercentage;
     private Integer discountId;
-
+    private String productIdString;
     private String description;
     private String warranty;
     private Float weight;

@@ -1,7 +1,7 @@
 'use client'
 import ProductRating from '@/components/product-rating'
 import QuantityController from '@/components/quantity-controller'
-import { formatCurrency, formatNumberToK, getIdFromNameId } from '@/lib/utils'
+import { decodeHTML, formatCurrency, formatNumberToK, getIdFromNameId } from '@/lib/utils'
 import { ChevronLeft, ChevronRight, Heart, ImagePlus, SendHorizontal, ShoppingBasket, Star, X, Zap } from 'lucide-react'
 import Image from 'next/image'
 import type React from 'react'
@@ -346,7 +346,7 @@ export default function ProductDetail({ id }: { id: string }) {
                      <Image
                         ref={imageRef}
                         src={product.productImages[activeImageIndex].imageUrl || '/placeholder.svg'}
-                        alt={product.name}
+                        alt={decodeHTML(product.name)}
                         width={500}
                         height={500}
                         className='h-full w-full object-contain transition-transform duration-300'
@@ -354,7 +354,7 @@ export default function ProductDetail({ id }: { id: string }) {
                   ) : (
                      <Image
                         src={product.image || '/placeholder.svg'}
-                        alt={product.name}
+                        alt={decodeHTML(product.name)}
                         width={500}
                         height={500}
                         className='h-full w-full object-contain'
@@ -378,7 +378,7 @@ export default function ProductDetail({ id }: { id: string }) {
                            >
                               <Image
                                  src={imageUrl.imageUrl || '/placeholder.svg'}
-                                 alt={`${product.name} - ảnh ${index + 1}`}
+                                 alt={`${decodeHTML(product.name)} - ảnh ${index + 1}`}
                                  width={100}
                                  height={100}
                                  className='h-full w-full object-cover'
@@ -420,7 +420,7 @@ export default function ProductDetail({ id }: { id: string }) {
 
             <div className='w-full md:w-1/2 flex flex-col gap-5'>
                {/* Tên sản phẩm */}
-               <h1 className='font-medium text-2xl'>{product.name}</h1>
+               <h1 className='font-medium text-2xl'>{decodeHTML(product.name)}</h1>
 
                {/* Đánh giá và số lượng bán */}
                <div className='flex items-center flex-wrap gap-3 text-base'>
@@ -625,7 +625,7 @@ export default function ProductDetail({ id }: { id: string }) {
             <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>{t('description')}</h2>
             <div className='prose max-w-none'>
                {product.description ? (
-                  <p className='whitespace-pre-line'>{product.description}</p>
+                  <p className='whitespace-pre-line'>{decodeHTML(product.description)}</p>
                ) : (
                   <p className='text-muted-foreground italic'>{t('noDescription')}</p>
                )}

@@ -1,24 +1,12 @@
 'use client'
+
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
-import { Switch } from '@/components/ui/switch'
 import type { GetProductQueryParamsType } from '@/types/product.type'
 import { useState, useEffect, useRef } from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import {
-   ChevronDown,
-   ChevronUp,
-   Filter,
-   SlidersHorizontal,
-   Tag,
-   Smartphone,
-   Star,
-   TrendingUp,
-   RotateCcw
-} from 'lucide-react'
-import { Separator } from '@/components/ui/separator'
+import { ChevronDown, ChevronUp, SlidersHorizontal, Tag, Smartphone, Star, TrendingUp, RotateCcw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { BrandType, CategoryType } from '@/types/admin.type'
@@ -70,12 +58,9 @@ export default function ProductFilter({
    })
 
    const t = useTranslations('ProductFilter')
-
    const debouncedFilters = useDebounce(
       {
-         ...filters,
-         minPrice: priceRange[0],
-         maxPrice: priceRange[1]
+         ...filters
       },
       500
    )
@@ -85,18 +70,13 @@ export default function ProductFilter({
    }, [initialFilters])
 
    const prevFiltersRef = useRef<GetProductQueryParamsType>()
-
    useEffect(() => {
       const currentFilters = {
-         ...filters,
-         minPrice: priceRange[0],
-         maxPrice: priceRange[1]
+         ...filters
       }
-
       if (prevFiltersRef.current && JSON.stringify(prevFiltersRef.current) !== JSON.stringify(currentFilters)) {
          onFilterChange(currentFilters)
       }
-
       prevFiltersRef.current = currentFilters
    }, [debouncedFilters])
 
@@ -104,8 +84,11 @@ export default function ProductFilter({
       setFilters((prev) => ({ ...prev, [name]: value }))
    }
 
-   const handlePriceChange = (value: number[]) => {
-      setPriceRange([value[0], value[1]])
+   // Updated function to handle price range changes
+   const handlePriceRangeChange = (minPrice: number, maxPrice: number) => {
+      setPriceRange([minPrice, maxPrice])
+      handleFilterChange('minPrice', minPrice)
+      handleFilterChange('maxPrice', maxPrice)
    }
 
    const handleBrandChange = (brandName: string) => {
@@ -282,7 +265,7 @@ export default function ProductFilter({
             </Collapsible>
          </Card>
 
-         {/* Khoảng giá */}
+         {/* Khoảng giá - Updated section */}
          <Card>
             <Collapsible open={openSections.price} onOpenChange={() => toggleSection('price')}>
                <CollapsibleTrigger asChild>
@@ -303,12 +286,12 @@ export default function ProductFilter({
                </CollapsibleTrigger>
                <CollapsibleContent>
                   <CardContent className='pt-0 space-y-4'>
-                     {/* Quick price buttons */}
+                     {/* Quick price buttons - Updated with handleFilterChange */}
                      <div className='grid grid-cols-2 gap-2'>
                         <Button
                            variant='outline'
                            size='sm'
-                           onClick={() => setPriceRange([0, 5000000])}
+                           onClick={() => handlePriceRangeChange(0, 5000000)}
                            className={
                               priceRange[0] === 0 && priceRange[1] === 5000000 ? 'border-primary bg-primary/10' : ''
                            }
@@ -318,7 +301,7 @@ export default function ProductFilter({
                         <Button
                            variant='outline'
                            size='sm'
-                           onClick={() => setPriceRange([5000000, 10000000])}
+                           onClick={() => handlePriceRangeChange(5000000, 10000000)}
                            className={
                               priceRange[0] === 5000000 && priceRange[1] === 10000000
                                  ? 'border-primary bg-primary/10'
@@ -330,7 +313,7 @@ export default function ProductFilter({
                         <Button
                            variant='outline'
                            size='sm'
-                           onClick={() => setPriceRange([10000000, 20000000])}
+                           onClick={() => handlePriceRangeChange(10000000, 20000000)}
                            className={
                               priceRange[0] === 10000000 && priceRange[1] === 20000000
                                  ? 'border-primary bg-primary/10'
@@ -342,7 +325,7 @@ export default function ProductFilter({
                         <Button
                            variant='outline'
                            size='sm'
-                           onClick={() => setPriceRange([20000000, maxPriceValue])}
+                           onClick={() => handlePriceRangeChange(20000000, maxPriceValue)}
                            className={
                               priceRange[0] === 20000000 && priceRange[1] === maxPriceValue
                                  ? 'border-primary bg-primary/10'
@@ -351,25 +334,6 @@ export default function ProductFilter({
                         >
                            Trên 20 triệu
                         </Button>
-                     </div>
-
-                     <Separator />
-
-                     {/* Custom price slider */}
-                     <div className='space-y-3'>
-                        <Label className='text-sm font-medium'>Tùy chỉnh khoảng giá</Label>
-                        <Slider
-                           defaultValue={[0, maxPriceValue]}
-                           max={maxPriceValue}
-                           step={100000}
-                           value={[priceRange[0], priceRange[1]]}
-                           onValueChange={handlePriceChange}
-                           className='w-full'
-                        />
-                        <div className='flex justify-between items-center'>
-                           <div className='text-sm font-medium text-primary'>{formatPrice(priceRange[0])}</div>
-                           <div className='text-sm font-medium text-primary'>{formatPrice(priceRange[1])}</div>
-                        </div>
                      </div>
                   </CardContent>
                </CollapsibleContent>
@@ -402,7 +366,6 @@ export default function ProductFilter({
                         { value: 'TOP_SELLING', label: 'Bán chạy nhất', icon: '🔥' },
                         { value: 'NEW_ARRIVALS', label: 'Hàng mới về', icon: '✨' },
                         { value: 'TOP_RATED', label: 'Đánh giá cao', icon: '⭐' }
-                        // { value: 'FLASH_SALE', label: 'Đang giảm giá', icon: '💰' }
                      ].map((type) => (
                         <div
                            key={type.value}
@@ -424,82 +387,6 @@ export default function ProductFilter({
                </CollapsibleContent>
             </Collapsible>
          </Card>
-
-         {/* Sắp xếp */}
-         {/* <Card>
-            <Collapsible open={openSections.sort} onOpenChange={() => toggleSection('sort')}>
-               <CollapsibleTrigger asChild>
-                  <CardHeader className='cursor-pointer hover:bg-muted/50 transition-colors pb-3'>
-                     <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-2'>
-                           <Filter className='h-4 w-4 text-primary' />
-                           <CardTitle className='text-base'>Sắp xếp theo</CardTitle>
-                        </div>
-                        {openSections.sort ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
-                     </div>
-                  </CardHeader>
-               </CollapsibleTrigger>
-               <CollapsibleContent>
-                  <CardContent className='pt-0'>
-                     <Select
-                        value={`${filters.sortBy || 'id'}-${filters.sortDir || 'desc'}`}
-                        onValueChange={(value) => {
-                           const [sortBy, sortDir] = value.split('-')
-                           handleFilterChange('sortBy', sortBy)
-                           handleFilterChange('sortDir', sortDir)
-                        }}
-                     >
-                        <SelectTrigger className='w-full'>
-                           <SelectValue placeholder='Chọn cách sắp xếp' />
-                        </SelectTrigger>
-                        <SelectContent>
-                           <SelectItem value='id-desc'>Mới nhất</SelectItem>
-                           <SelectItem value='price-asc'>Giá thấp đến cao</SelectItem>
-                           <SelectItem value='price-desc'>Giá cao đến thấp</SelectItem>
-                           <SelectItem value='name-asc'>Tên A-Z</SelectItem>
-                           <SelectItem value='name-desc'>Tên Z-A</SelectItem>
-                        </SelectContent>
-                     </Select>
-                  </CardContent>
-               </CollapsibleContent>
-            </Collapsible>
-         </Card> */}
-
-         {/* Tùy chọn khác */}
-         {/* <Card>
-            <Collapsible open={openSections.options} onOpenChange={() => toggleSection('options')}>
-               <CollapsibleTrigger asChild>
-                  <CardHeader className='cursor-pointer hover:bg-muted/50 transition-colors pb-3'>
-                     <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-2'>
-                           <SlidersHorizontal className='h-4 w-4 text-primary' />
-                           <CardTitle className='text-base'>Tùy chọn khác</CardTitle>
-                           {filters.inStock && (
-                              <Badge variant='outline' className='text-xs'>
-                                 1
-                              </Badge>
-                           )}
-                        </div>
-                        {openSections.options ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
-                     </div>
-                  </CardHeader>
-               </CollapsibleTrigger>
-               <CollapsibleContent>
-                  <CardContent className='pt-0'>
-                     <div className='flex items-center justify-between p-3 bg-muted/30 rounded-lg'>
-                        <Label htmlFor='inStock' className='cursor-pointer text-sm font-medium'>
-                           Chỉ hiển thị sản phẩm còn hàng
-                        </Label>
-                        <Switch
-                           id='inStock'
-                           checked={filters.inStock || false}
-                           onCheckedChange={(value) => handleFilterChange('inStock', value)}
-                        />
-                     </div>
-                  </CardContent>
-               </CollapsibleContent>
-            </Collapsible>
-         </Card> */}
       </div>
    )
 }

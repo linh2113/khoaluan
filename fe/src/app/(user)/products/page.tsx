@@ -25,6 +25,7 @@ import {
    BreadcrumbSeparator
 } from '@/components/ui/breadcrumb'
 import ProductCard from '@/components/product-card'
+import { decodeHTML } from '@/lib/utils'
 
 function ProductsPageContent() {
    const searchParams = useSearchParams()
@@ -47,7 +48,7 @@ function ProductsPageContent() {
    const getInitialFilters = (): GetProductQueryParamsType => {
       const filters: GetProductQueryParamsType = {
          page: 0,
-         size: 2,
+         size: 12,
          sortBy: 'id',
          sortDir: 'desc'
       }
@@ -226,8 +227,8 @@ function ProductsPageContent() {
          })
       }
       if (queryParams.minPrice || queryParams.maxPrice) {
-         const minPrice = queryParams.minPrice || 0
-         const maxPrice = queryParams.maxPrice || 50000000
+         const minPrice = queryParams.minPrice
+         const maxPrice = queryParams.maxPrice
          filters.push({
             key: 'price',
             label: `${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
@@ -464,7 +465,7 @@ function ProductsPageContent() {
                            >
                               <Image
                                  src={product.image || '/placeholder.svg'}
-                                 alt={product.name}
+                                 alt={decodeHTML(product.name)}
                                  fill
                                  className='object-cover'
                               />

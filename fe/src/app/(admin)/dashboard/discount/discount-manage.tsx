@@ -30,6 +30,7 @@ import type {
 import { toast } from 'react-toastify'
 import Paginate from '@/components/paginate'
 import Image from 'next/image'
+import { decodeHTML } from '@/lib/utils'
 
 export default function DiscountManage() {
    const [currentPage, setCurrentPage] = useState<number>(1)
@@ -727,7 +728,7 @@ export default function DiscountManage() {
                                                    className='rounded w-10 h-10'
                                                 />
                                                 <div>
-                                                   <div className='font-medium text-sm'>{product.name}</div>
+                                                   <div className='font-medium text-sm'>{decodeHTML(product.name)}</div>
                                                    <div className='text-xs text-muted-foreground'>
                                                       Giá gốc: {product.price?.toLocaleString('vi-VN')}đ
                                                    </div>
@@ -961,7 +962,9 @@ export default function DiscountManage() {
                                                       className='rounded w-10 h-10'
                                                    />
                                                    <div>
-                                                      <div className='font-medium text-sm'>{product.name}</div>
+                                                      <div className='font-medium text-sm'>
+                                                         {decodeHTML(product.name)}
+                                                      </div>
                                                       <div className='text-xs text-muted-foreground'>
                                                          Giá gốc: {product.price?.toLocaleString('vi-VN')}đ
                                                       </div>

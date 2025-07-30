@@ -4,7 +4,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { formatCurrency } from '@/lib/utils'
+import { decodeHTML, formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import {
@@ -293,7 +293,7 @@ export default function Statistics() {
                               statistics?.topSellingProducts.map((product) => (
                                  <TableRow key={product.id}>
                                     <TableCell className='font-medium'>{product.id}</TableCell>
-                                    <TableCell>{product.name}</TableCell>
+                                    <TableCell>{decodeHTML(product.name)}</TableCell>
                                     <TableCell>{formatCurrency(product.price)}</TableCell>
                                     <TableCell className='text-right'>{product.soldQuantity}</TableCell>
                                  </TableRow>

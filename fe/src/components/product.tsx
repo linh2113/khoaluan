@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Heart, ShoppingCart, Star, Eye, Scale } from 'lucide-react'
 import type { ProductType } from '@/types/product.type'
+import { decodeHTML } from '@/lib/utils'
 
 interface ProductCardProps {
    product: ProductType
@@ -47,7 +48,7 @@ export default function Product({
                   <Link href={`/products/${product.id}`}>
                      <Image
                         src={imageError ? '/placeholder.svg' : product.image || '/placeholder.svg'}
-                        alt={product.name}
+                        alt={decodeHTML(product.name)}
                         fill
                         className='object-cover group-hover:scale-105 transition-transform duration-300'
                         onError={() => setImageError(true)}
@@ -85,7 +86,7 @@ export default function Product({
                         {/* Title */}
                         <Link href={`/products/${product.id}`}>
                            <h3 className='font-semibold text-lg mb-2 line-clamp-2 hover:text-primary transition-colors'>
-                              {product.name}
+                              {decodeHTML(product.name)}
                            </h3>
                         </Link>
 
@@ -155,7 +156,7 @@ export default function Product({
             <Link href={`/products/${product.id}`}>
                <Image
                   src={imageError ? '/placeholder.svg' : product.image || '/placeholder.svg'}
-                  alt={product.name}
+                  alt={decodeHTML(product.name)}
                   fill
                   className='object-cover group-hover:scale-105 transition-transform duration-300'
                   onError={() => setImageError(true)}
@@ -203,7 +204,9 @@ export default function Product({
 
             {/* Title */}
             <Link href={`/products/${product.id}`}>
-               <h3 className='font-semibold mb-2 line-clamp-2 hover:text-primary transition-colors'>{product.name}</h3>
+               <h3 className='font-semibold mb-2 line-clamp-2 hover:text-primary transition-colors'>
+                  {decodeHTML(product.name)}
+               </h3>
             </Link>
 
             {/* Rating */}

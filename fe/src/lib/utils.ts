@@ -24,3 +24,8 @@ export const getIdFromNameId = (nameId: string) => {
    const arr = nameId.split('-i-')
    return arr[1]
 }
+export function decodeHTML(str: string) {
+   const txt = document.createElement('textarea')
+   txt.innerHTML = str
+   return txt.value
+}

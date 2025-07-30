@@ -30,6 +30,7 @@ import type {
 } from '@/types/admin.type'
 import { toast } from 'react-toastify'
 import Paginate from '@/components/paginate'
+import { decodeHTML } from '@/lib/utils'
 
 export default function FlashSaleManage() {
    const [currentPage, setCurrentPage] = useState<number>(1)
@@ -752,11 +753,11 @@ export default function FlashSaleManage() {
                                        <div className='flex items-center gap-3 py-1'>
                                           <img
                                              src={product.image || '/placeholder.svg?height=32&width=32'}
-                                             alt={product.name}
+                                             alt={decodeHTML(product.name)}
                                              className='w-8 h-8 rounded object-cover flex-shrink-0'
                                           />
                                           <div className='flex-1 min-w-0'>
-                                             <p className='font-medium truncate'>{product.name}</p>
+                                             <p className='font-medium truncate'>{decodeHTML(product.name)}</p>
                                              <p className='text-sm text-gray-500'>
                                                 {formatCurrency(product.price)} • ID: {product.id}
                                              </p>
@@ -854,11 +855,11 @@ export default function FlashSaleManage() {
                                           <div className='flex items-center gap-3 py-1'>
                                              <img
                                                 src={product.image || '/placeholder.svg?height=32&width=32'}
-                                                alt={product.name}
+                                                alt={decodeHTML(product.name)}
                                                 className='w-8 h-8 rounded object-cover flex-shrink-0'
                                              />
                                              <div className='flex-1 min-w-0'>
-                                                <p className='font-medium truncate'>{product.name}</p>
+                                                <p className='font-medium truncate'>{decodeHTML(product.name)}</p>
                                                 <p className='text-sm text-gray-500'>
                                                    {formatCurrency(product.price)} • ID: {product.id}
                                                 </p>

@@ -3,7 +3,7 @@ import { useCompareProducts } from '@/queries/useProduct'
 import { useSearchParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { formatCurrency, generateNameId } from '@/lib/utils'
+import { decodeHTML, formatCurrency, generateNameId } from '@/lib/utils'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, ShoppingCart } from 'lucide-react'
@@ -121,7 +121,7 @@ export default function Compare() {
                               <div className='w-full'>
                                  <Image
                                     src={product.image || '/placeholder.svg'}
-                                    alt={product.name}
+                                    alt={decodeHTML(product.name)}
                                     width={500}
                                     height={500}
                                     className='mb-2'
@@ -131,7 +131,7 @@ export default function Compare() {
                                  href={`/${generateNameId({ name: product.name, id: product.id })}`}
                                  className='text-blue-600 hover:underline text-center font-medium'
                               >
-                                 {product.name}
+                                 {decodeHTML(product.name)}
                               </Link>
                               <Button
                                  onClick={() => handleAddToCart(product.id)}

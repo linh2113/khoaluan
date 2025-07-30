@@ -32,6 +32,12 @@ const nextConfig: NextConfig = {
             hostname: 'ecx.images-amazon.com',
             port: '',
             pathname: '/**'
+         },
+         {
+            protocol: 'https',
+            hostname: 'images-na.ssl-images-amazon.com',
+            port: '',
+            pathname: '/**'
          }
       ]
    }

@@ -348,25 +348,6 @@ export default function ProductFilter({
                            Trên 20 triệu
                         </Button>
                      </div>
-
-                     {/* <Separator /> */}
-
-                     {/* Custom price slider */}
-                     {/* <div className='space-y-3'>
-                        <Label className='text-sm font-medium'>Tùy chỉnh khoảng giá</Label>
-                        <Slider
-                           defaultValue={[0, maxPriceValue]}
-                           max={maxPriceValue}
-                           step={100000}
-                           value={[priceRange[0], priceRange[1]]}
-                           onValueChange={handlePriceChange}
-                           className='w-full'
-                        />
-                        <div className='flex justify-between items-center'>
-                           <div className='text-sm font-medium text-primary'>{formatPrice(priceRange[0])}</div>
-                           <div className='text-sm font-medium text-primary'>{formatPrice(priceRange[1])}</div>
-                        </div>
-                     </div> */}
                   </CardContent>
                </CollapsibleContent>
             </Collapsible>
@@ -420,82 +401,6 @@ export default function ProductFilter({
                </CollapsibleContent>
             </Collapsible>
          </Card>
-
-         {/* Sắp xếp */}
-         {/* <Card>
-            <Collapsible open={openSections.sort} onOpenChange={() => toggleSection('sort')}>
-               <CollapsibleTrigger asChild>
-                  <CardHeader className='cursor-pointer hover:bg-muted/50 transition-colors pb-3'>
-                     <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-2'>
-                           <Filter className='h-4 w-4 text-primary' />
-                           <CardTitle className='text-base'>Sắp xếp theo</CardTitle>
-                        </div>
-                        {openSections.sort ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
-                     </div>
-                  </CardHeader>
-               </CollapsibleTrigger>
-               <CollapsibleContent>
-                  <CardContent className='pt-0'>
-                     <Select
-                        value={`${filters.sortBy || 'id'}-${filters.sortDir || 'desc'}`}
-                        onValueChange={(value) => {
-                           const [sortBy, sortDir] = value.split('-')
-                           handleFilterChange('sortBy', sortBy)
-                           handleFilterChange('sortDir', sortDir)
-                        }}
-                     >
-                        <SelectTrigger className='w-full'>
-                           <SelectValue placeholder='Chọn cách sắp xếp' />
-                        </SelectTrigger>
-                        <SelectContent>
-                           <SelectItem value='id-desc'>Mới nhất</SelectItem>
-                           <SelectItem value='price-asc'>Giá thấp đến cao</SelectItem>
-                           <SelectItem value='price-desc'>Giá cao đến thấp</SelectItem>
-                           <SelectItem value='name-asc'>Tên A-Z</SelectItem>
-                           <SelectItem value='name-desc'>Tên Z-A</SelectItem>
-                        </SelectContent>
-                     </Select>
-                  </CardContent>
-               </CollapsibleContent>
-            </Collapsible>
-         </Card> */}
-
-         {/* Tùy chọn khác */}
-         {/* <Card>
-            <Collapsible open={openSections.options} onOpenChange={() => toggleSection('options')}>
-               <CollapsibleTrigger asChild>
-                  <CardHeader className='cursor-pointer hover:bg-muted/50 transition-colors pb-3'>
-                     <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-2'>
-                           <SlidersHorizontal className='h-4 w-4 text-primary' />
-                           <CardTitle className='text-base'>Tùy chọn khác</CardTitle>
-                           {filters.inStock && (
-                              <Badge variant='outline' className='text-xs'>
-                                 1
-                              </Badge>
-                           )}
-                        </div>
-                        {openSections.options ? <ChevronUp className='h-4 w-4' /> : <ChevronDown className='h-4 w-4' />}
-                     </div>
-                  </CardHeader>
-               </CollapsibleTrigger>
-               <CollapsibleContent>
-                  <CardContent className='pt-0'>
-                     <div className='flex items-center justify-between p-3 bg-muted/30 rounded-lg'>
-                        <Label htmlFor='inStock' className='cursor-pointer text-sm font-medium'>
-                           Chỉ hiển thị sản phẩm còn hàng
-                        </Label>
-                        <Switch
-                           id='inStock'
-                           checked={filters.inStock || false}
-                           onCheckedChange={(value) => handleFilterChange('inStock', value)}
-                        />
-                     </div>
-                  </CardContent>
-               </CollapsibleContent>
-            </Collapsible>
-         </Card> */}
       </div>
    )
 }

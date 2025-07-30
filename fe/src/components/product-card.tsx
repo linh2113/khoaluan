@@ -2,7 +2,7 @@
 import type { ProductType } from '@/types/product.type'
 import type React from 'react'
 
-import { formatCurrency, generateNameId } from '@/lib/utils'
+import { decodeHTML, formatCurrency, generateNameId } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
@@ -135,7 +135,7 @@ export default function ProductCard({
 
                   <Link href={productUrl}>
                      <h3 className='font-medium text-lg line-clamp-2 min-h-[40px] group-hover:text-primaryColor transition-colors'>
-                        {product.name || t('productName')}
+                        {decodeHTML(product.name)}
                      </h3>
                   </Link>
 
@@ -262,7 +262,7 @@ export default function ProductCard({
             </div>
             <Link href={productUrl}>
                <h3 className='font-medium text-sm line-clamp-2 min-h-[40px] group-hover:text-primaryColor transition-colors'>
-                  {product.name || t('productName')}
+                  {decodeHTML(product.name)}
                </h3>
             </Link>
             <div className='mt-2 flex items-center justify-between'>

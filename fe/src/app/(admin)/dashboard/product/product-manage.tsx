@@ -1305,7 +1305,12 @@ export default function ProductManage() {
                                        />
                                     </div>
                                  </TableCell>
-                                 <TableCell className='font-medium'>{decodeHTML(product.name)}</TableCell>
+                                 <TableCell
+                                    title={decodeHTML(product.name)}
+                                    className='font-medium max-w-[300px] truncate'
+                                 >
+                                    {decodeHTML(product.name)}
+                                 </TableCell>
                                  <TableCell>{product.categoryName}</TableCell>
                                  <TableCell>{product.brandName || 'N/A'}</TableCell>
                                  <TableCell className='text-right'>

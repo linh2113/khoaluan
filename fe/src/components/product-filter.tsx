@@ -55,7 +55,7 @@ export default function ProductFilter({
    maxPriceValue = 50000000
 }: ProductFilterProps) {
    const [filters, setFilters] = useState<GetProductQueryParamsType>(initialFilters)
-   const [priceRange, setPriceRange] = useState<[number, number]>([0, maxPriceValue])
+   const [priceRange, setPriceRange] = useState<[number, number]>([])
    const [selectedBrand, setSelectedBrand] = useState<string>('')
    const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
 
@@ -73,9 +73,7 @@ export default function ProductFilter({
 
    const debouncedFilters = useDebounce(
       {
-         ...filters,
-         minPrice: priceRange[0],
-         maxPrice: priceRange[1]
+         ...filters
       },
       500
    )
@@ -88,9 +86,7 @@ export default function ProductFilter({
 
    useEffect(() => {
       const currentFilters = {
-         ...filters,
-         minPrice: priceRange[0],
-         maxPrice: priceRange[1]
+         ...filters
       }
 
       if (prevFiltersRef.current && JSON.stringify(prevFiltersRef.current) !== JSON.stringify(currentFilters)) {
@@ -353,10 +349,10 @@ export default function ProductFilter({
                         </Button>
                      </div>
 
-                     <Separator />
+                     {/* <Separator /> */}
 
                      {/* Custom price slider */}
-                     <div className='space-y-3'>
+                     {/* <div className='space-y-3'>
                         <Label className='text-sm font-medium'>Tùy chỉnh khoảng giá</Label>
                         <Slider
                            defaultValue={[0, maxPriceValue]}
@@ -370,7 +366,7 @@ export default function ProductFilter({
                            <div className='text-sm font-medium text-primary'>{formatPrice(priceRange[0])}</div>
                            <div className='text-sm font-medium text-primary'>{formatPrice(priceRange[1])}</div>
                         </div>
-                     </div>
+                     </div> */}
                   </CardContent>
                </CollapsibleContent>
             </Collapsible>

@@ -94,6 +94,7 @@ public class SecurityConfig {
                         "/login/oauth2/code/*",
                         "/products/**",
                         "/flash-sales/**",
+                        "/recommendations/**",
                         "/categories/**",
                         "/swagger-ui/**",
                         "/api-docs/**",

@@ -25,6 +25,7 @@ import {
    BreadcrumbSeparator
 } from '@/components/ui/breadcrumb'
 import ProductCard from '@/components/product-card'
+import { decodeHTML } from '@/lib/utils'
 
 function ProductsPageContent() {
    const searchParams = useSearchParams()
@@ -464,7 +465,7 @@ function ProductsPageContent() {
                            >
                               <Image
                                  src={product.image || '/placeholder.svg'}
-                                 alt={product.name}
+                                 alt={decodeHTML(product.name)}
                                  fill
                                  className='object-cover'
                               />

@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl'
 import FlashSale from '@/components/flash-sale'
 import { useProductSections } from '@/hooks/useProductSections'
 import ProductSection from '@/components/product-section'
+import { decodeHTML } from '@/lib/utils'
 
 export default function Home() {
    const router = useRouter()
@@ -236,7 +237,7 @@ export default function Home() {
                            >
                               <Image
                                  src={product.image || '/placeholder.svg'}
-                                 alt={product.name}
+                                 alt={decodeHTML(product.name)}
                                  fill
                                  className='object-cover'
                               />

@@ -14,7 +14,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import Paginate from '@/components/paginate'
 import Image from 'next/image'
-import { formatCurrency } from '@/lib/utils'
+import { decodeHTML, formatCurrency } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Edit, Plus, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -1299,13 +1299,13 @@ export default function ProductManage() {
                                     <div className='h-16 w-16 relative'>
                                        <Image
                                           src={product.image || '/placeholder.svg'}
-                                          alt={product.name}
+                                          alt={decodeHTML(product.name)}
                                           fill
                                           className='object-cover rounded-md'
                                        />
                                     </div>
                                  </TableCell>
-                                 <TableCell className='font-medium'>{product.name}</TableCell>
+                                 <TableCell className='font-medium'>{decodeHTML(product.name)}</TableCell>
                                  <TableCell>{product.categoryName}</TableCell>
                                  <TableCell>{product.brandName || 'N/A'}</TableCell>
                                  <TableCell className='text-right'>

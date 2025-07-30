@@ -60,5 +60,5 @@ public interface ProductService {
     List<ProductDTO> compareProducts(List<Integer> productIds);
     
     Page<ProductDTO> getProductsWithSearch(String search, Pageable pageable);
-    ProductDTO getProductByProductIdString(String productIdString);
+    List<ProductDTO> getProductsByIdStrings(List<String> productIdStrings);
 }

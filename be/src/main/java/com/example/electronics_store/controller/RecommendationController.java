@@ -2,130 +2,56 @@ package com.example.electronics_store.controller;
 
 import com.example.electronics_store.dto.ApiResponse;
 import com.example.electronics_store.dto.ProductDTO;
-import com.example.electronics_store.dto.UserProductPredictionDTO;
-import com.example.electronics_store.service.ProductRecommendationService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import com.example.electronics_store.service.ProductService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
+
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @RestController
-@RequestMapping("/api/recommendations")
+@RequestMapping("/recommendations")
+@RequiredArgsConstructor
 public class RecommendationController {
 
+    private final ProductService  productService;
+    private final WebClient    recClient;
+    private static final int MAX_K = 30;
 
-    private ProductRecommendationService recommendationService;
+    @GetMapping("/{userId}")
+    public ResponseEntity<ApiResponse<?>> rec(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "8") Integer k) {
+    try{
+        k = Math.max(1, Math.min(k, MAX_K));
 
-    private final WebClient recClient;
+        String[] asins = recClient.get()
+                .uri("/recommendations/{uid}?k={k}", userId, k)
+                .retrieve()
+                .bodyToMono(String[].class)
+                .block();
 
-    public RecommendationController(@Value("${recommendation.service.url:http://localhost:8000}") String recommendationServiceUrl) {
-        this.recClient = WebClient.builder()
-                .baseUrl(recommendationServiceUrl)
-                .build();
+        if (asins == null || asins.length == 0)
+            return ResponseEntity.ok(ApiResponse.success("No recommendations", List.of()));
+
+        List<ProductDTO> products = productService.getProductsByIdStrings(List.of(asins));
+        // Giữ thứ tự theo recommender
+        Map<String,Integer> idx = IntStream.range(0, asins.length)
+                .boxed()
+                .collect(Collectors.toMap(i -> asins[i], i -> i));
+        products.sort(Comparator.comparingInt(p -> idx.getOrDefault(p.getProductIdString(), 999)));
+        return ResponseEntity.ok(ApiResponse.success(products));
     }
-
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<?>> getRecommendationsForUser(
-            @PathVariable Integer userId,
-            @RequestParam(defaultValue = "10") Integer limit) {
-        try {
-            List<ProductDTO> products = recommendationService.getRecommendedProductsForUser(userId, limit);
-            return ResponseEntity.ok(ApiResponse.success(products));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+    catch (Exception e){
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(e.getMessage()));
     }
-
-    @GetMapping("/similar/{productId}")
-    public ResponseEntity<ApiResponse<?>> getSimilarProducts(
-            @PathVariable Integer productId,
-            @RequestParam(defaultValue = "10") Integer limit) {
-        try {
-            List<ProductDTO> products = recommendationService.getSimilarProducts(productId, limit);
-            return ResponseEntity.ok(ApiResponse.success(products));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
-
-    @GetMapping("/popular")
-    public ResponseEntity<ApiResponse<?>> getPopularProducts(
-            @RequestParam(defaultValue = "10") Integer limit) {
-        try {
-            List<ProductDTO> products = recommendationService.getPopularProducts(limit);
-            return ResponseEntity.ok(ApiResponse.success(products));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    @GetMapping("/personalized/{userId}")
-    public ResponseEntity<ApiResponse<?>> getPersonalizedRecommendations(
-            @PathVariable Integer userId,
-            @RequestParam(defaultValue = "10") Integer limit) {
-        try {
-            List<ProductDTO> products = recommendationService.getPersonalizedRecommendations(userId, limit);
-            return ResponseEntity.ok(ApiResponse.success(products));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    @PostMapping("/event")
-    public ResponseEntity<ApiResponse<?>> recordUserEvent(
-            @RequestParam Integer userId,
-            @RequestParam Integer productId,
-            @RequestParam String eventType) {
-        try {
-            recommendationService.recordUserEvent(userId, productId, eventType);
-            return ResponseEntity.ok(ApiResponse.success("Event recorded successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    @GetMapping("/predictions/{userId}")
-    public ResponseEntity<ApiResponse<?>> getPredictionsForUser(@PathVariable Integer userId) {
-        try {
-            List<UserProductPredictionDTO> predictions = recommendationService.getPredictionsForUser(userId);
-            return ResponseEntity.ok(ApiResponse.success(predictions));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    @PostMapping("/predictions/update/{userId}")
-    public ResponseEntity<ApiResponse<?>> updatePredictionsForUser(@PathVariable Integer userId) {
-        try {
-            recommendationService.updatePredictionsForUser(userId);
-            return ResponseEntity.ok(ApiResponse.success("Predictions updated successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    @PostMapping("/predictions/update-all")
-    public ResponseEntity<ApiResponse<?>> updateAllPredictions() {
-        try {
-            recommendationService.updateAllPredictions();
-            return ResponseEntity.ok(ApiResponse.success("All predictions updated successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-
 }

@@ -147,9 +147,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
        "AND pd.discount.endDate >= :now")
 List<Integer> findProductIdsWithActiveDiscounts(@Param("now") LocalDateTime now);
 
-    @Query("SELECT p FROM Product p WHERE p.productIdString = :productIdString AND p.status = true")
-    Optional<Product> findActiveProductByProductIdString(@Param("productIdString") String productIdString);
-
     @Query("SELECT p FROM Product p WHERE p.productIdString IN :productIdStrings AND p.status = true")
-    List<Product> findActiveProductsByProductIdStrings(@Param("productIdStrings") List<String> productIdStrings);
+    List<Product> findByProductIdStringsInOrder(@Param("productIdStrings") List<String> productIdStrings);
 }

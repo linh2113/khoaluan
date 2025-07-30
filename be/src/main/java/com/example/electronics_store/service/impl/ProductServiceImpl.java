@@ -723,11 +723,14 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProductDTO getProductByProductIdString(String productIdString) {
-        Product product = productRepository.findActiveProductByProductIdString(productIdString)
-                .orElseThrow(() -> new RuntimeException("Product not found with productIdString: " + productIdString));
-        return mapProductToDTO(product);
+    public List<ProductDTO> getProductsByIdStrings(List<String> productIdStrings) {
+        List<Product> products = productRepository.findByProductIdStringsInOrder(productIdStrings);
+        return products.stream()
+                .map(this::mapProductToDTO)
+                .collect(Collectors.toList());
     }
+
+
 
     private ProductDTO mapProductToDTO(Product product) {
         ProductDTO dto = new ProductDTO();

@@ -20,3 +20,6 @@ export const getAllBrandProducts = (queryParams: GetBrandQueryParamsType) =>
    http.get<ResponseData<ResponseDataWithPaginate<BrandType[]>>>(
       '/products/allBrands?' + queryString.stringify(queryParams)
    )
+
+export const getAllRecommendedProducts = ({ userid, k }: { userid: number; k: number }) =>
+   http.get<ResponseData<ProductType[]>>(`/recommendations/${userid}?k=${k}`)

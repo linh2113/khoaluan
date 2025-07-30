@@ -3,7 +3,8 @@ import {
    getProduct,
    compareProducts,
    getAllCategoryProducts,
-   getAllBrandProducts
+   getAllBrandProducts,
+   getAllRecommendedProducts
 } from '@/apiRequest/product'
 import { GetBrandQueryParamsType, GetCategoryQueryParamsType } from '@/types/admin.type'
 import { GetProductQueryParamsType } from '@/types/product.type'
@@ -42,5 +43,11 @@ export const useGetAllBrandProducts = (queryParams: GetBrandQueryParamsType) => 
    return useQuery({
       queryKey: ['brandProducts', queryParams],
       queryFn: () => getAllBrandProducts(queryParams)
+   })
+}
+export const useGetAllRecommendedProducts = (queryParams: { userid: number; k: number }) => {
+   return useQuery({
+      queryKey: ['products', queryParams],
+      queryFn: () => getAllRecommendedProducts(queryParams)
    })
 }

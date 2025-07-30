@@ -14,11 +14,17 @@ import FlashSale from '@/components/flash-sale'
 import { useProductSections } from '@/hooks/useProductSections'
 import ProductSection from '@/components/product-section'
 import { decodeHTML } from '@/lib/utils'
+import { useGetAllRecommendedProducts } from '@/queries/useProduct'
+import { useAppContext } from '@/context/app.context'
 
 export default function Home() {
    const router = useRouter()
+   const { userId } = useAppContext()
    const [selectedProducts, setSelectedProducts] = useState<ProductType[]>([])
+   const { data, isLoading } = useGetAllRecommendedProducts({ userid: userId || 1, k: 5 })
+   const recommendedProducts = data?.data.data || []
 
+   const t = useTranslations()
    // Lấy dữ liệu từ các section
    const { discountedProducts, topSellingProducts, topRatedProducts, newArrivals, budgetProducts, premiumProducts } =
       useProductSections()
@@ -134,7 +140,18 @@ export default function Home() {
                onSelectForCompare={handleSelectProductForCompare}
                selectedProducts={selectedProducts}
             /> */}
-
+            {/* Sản phẩm gợi ý */}
+            <ProductSection
+               title='🎁 Sản phẩm gợi ý'
+               subtitle='Sản phẩm gợi ý theo sở thích người dùng'
+               icon={<TrendingUp className='h-6 w-6 text-green-500' />}
+               products={recommendedProducts}
+               isLoading={isLoading}
+               backgroundColor='bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20'
+               viewAllLink='/products'
+               onSelectForCompare={handleSelectProductForCompare}
+               selectedProducts={selectedProducts}
+            />
             {/* Sản phẩm bán chạy */}
             <ProductSection
                title='🏆 Sản phẩm bán chạy'

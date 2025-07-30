@@ -1,24 +1,12 @@
 'use client'
+
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
-import { Switch } from '@/components/ui/switch'
 import type { GetProductQueryParamsType } from '@/types/product.type'
 import { useState, useEffect, useRef } from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import {
-   ChevronDown,
-   ChevronUp,
-   Filter,
-   SlidersHorizontal,
-   Tag,
-   Smartphone,
-   Star,
-   TrendingUp,
-   RotateCcw
-} from 'lucide-react'
-import { Separator } from '@/components/ui/separator'
+import { ChevronDown, ChevronUp, SlidersHorizontal, Tag, Smartphone, Star, TrendingUp, RotateCcw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { BrandType, CategoryType } from '@/types/admin.type'
@@ -55,7 +43,7 @@ export default function ProductFilter({
    maxPriceValue = 50000000
 }: ProductFilterProps) {
    const [filters, setFilters] = useState<GetProductQueryParamsType>(initialFilters)
-   const [priceRange, setPriceRange] = useState<[number, number]>([])
+   const [priceRange, setPriceRange] = useState<[number, number]>([0, maxPriceValue])
    const [selectedBrand, setSelectedBrand] = useState<string>('')
    const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
 
@@ -70,7 +58,6 @@ export default function ProductFilter({
    })
 
    const t = useTranslations('ProductFilter')
-
    const debouncedFilters = useDebounce(
       {
          ...filters
@@ -83,16 +70,13 @@ export default function ProductFilter({
    }, [initialFilters])
 
    const prevFiltersRef = useRef<GetProductQueryParamsType>()
-
    useEffect(() => {
       const currentFilters = {
          ...filters
       }
-
       if (prevFiltersRef.current && JSON.stringify(prevFiltersRef.current) !== JSON.stringify(currentFilters)) {
          onFilterChange(currentFilters)
       }
-
       prevFiltersRef.current = currentFilters
    }, [debouncedFilters])
 
@@ -100,8 +84,11 @@ export default function ProductFilter({
       setFilters((prev) => ({ ...prev, [name]: value }))
    }
 
-   const handlePriceChange = (value: number[]) => {
-      setPriceRange([value[0], value[1]])
+   // Updated function to handle price range changes
+   const handlePriceRangeChange = (minPrice: number, maxPrice: number) => {
+      setPriceRange([minPrice, maxPrice])
+      handleFilterChange('minPrice', minPrice)
+      handleFilterChange('maxPrice', maxPrice)
    }
 
    const handleBrandChange = (brandName: string) => {
@@ -278,7 +265,7 @@ export default function ProductFilter({
             </Collapsible>
          </Card>
 
-         {/* Khoảng giá */}
+         {/* Khoảng giá - Updated section */}
          <Card>
             <Collapsible open={openSections.price} onOpenChange={() => toggleSection('price')}>
                <CollapsibleTrigger asChild>
@@ -299,12 +286,12 @@ export default function ProductFilter({
                </CollapsibleTrigger>
                <CollapsibleContent>
                   <CardContent className='pt-0 space-y-4'>
-                     {/* Quick price buttons */}
+                     {/* Quick price buttons - Updated with handleFilterChange */}
                      <div className='grid grid-cols-2 gap-2'>
                         <Button
                            variant='outline'
                            size='sm'
-                           onClick={() => setPriceRange([0, 5000000])}
+                           onClick={() => handlePriceRangeChange(0, 5000000)}
                            className={
                               priceRange[0] === 0 && priceRange[1] === 5000000 ? 'border-primary bg-primary/10' : ''
                            }
@@ -314,7 +301,7 @@ export default function ProductFilter({
                         <Button
                            variant='outline'
                            size='sm'
-                           onClick={() => setPriceRange([5000000, 10000000])}
+                           onClick={() => handlePriceRangeChange(5000000, 10000000)}
                            className={
                               priceRange[0] === 5000000 && priceRange[1] === 10000000
                                  ? 'border-primary bg-primary/10'
@@ -326,7 +313,7 @@ export default function ProductFilter({
                         <Button
                            variant='outline'
                            size='sm'
-                           onClick={() => setPriceRange([10000000, 20000000])}
+                           onClick={() => handlePriceRangeChange(10000000, 20000000)}
                            className={
                               priceRange[0] === 10000000 && priceRange[1] === 20000000
                                  ? 'border-primary bg-primary/10'
@@ -338,7 +325,7 @@ export default function ProductFilter({
                         <Button
                            variant='outline'
                            size='sm'
-                           onClick={() => setPriceRange([20000000, maxPriceValue])}
+                           onClick={() => handlePriceRangeChange(20000000, maxPriceValue)}
                            className={
                               priceRange[0] === 20000000 && priceRange[1] === maxPriceValue
                                  ? 'border-primary bg-primary/10'
@@ -379,7 +366,6 @@ export default function ProductFilter({
                         { value: 'TOP_SELLING', label: 'Bán chạy nhất', icon: '🔥' },
                         { value: 'NEW_ARRIVALS', label: 'Hàng mới về', icon: '✨' },
                         { value: 'TOP_RATED', label: 'Đánh giá cao', icon: '⭐' }
-                        // { value: 'FLASH_SALE', label: 'Đang giảm giá', icon: '💰' }
                      ].map((type) => (
                         <div
                            key={type.value}

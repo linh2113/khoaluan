@@ -21,7 +21,7 @@ export default function Home() {
    const router = useRouter()
    const { userId } = useAppContext()
    const [selectedProducts, setSelectedProducts] = useState<ProductType[]>([])
-   const { data, isLoading } = useGetAllRecommendedProducts({ userid: userId || 1, k: 5 })
+   const { data, isLoading } = useGetAllRecommendedProducts({ userid: userId || 12394, k: 8 })
    const recommendedProducts = data?.data.data || []
 
    const t = useTranslations()
@@ -144,10 +144,10 @@ export default function Home() {
             <ProductSection
                title='🎁 Sản phẩm gợi ý'
                subtitle='Sản phẩm gợi ý theo sở thích người dùng'
-               icon={<TrendingUp className='h-6 w-6 text-green-500' />}
+               icon={<TrendingUp className='h-6 w-6 text-blue-500' />}
                products={recommendedProducts}
                isLoading={isLoading}
-               backgroundColor='bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20'
+               backgroundColor='bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-950/20 dark:to-emerald-950/20'
                viewAllLink='/products'
                onSelectForCompare={handleSelectProductForCompare}
                selectedProducts={selectedProducts}

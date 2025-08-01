@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { useAppContext } from '@/context/app.context'
 import { useGetOrdersByUserId, useDeleteOrder, useUpdateOrderStatus } from '@/queries/useOrder'
 import { useAddToCart } from '@/queries/useCart'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, generateNameId } from '@/lib/utils'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { ORDER_STATUS, PAYMENT_STATUS } from '@/types/order.type'
@@ -23,6 +23,7 @@ import { Loader2, ShoppingCart } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { useRouter } from 'next/navigation'
 import { useIsMobile } from '@/hooks/use-mobile'
+import Link from 'next/link'
 
 export default function Purchase() {
    const router = useRouter()
@@ -382,7 +383,11 @@ export default function Purchase() {
                         <h3 className='font-medium mb-2'>Sản phẩm</h3>
                         <div className='space-y-3'>
                            {selectedOrder.orderDetails.map((item) => (
-                              <div key={item.id} className='flex items-center gap-3 md:gap-4 border-b pb-3'>
+                              <Link
+                                 href={`/${generateNameId({ name: item.productName, id: item.productId })}`}
+                                 key={item.id}
+                                 className='flex items-center gap-3 md:gap-4 border-b pb-3'
+                              >
                                  <div className='w-12 h-12 md:w-16 md:h-16 flex-shrink-0'>
                                     <Image
                                        src={item.productImage}
@@ -403,7 +408,7 @@ export default function Purchase() {
                                        {formatCurrency(item.totalPrice)}
                                     </p>
                                  </div>
-                              </div>
+                              </Link>
                            ))}
                         </div>
                      </div>

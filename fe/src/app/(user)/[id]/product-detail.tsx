@@ -628,7 +628,7 @@ export default function ProductDetail({ id }: { id: string }) {
                   decodeHTML(product.description)
                      .split(/(?<=[.?!])\s+/) // Tách sau dấu chấm, chấm hỏi, chấm than
                      .map((sentence, index) => (
-                        <p key={index} className='whitespace-pre-line mt-'>
+                        <p key={index} className='whitespace-pre-line'>
                            {sentence.trim()}
                         </p>
                      ))

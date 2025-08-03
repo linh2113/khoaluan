@@ -206,6 +206,7 @@ export interface DashboardStatisticsType {
    totalRevenue: number
    processingOrders: number
    newOrdersToday: number
+   completedOrders: number
 }
 export interface TopSellingProduct {
    price: number

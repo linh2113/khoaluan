@@ -179,7 +179,7 @@ export default function Statistics() {
          </div>
 
          {/* Thống kê trạng thái đơn hàng */}
-         <div className='grid grid-cols-1 md:grid-cols-5 gap-4 mb-6'>
+         <div className='grid grid-cols-1 md:grid-cols-6 gap-4 mb-6'>
             <Card className='bg-amber-50 border-amber-200'>
                <CardContent className='p-4 flex flex-col items-center justify-center'>
                   <Clock className='h-6 w-6 text-amber-600 mb-2' />
@@ -187,7 +187,6 @@ export default function Statistics() {
                   <h3 className='text-2xl font-bold text-amber-700'>{statistics?.pendingOrders || 0}</h3>
                </CardContent>
             </Card>
-
             <Card className='bg-blue-50 border-blue-200'>
                <CardContent className='p-4 flex flex-col items-center justify-center'>
                   <TrendingUp className='h-6 w-6 text-blue-600 mb-2' />
@@ -195,7 +194,6 @@ export default function Statistics() {
                   <h3 className='text-2xl font-bold text-blue-700'>{statistics?.processingOrders || 0}</h3>
                </CardContent>
             </Card>
-
             <Card className='bg-green-50 border-green-200'>
                <CardContent className='p-4 flex flex-col items-center justify-center'>
                   <Truck className='h-6 w-6 text-green-600 mb-2' />
@@ -203,7 +201,6 @@ export default function Statistics() {
                   <h3 className='text-2xl font-bold text-green-700'>{statistics?.shippedOrders || 0}</h3>
                </CardContent>
             </Card>
-
             <Card className='bg-emerald-50 border-emerald-200'>
                <CardContent className='p-4 flex flex-col items-center justify-center'>
                   <CheckCircle className='h-6 w-6 text-emerald-600 mb-2' />
@@ -211,7 +208,13 @@ export default function Statistics() {
                   <h3 className='text-2xl font-bold text-emerald-700'>{statistics?.deliveredOrders || 0}</h3>
                </CardContent>
             </Card>
-
+            <Card className='bg-emerald-50 border-emerald-200'>
+               <CardContent className='p-4 flex flex-col items-center justify-center'>
+                  <CheckCircle className='h-6 w-6 text-emerald-600 mb-2' />
+                  <p className='text-sm text-muted-foreground'>Hoàn thành</p>
+                  <h3 className='text-2xl font-bold text-emerald-700'>{statistics?.completedOrders || 0}</h3>
+               </CardContent>
+            </Card>
             <Card className='bg-red-50 border-red-200'>
                <CardContent className='p-4 flex flex-col items-center justify-center'>
                   <XCircle className='h-6 w-6 text-red-600 mb-2' />

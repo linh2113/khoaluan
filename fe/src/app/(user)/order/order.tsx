@@ -1,5 +1,5 @@
 'use client'
-import { formatCurrency } from '@/lib/utils'
+import { decodeHTML, formatCurrency } from '@/lib/utils'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -274,12 +274,14 @@ export default function Order() {
                                  />
                               </TableCell>
                               <TableCell>
-                                 <h3 className='font-medium line-clamp-2'>{item.productName}</h3>
+                                 <h3 className='font-medium line-clamp-2'>{decodeHTML(item.productName)}</h3>
                               </TableCell>
                               <TableCell className='text-center'>
-                                 <span className='text-gray-400 line-through block text-sm'>
-                                    {formatCurrency(item.originalPrice)}
-                                 </span>
+                                 {item.originalPrice !== item.price && (
+                                    <span className='text-gray-400 line-through block text-sm'>
+                                       {formatCurrency(item.originalPrice)}
+                                    </span>
+                                 )}
                                  <span>{formatCurrency(item.price)}</span>
                               </TableCell>
                               <TableCell className='text-center'>x{item.quantity}</TableCell>

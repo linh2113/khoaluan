@@ -14,6 +14,7 @@ import { GetOrderQueryParamsType, OrderType } from '@/types/admin.type'
 import { ORDER_STATUS, PAYMENT_STATUS } from '@/types/order.type'
 import { renderOrderStatusBadge, renderPaymentStatusBadge } from '@/lib/order-utils'
 import { Skeleton } from '@/components/ui/skeleton'
+import { decodeHTML } from '@/lib/utils'
 
 export default function OrderManage() {
    const [currentPage, setCurrentPage] = useState<number>(1)
@@ -224,7 +225,7 @@ export default function OrderManage() {
             </div>
             <div className='flex flex-wrap items-center gap-3 md:gap-4'>
                <div className='flex items-center gap-2'>
-                  <span className='text-sm whitespace-nowrap'>Hiển thị:</span>
+                  <span className=' whitespace-nowrap'>Hiển thị:</span>
                   <Select value={(queryParams.size ?? 10).toString()} onValueChange={handlePageSizeChange}>
                      <SelectTrigger className='w-[80px]'>
                         <SelectValue placeholder='10' />
@@ -238,7 +239,7 @@ export default function OrderManage() {
                   </Select>
                </div>
                <div className='flex items-center gap-2'>
-                  <span className='text-sm whitespace-nowrap'>Sắp xếp:</span>
+                  <span className=' whitespace-nowrap'>Sắp xếp:</span>
                   <Select value={`${queryParams.sortBy}-${queryParams.sortDir}`} onValueChange={handleSortChange}>
                      <SelectTrigger className='w-[180px]'>
                         <SelectValue placeholder='Mới nhất' />
@@ -388,7 +389,7 @@ export default function OrderManage() {
                      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6'>
                         <div className='space-y-3'>
                            <h3 className='font-semibold mb-2'>Thông tin đơn hàng</h3>
-                           <div className='space-y-1 text-sm md:text-base'>
+                           <div className='space-y-1  '>
                               <p>Mã đơn hàng: #{selectedOrder.id}</p>
                               <p>Ngày đặt: {formatDate(selectedOrder.createAt)}</p>
                               <p>Tổng tiền: {formatCurrency(selectedOrder.totalPrice)}</p>
@@ -421,7 +422,7 @@ export default function OrderManage() {
                         </div>
                         <div className='space-y-3'>
                            <h3 className='font-semibold mb-2'>Thông tin khách hàng</h3>
-                           <div className='space-y-1 text-sm md:text-base'>
+                           <div className='space-y-1 '>
                               <p>Tên khách hàng: {selectedOrder.userName}</p>
                               <p>Địa chỉ: {selectedOrder.address}</p>
                               <p>Số điện thoại: {selectedOrder.phoneNumber}</p>
@@ -471,15 +472,17 @@ export default function OrderManage() {
                                        <TableCell>
                                           <div className='flex items-center gap-2'>
                                              {detail.productImage && (
-                                                <div className='w-12 h-12 rounded overflow-hidden flex-shrink-0'>
+                                                <div className='w-12 h-12 rounded aspect-square overflow-hidden flex-shrink-0'>
                                                    <img
                                                       src={detail.productImage}
                                                       alt={detail.productName}
-                                                      className='w-full h-full object-cover'
+                                                      className='w-full h-full object-contain'
                                                    />
                                                 </div>
                                              )}
-                                             <span className='line-clamp-2'>{detail.productName}</span>
+                                             <span title={decodeHTML(detail.productName)} className='truncate max-w-56'>
+                                                {decodeHTML(detail.productName)}
+                                             </span>
                                           </div>
                                        </TableCell>
                                        <TableCell className='text-right'>{formatCurrency(detail.price)}</TableCell>

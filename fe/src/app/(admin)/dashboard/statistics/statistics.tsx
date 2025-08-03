@@ -360,7 +360,12 @@ export default function Statistics() {
                      <CardContent className='h-80'>
                         <ResponsiveContainer width='100%' height='100%'>
                            <BarChart
-                              data={statistics?.topSellingProducts || []}
+                              data={
+                                 statistics?.topSellingProducts?.map((item) => ({
+                                    ...item,
+                                    name: decodeHTML(item.name)
+                                 })) || []
+                              }
                               layout='vertical'
                               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                            >

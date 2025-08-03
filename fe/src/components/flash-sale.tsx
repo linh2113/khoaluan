@@ -6,7 +6,7 @@ import Autoplay from 'embla-carousel-autoplay'
 import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import Link from 'next/link'
-import { formatCurrency, generateNameId } from '@/lib/utils'
+import { decodeHTML, formatCurrency, generateNameId } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import Image from 'next/image'
 import { ShoppingCart, Zap } from 'lucide-react'
@@ -171,7 +171,7 @@ export default function FlashSale() {
                         <CardContent className='p-4 relative'>
                            <Link href={`/${generateNameId({ name: item.productName, id: item.productId })}`}>
                               <h3 className='font-medium text-sm line-clamp-2 min-h-[40px] group-hover:text-primaryColor transition-colors'>
-                                 {item.productName || t('productName')}
+                                 {decodeHTML(item.productName)}
                               </h3>
                            </Link>
                            <div className='mt-2 flex items-center justify-between'>

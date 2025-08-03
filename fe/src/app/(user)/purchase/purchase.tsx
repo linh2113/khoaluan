@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { useAppContext } from '@/context/app.context'
 import { useGetOrdersByUserId, useDeleteOrder, useUpdateOrderStatus } from '@/queries/useOrder'
 import { useAddToCart } from '@/queries/useCart'
-import { formatCurrency, generateNameId } from '@/lib/utils'
+import { decodeHTML, formatCurrency, generateNameId } from '@/lib/utils'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { ORDER_STATUS, PAYMENT_STATUS } from '@/types/order.type'
@@ -148,7 +148,7 @@ export default function Purchase() {
                      </div>
                      <div className='flex-grow'>
                         <p className='font-medium text-sm md:text-base line-clamp-1'>
-                           {order.orderDetails[0].productName}
+                           {decodeHTML(order.orderDetails[0].productName)}
                         </p>
                         <p className='text-xs md:text-sm text-gray-500'>
                            {formatCurrency(order.orderDetails[0].price)} x {order.orderDetails[0].quantity}
@@ -398,7 +398,7 @@ export default function Purchase() {
                                     />
                                  </div>
                                  <div className='flex-grow'>
-                                    <p className='font-medium text-sm md:text-base'>{item.productName}</p>
+                                    <p className='font-medium text-sm md:text-base'>{decodeHTML(item.productName)}</p>
                                     <p className='text-xs md:text-sm text-gray-500'>
                                        {formatCurrency(item.price)} x {item.quantity}
                                     </p>

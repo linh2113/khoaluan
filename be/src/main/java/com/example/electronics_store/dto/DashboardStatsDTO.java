@@ -27,6 +27,7 @@ public class DashboardStatsDTO {
     private Long shippedOrders;
     private Long deliveredOrders;
     private Long cancelledOrders;
+    private Long completedOrders;
     
     private Long lowStockProducts;
     

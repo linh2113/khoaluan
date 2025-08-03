@@ -35,7 +35,7 @@ import { vi } from 'date-fns/locale'
 import { Reply } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useRouter } from 'next/navigation'
 
 export default function ProductDetail({ id }: { id: string }) {
@@ -340,7 +340,7 @@ export default function ProductDetail({ id }: { id: string }) {
                <div
                   onMouseMove={handleImageZoom}
                   onMouseLeave={handleImageZoomLeave}
-                  className='relative w-full overflow-hidden rounded-md'
+                  className='relative w-full overflow-hidden rounded-md aspect-square'
                >
                   {product.productImages && product.productImages.length > 0 ? (
                      <Image
@@ -566,7 +566,7 @@ export default function ProductDetail({ id }: { id: string }) {
          </div>
 
          {/* Thông số kỹ thuật */}
-         {product.productDetail && (
+         {product.productDetail && product.productDetail.processor && (
             <div className='bg-secondary rounded-lg p-5 mt-5'>
                <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>{t('specifications')}</h2>
                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -623,9 +623,15 @@ export default function ProductDetail({ id }: { id: string }) {
          {/* Mô tả sản phẩm */}
          <div className='bg-secondary rounded-lg p-5 mt-5'>
             <h2 className='font-medium text-xl mb-5 p-3 rounded-lg bg-background'>{t('description')}</h2>
-            <div className='prose max-w-none'>
+            <div className='flex flex-col gap-2 max-w-none'>
                {product.description ? (
-                  <p className='whitespace-pre-line'>{decodeHTML(product.description)}</p>
+                  decodeHTML(product.description)
+                     .split(/(?<=[.?!])\s+/) // Tách sau dấu chấm, chấm hỏi, chấm than
+                     .map((sentence, index) => (
+                        <p key={index} className='whitespace-pre-line'>
+                           {sentence.trim()}
+                        </p>
+                     ))
                ) : (
                   <p className='text-muted-foreground italic'>{t('noDescription')}</p>
                )}
@@ -729,12 +735,12 @@ export default function ProductDetail({ id }: { id: string }) {
                                              className='rounded-md'
                                           />
                                        </div>
-                                       <button
+                                       {/* <button
                                           className='absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70'
                                           onClick={() => setIsImageDialogOpen(false)}
                                        >
-                                          <X />
-                                       </button>
+                                          <X color='white' />
+                                       </button> */}
                                     </DialogContent>
                                  </Dialog>
 
@@ -763,7 +769,7 @@ export default function ProductDetail({ id }: { id: string }) {
                                        <div className='flex items-center gap-2'>
                                           <label
                                              htmlFor={`reply-image-${rating.id}`}
-                                             className='cursor-pointer px-3 py-1 text-sm rounded bg-primaryColor'
+                                             className='cursor-pointer text-white px-3 py-1 text-sm rounded bg-primaryColor'
                                           >
                                              {t('addImage')}
                                           </label>

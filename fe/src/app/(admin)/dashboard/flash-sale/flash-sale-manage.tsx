@@ -654,7 +654,7 @@ export default function FlashSaleManage() {
                                                 alt={item.productName}
                                                 className='w-10 h-10 rounded object-cover'
                                              />
-                                             <span className='font-medium'>{item.productName}</span>
+                                             <span className='font-medium'>{decodeHTML(item.productName)}</span>
                                           </div>
                                        </TableCell>
                                        <TableCell>{formatCurrency(item.originalPrice)}</TableCell>

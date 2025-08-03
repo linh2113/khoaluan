@@ -159,6 +159,7 @@ export default function Profile() {
                                     <Input
                                        id='current-password'
                                        type='password'
+                                       isPassword
                                        value={currentPassword}
                                        onChange={(e) => setCurrentPassword(e.target.value)}
                                     />

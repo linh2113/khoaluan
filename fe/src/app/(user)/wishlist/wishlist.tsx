@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { useAppContext } from '@/context/app.context'
 import { useGetWishlist, useRemoveFromWishlist } from '@/queries/useWishlist'
 import { useAddToCart } from '@/queries/useCart'
-import { formatCurrency, generateNameId } from '@/lib/utils'
+import { decodeHTML, formatCurrency, generateNameId } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -121,7 +121,7 @@ export default function Wishlist() {
 
          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
             {wishlistItems.map((item) => (
-               <div key={item.id} className=' rounded-lg shadow-sm p-4 border relative '>
+               <div key={item.id} className=' rounded-lg shadow-sm p-4 border relative bg-primary-foreground'>
                   {/* Nút xóa */}
                   <button
                      onClick={() => handleRemoveFromWishlist(item)}
@@ -133,13 +133,13 @@ export default function Wishlist() {
 
                   {/* Hình ảnh sản phẩm */}
                   <Link href={`/${generateNameId({ name: item.productName, id: item.productId })}`}>
-                     <div className='mb-4 overflow-hidden rounded-md'>
+                     <div className='mb-4 overflow-hidden rounded-md aspect-square'>
                         <Image
                            src={item.productImage}
                            alt={item.productName}
                            width={300}
                            height={300}
-                           className='w-full h-48 object-cover transition-transform hover:scale-105'
+                           className='w-full h-full object-contain transition-transform hover:scale-105'
                         />
                      </div>
                   </Link>
@@ -147,7 +147,7 @@ export default function Wishlist() {
                   {/* Thông tin sản phẩm */}
                   <Link href={`/${generateNameId({ name: item.productName, id: item.productId })}`}>
                      <h3 className='font-medium text-lg mb-2 line-clamp-2 hover:text-secondaryColor transition-colors'>
-                        {item.productName}
+                        {decodeHTML(item.productName)}
                      </h3>
                   </Link>
 
@@ -199,7 +199,8 @@ export default function Wishlist() {
                <AlertDialogHeader>
                   <AlertDialogTitle>Xóa sản phẩm khỏi danh sách yêu thích?</AlertDialogTitle>
                   <AlertDialogDescription>
-                     Bạn có chắc chắn muốn xóa sản phẩm "{selectedItem?.productName}" khỏi danh sách yêu thích?
+                     Bạn có chắc chắn muốn xóa sản phẩm "{decodeHTML(selectedItem?.productName!)}" khỏi danh sách yêu
+                     thích?
                   </AlertDialogDescription>
                </AlertDialogHeader>
                <AlertDialogFooter>

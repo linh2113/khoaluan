@@ -69,6 +69,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         long shippedOrders = orderRepository.findByOrderStatus(2).size();
         long deliveredOrders = orderRepository.findByOrderStatus(3).size();
         long cancelledOrders = orderRepository.findByOrderStatus(5).size();
+        long completedOrders = orderRepository.findByOrderStatus(4).size();
         
         // Get low stock products
         long lowStockProducts = productRepository.findLowStockProducts().size();
@@ -135,6 +136,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                 .revenueToday(revenueToday != null ? revenueToday : 0f)
                 .pendingOrders(pendingOrders)
                 .processingOrders(processingOrders)
+                .completedOrders(completedOrders)
                 .shippedOrders(shippedOrders)
                 .deliveredOrders(deliveredOrders)
                 .cancelledOrders(cancelledOrders)
@@ -155,6 +157,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         result.put("revenueToday", stats.getRevenueToday());
         result.put("pendingOrders", stats.getPendingOrders());
         result.put("processingOrders", stats.getProcessingOrders());
+        result.put("completedOrders", stats.getCompletedOrders());
         result.put("shippedOrders", stats.getShippedOrders());
         result.put("deliveredOrders", stats.getDeliveredOrders());
         result.put("cancelledOrders", stats.getCancelledOrders());

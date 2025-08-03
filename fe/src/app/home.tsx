@@ -168,7 +168,7 @@ export default function Home() {
             {/* Sản phẩm đánh giá cao */}
             <ProductSection
                title='⭐ Đánh giá cao'
-               subtitle='Sản phẩm được đánh giá 5 sao bởi khách hàng'
+               subtitle='Sản phẩm được đánh giá cao bởi khách hàng'
                icon={<Star className='h-6 w-6 text-yellow-500' />}
                products={topRatedProducts.data}
                isLoading={topRatedProducts.isLoading}
@@ -212,9 +212,7 @@ export default function Home() {
                products={premiumProducts.data}
                isLoading={premiumProducts.isLoading}
                backgroundColor='bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20'
-               viewAllLink='/products?minPrice=20000000'
-               layout='grid'
-               maxItems={4}
+               viewAllLink='/products?minPrice=5000000'
                onSelectForCompare={handleSelectProductForCompare}
                selectedProducts={selectedProducts}
             />

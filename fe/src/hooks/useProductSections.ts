@@ -46,11 +46,11 @@ export function useProductSections() {
       sortDir: 'asc'
    })
 
-   // Sản phẩm cao cấp (trên 20 triệu)
+   // Sản phẩm cao cấp (trên 5 triệu)
    const premiumProducts = useGetAllProducts({
       page: 0,
       size: 8,
-      minPrice: 20000000,
+      minPrice: 5000000,
       sortBy: 'price',
       sortDir: 'desc'
    })

@@ -196,17 +196,16 @@ export const useCreateDiscount = () => {
    })
 }
 export const useUpdateDiscount = () => {
-   const queryClient = useQueryClient()
-   return useMutation({
-      mutationFn: updateDiscount,
-      onSuccess: () => {
-         queryClient.invalidateQueries({
-            queryKey: ['discount']
-         })
-      },
-      onError: () => {}
-   })
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: updateDiscount,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['discount'] })
+    },
+    onError: () => {}
+  })
 }
+
 // 1. Hook: Gán mã giảm giá cho danh mục
 export const useAssignDiscountToCategories = () => {
    const queryClient = useQueryClient()

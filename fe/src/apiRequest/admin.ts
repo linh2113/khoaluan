@@ -57,8 +57,20 @@ export const getAllDiscount = (queryParams: GetDiscountQueryParamsType) =>
    http.get<ResponseData<ResponseDataWithPaginate<DiscountType[]>>>(
       `/admin/discounts?` + queryString.stringify(queryParams)
    )
-export const createDiscount = (body: CreateDiscountType) => http.post('/admin/discounts', body)
-export const updateDiscount = (body: UpdateDiscountType) => http.put(`/admin/discounts/${body.id}`, body)
+export const createDiscount = (formData: FormData) => 
+  http.post('/admin/discounts', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+ export const updateDiscount = ({ id, formData }: { id: number; formData: FormData }) =>
+  http.post(`/admin/discounts/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+
+
 export const assignDiscountToProducts = (body: any) =>
    http.post(`/admin/discounts/${body.discountId}/assign-products`, body)
 export const assignDiscountToCategories = (body: any) =>

@@ -264,15 +264,13 @@ public class AdminController {
     }
 
 
-    @PutMapping(value = "/discounts/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<?>> updateDiscount(
+    @PostMapping(value = "/discounts/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<?>> updateDiscountMultipart(
             @PathVariable Integer id,
             @RequestPart("discount") @Valid DiscountUpdateDTO discountUpdateDTO,
             @RequestParam(value = "banner", required = false) MultipartFile banner) {
         try {
-            // Gán file vào DTO
             discountUpdateDTO.setBannerFile(banner);
-
             DiscountDTO discount = discountService.updateDiscount(id, discountUpdateDTO);
             return ResponseEntity.ok(ApiResponse.success("Discount updated successfully", discount));
         } catch (Exception e) {

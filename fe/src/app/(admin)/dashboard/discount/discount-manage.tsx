@@ -9,8 +9,9 @@ import {
    useDeleteDiscountToCategories,
    useGetAllAdminProduct,
    useGetAllCategories,
-   useEditPriceDiscountToProducts
+   useEditPriceDiscountToProducts,
 } from '@/queries/useAdmin'
+import { format } from 'date-fns'
 import type React from 'react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
@@ -200,22 +201,26 @@ export default function DiscountManage() {
 
       // Tạo FormData để gửi multipart request
       const formData = new FormData()
-
+      const formattedStartDate = format(new Date(newDiscount.startDate), 'yyyy-MM-dd HH:mm:ss')
+      const formattedEndDate = format(new Date(newDiscount.endDate), 'yyyy-MM-dd HH:mm:ss')
       // Tạo discount object theo format backend mong đợi
       const discountData = {
          name: newDiscount.name,
          type: newDiscount.type,
          value: newDiscount.value,
-         startDate: newDiscount.startDate,
-         endDate: newDiscount.endDate,
+         startDate: formattedStartDate,
+         endDate: formattedEndDate,
          isActive: newDiscount.isActive,
          productIds: newDiscount.productIds,
          discountedPrices: newDiscount.discountedPrices,
          categoryIds: newDiscount.categoryIds
       }
 
-      // Append discount data as JSON string
-      formData.append('discount', JSON.stringify(discountData))
+
+      formData.append(
+      'discount',
+      new Blob([JSON.stringify(discountData)], { type: 'application/json' })
+      )
 
       // Append banner file if exists
       if (bannerFile) {
@@ -238,7 +243,6 @@ export default function DiscountManage() {
             })
             setBannerFile(null)
             setBannerPreview(null)
-            toast.success('Tạo mã giảm giá thành công!')
          },
          onError: (error: any) => {
             toast.error(error?.message || 'Có lỗi xảy ra khi tạo mã giảm giá')
@@ -265,17 +269,28 @@ export default function DiscountManage() {
       }
 
       try {
+         
+         const formattedStartDate = format(new Date(editingDiscount.startDate), 'yyyy-MM-dd HH:mm:ss')
+         const formattedEndDate = format(new Date(editingDiscount.endDate), 'yyyy-MM-dd HH:mm:ss')
+         const formData = new FormData()
          // 1. Update thông tin cơ bản của discount
          const basicUpdateData = {
             id: editingDiscount.id,
             name: editingDiscount.name,
             type: editingDiscount.type,
             value: editingDiscount.value,
-            startDate: editingDiscount.startDate,
-            endDate: editingDiscount.endDate,
-            isActive: editingDiscount.isActive
+            startDate: formattedStartDate,
+            endDate: formattedEndDate,
+            isActive: editingDiscount.isActive,
+            discountedPrices: editingDiscount.discountedPrices
          }
-         await updateDiscount.mutateAsync(basicUpdateData)
+         formData.append('discount', new Blob([JSON.stringify(basicUpdateData)], { type: 'application/json' }))
+
+         if (bannerFile) {
+         formData.append('banner', bannerFile)
+         }
+
+         await updateDiscount.mutateAsync({ id: editingDiscount.id, formData })
 
          // 2. Tìm discount gốc để so sánh thay đổi
          const originalDiscount = discounts.find((d) => d.id === editingDiscount.id)
@@ -378,50 +393,64 @@ export default function DiscountManage() {
 
    // Auto-recalculate discounted prices when discount value changes (for Add Dialog)
    useEffect(() => {
-      if ((newDiscount.productIds?.length ?? 0) > 0 && newDiscount.value > 0) {
-         interface Product {
-            id: number
-            name: string
-            price: number
-         }
-         const updatedDiscountedPrices: Record<number, number> = {}
-         ;(newDiscount.productIds ?? []).forEach((productId: number) => {
-            const product: Product | undefined = products.find((p: Product) => p.id === productId)
-            if (product && !newDiscount.discountedPrices?.[productId]) {
-               updatedDiscountedPrices[productId] = product.price * (1 - newDiscount.value / 100)
-            } else if (newDiscount.discountedPrices?.[productId]) {
-               updatedDiscountedPrices[productId] = newDiscount.discountedPrices[productId]
-            }
-         })
-         setNewDiscount((prev) => ({
-            ...prev,
-            discountedPrices: updatedDiscountedPrices
-         }))
+   if (!editingDiscount || !editingDiscount.productIds || editingDiscount.value <= 0) return;
+
+   const updatedPrices: Record<number, number> = { ...editingDiscount.discountedPrices }
+
+   editingDiscount.productIds.forEach((productId) => {
+      const isCustom = editingDiscount.discountedPrices?.[productId]
+      const product = products.find((p) => p.id === productId)
+
+      if (product && !isCustom) {
+         // chỉ update nếu không phải giá người dùng nhập
+         updatedPrices[productId] = Math.round(product.price * (1 - editingDiscount.value / 100))
       }
-   }, [newDiscount.value, newDiscount.productIds, products])
+   })
+
+   setEditingDiscount((prev) =>
+      prev
+         ? {
+              ...prev,
+              discountedPrices: updatedPrices
+           }
+         : null
+   )
+}, [editingDiscount?.value, editingDiscount?.productIds, products])
+
 
    // Auto-recalculate discounted prices when discount value changes (for Edit Dialog)
    useEffect(() => {
-      if (editingDiscount && (editingDiscount.productIds?.length ?? 0) > 0 && editingDiscount.value > 0) {
-         const updatedDiscountedPrices: Record<number, number> = {}
-         editingDiscount?.productIds?.forEach((productId) => {
-            const product = products.find((p) => p.id === productId)
-            if (product && !editingDiscount.discountedPrices?.[productId]) {
-               updatedDiscountedPrices[productId] = product.price * (1 - editingDiscount.value / 100)
-            } else if (editingDiscount.discountedPrices?.[productId]) {
-               updatedDiscountedPrices[productId] = editingDiscount.discountedPrices[productId]
-            }
-         })
-         setEditingDiscount((prev) =>
-            prev
-               ? {
-                    ...prev,
-                    discountedPrices: updatedDiscountedPrices
-                 }
-               : null
-         )
+   if (!editingDiscount || !editingDiscount.productIds || editingDiscount.value <= 0) return;
+
+   let hasChange = false;
+   const updatedPrices: Record<number, number> = { ...editingDiscount.discountedPrices };
+
+   editingDiscount.productIds.forEach((productId) => {
+      const product = products.find((p) => p.id === productId);
+      if (product) {
+         const autoCalculatedPrice = Math.round(product.price * (1 - editingDiscount.value / 100));
+         const currentPrice = editingDiscount.discountedPrices?.[productId];
+
+         // Nếu người dùng chưa nhập giá hoặc giá không khớp giá tính tự động, thì cập nhật
+         if (currentPrice === undefined || currentPrice === 0) {
+            updatedPrices[productId] = autoCalculatedPrice;
+            hasChange = true;
+         }
       }
-   }, [editingDiscount, editingDiscount?.value, products])
+   });
+
+   if (hasChange) {
+      setEditingDiscount((prev) =>
+         prev
+            ? {
+                 ...prev,
+                 discountedPrices: updatedPrices
+              }
+            : null
+      );
+   }
+}, [editingDiscount?.value, editingDiscount?.productIds, products]);
+
 
    return (
       <div className='container mx-auto p-6'>
@@ -977,14 +1006,20 @@ export default function DiscountManage() {
                                                             value={editingDiscount.discountedPrices?.[product.id] || ''}
                                                             onChange={(e) => {
                                                                const newPrice = Number(e.target.value)
-                                                               setEditingDiscount({
-                                                                  ...editingDiscount,
-                                                                  discountedPrices: {
-                                                                     ...editingDiscount.discountedPrices,
-                                                                     [product.id]: newPrice
-                                                                  }
-                                                               })
+
+                                                               setEditingDiscount((prev) =>
+                                                                  prev
+                                                                     ? {
+                                                                        ...prev,
+                                                                        discountedPrices: {
+                                                                           ...prev.discountedPrices,
+                                                                           [product.id]: newPrice
+                                                                        },
+                                                                     }
+                                                                     : null
+                                                               )
                                                             }}
+
                                                             placeholder='Nhập giá giảm'
                                                             className='w-32 text-xs'
                                                          />

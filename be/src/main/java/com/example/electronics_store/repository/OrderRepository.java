@@ -34,10 +34,10 @@ public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpeci
             "GROUP BY DATE(o.create_at) " +
             "ORDER BY order_date", nativeQuery = true)
     List<Object[]> getOrderCountByDay(@Param("startDate") String startDate, @Param("endDate") String endDate);
-    
+
     @Query(value = "SELECT DATE(o.create_at) as order_date, SUM(o.total_price) as total_sales " +
             "FROM orders o " +
-            "WHERE o.create_at BETWEEN :startDate AND :endDate AND o.order_status = 4 " +
+            "WHERE o.create_at BETWEEN STR_TO_DATE(:startDate, '%Y-%m-%d') AND STR_TO_DATE(:endDate, '%Y-%m-%d') AND o.order_status = 4 " +
             "GROUP BY DATE(o.create_at) " +
             "ORDER BY order_date", nativeQuery = true)
     List<Object[]> getSalesByDay(@Param("startDate") String startDate, @Param("endDate") String endDate);

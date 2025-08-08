@@ -14,21 +14,21 @@ public class FlashSaleItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_flash_sale", nullable = false)
     private FlashSale flashSale;
-    
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_product", nullable = false)
     private Product product;
-    
+
     @Column(name = "flash_price", nullable = false)
     private Float flashPrice;
-    
+
     @Column(name = "stock_limit")
     private Integer stockLimit;
-    
-    @Column(name = "sold_count")
-    private Integer soldCount;
+
+    @Column(name = "sold_count", columnDefinition = "INTEGER DEFAULT 0")
+    private Integer soldCount = 0;
 }

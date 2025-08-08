@@ -16,13 +16,19 @@ public class ProductDTO {
     private Integer id;
     private Integer categoryId;
     private String categoryName;
-    private Integer discountId;
-    private String discountName;
+    private Integer brandId;
+    private String brandName;
     private String name;
-    private String brand;
     private String image;
     private Integer price;
     private Integer discountedPrice;
+    private LocalDateTime discountStartDate;
+    private LocalDateTime discountEndDate;
+    private Boolean isDiscountActive;
+    private String discountType;
+    private Double discountPercentage;
+    private Integer discountId;
+    private String productIdString;
     private String description;
     private String warranty;
     private Float weight;
@@ -33,8 +39,9 @@ public class ProductDTO {
     private LocalDateTime updateAt;
     private String updateBy;
     private Integer stock;
+    private Integer soldQuantity;
     private Double averageRating;
     private Long reviewCount;
-    private List<String> imageUrls;
+    private List<ProductImageDTO> productImages;
     private ProductDetailDTO productDetail;
 }

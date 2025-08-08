@@ -75,32 +75,41 @@ public class UserController {
         }
     }
 
-    @PostMapping("/{id}/change-password")
-    public ResponseEntity<ApiResponse<?>> initiatePasswordChange(
-            @PathVariable Integer id,
-            @Valid @RequestBody Map<String, String> request) {
-        try {
-            Optional<User> userOpt = userService.getUserEntityById(id);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.error("User not found"));
-            }
-            User user = userOpt.get();
-            String currentPassword = request.get("currentPassword");
-            if (currentPassword == null || currentPassword.trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Current password is required"));
-            }
-            userService.resetPassword(user.getEmail());
-
-            return ResponseEntity.ok(ApiResponse.success(
-                    "Password change verification email sent. Please check your email to complete the process."
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
+  @PostMapping("/{id}/change-password")
+public ResponseEntity<ApiResponse<?>> initiatePasswordChange(
+        @PathVariable Integer id,
+        @RequestBody Map<String, String> request) {
+    try {
+        Optional<User> userOpt = userService.getUserEntityById(id);
+        if (!userOpt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("User not found"));
         }
+
+        String currentPassword = request.get("currentPassword");
+        if (currentPassword == null || currentPassword.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Current password is required"));
+        }
+
+        User user = userOpt.get();
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Mật khẩu hiện tại không đúng"));
+        }
+
+        userService.resetPassword(user.getEmail());
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Password change verification email sent. Please check your email."
+        ));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(e.getMessage()));
     }
+}
+
 
 
 }

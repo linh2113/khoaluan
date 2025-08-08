@@ -25,7 +25,6 @@ public class OrderCreateDTO {
     
     @NotNull(message = "Payment method is required")
     private Integer paymentMethodId;
-    
-    // Optional discount code
-    private String discountCode;
+
+
 }

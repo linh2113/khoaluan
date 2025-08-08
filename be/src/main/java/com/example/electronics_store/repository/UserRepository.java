@@ -1,7 +1,9 @@
 package com.example.electronics_store.repository;
 
 import com.example.electronics_store.model.User;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Integer> {
+public interface UserRepository extends JpaRepository<User, Integer>, JpaSpecificationExecutor<User> {
     Optional<User> findByUserName(String userName);
 
     Optional<User> findByEmail(String email);
@@ -58,4 +60,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Modifying
     @Query("UPDATE User u SET u.hash = :hash WHERE u.id = :id")
     void updateHash(@Param("id") Integer id, @Param("hash") String hash);
+
+
+
 }

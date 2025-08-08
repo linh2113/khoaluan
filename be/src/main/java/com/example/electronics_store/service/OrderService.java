@@ -3,6 +3,8 @@ package com.example.electronics_store.service;
 import com.example.electronics_store.dto.OrderCreateDTO;
 import com.example.electronics_store.dto.OrderDTO;
 import com.example.electronics_store.model.Order;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,9 +15,9 @@ public interface OrderService {
     OrderDTO createOrder(Integer userId, OrderCreateDTO orderCreateDTO);
     
     OrderDTO getOrderById(Integer id);
-    
+    Page<OrderDTO> getAllOrdersWithPagination(Pageable pageable);
     List<OrderDTO> getOrdersByUserId(Integer userId);
-    
+    Page<OrderDTO> getOrdersWithSearch(String search, Pageable pageable);
     List<OrderDTO> getAllOrders();
     
     List<OrderDTO> getOrdersByStatus(Integer status);

@@ -12,6 +12,9 @@ import com.example.electronics_store.security.JwtTokenProvider;
 import com.example.electronics_store.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -102,6 +105,42 @@ public class UserServiceImpl implements UserService {
 
         return mapUserToDTO(savedUser);
     }
+    @Override
+    @Transactional
+    public UserDTO createUserByAdmin(UserRegistrationDTO registrationDTO) {
+        // Kiểm tra username, email, hoặc phone đã tồn tại chưa
+        if (userRepository.existsByUserName(registrationDTO.getUserName())) {
+            throw new RuntimeException("Username already exists");
+        }
+        if (userRepository.existsByEmail(registrationDTO.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
+        if (userRepository.existsByPhone(registrationDTO.getPhone())) {
+            throw new RuntimeException("Phone number already exists");
+        }
+
+        // Tạo user mới
+        User user = new User();
+        user.setUserName(registrationDTO.getUserName());
+        user.setPassword(passwordEncoder.encode(registrationDTO.getPassword()));
+        user.setEmail(registrationDTO.getEmail());
+        user.setPhone(registrationDTO.getPhone());
+        user.setSurName(registrationDTO.getSurName());
+        user.setLastName(registrationDTO.getLastName());
+        user.setAddress(registrationDTO.getAddress());
+        user.setDateOfBirth(registrationDTO.getDateOfBirth());
+        user.setGender(registrationDTO.getGender());
+        user.setRole(false);
+        user.setActive(1); // Kích hoạt ngay lập tức
+        user.setLoginTimes(0);
+        user.setLoginBy(0);
+        user.setLockFail(0);
+
+        User savedUser = userRepository.save(user);
+
+        return mapUserToDTO(savedUser);
+    }
+
     @Transactional
     @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
@@ -373,7 +412,8 @@ public class UserServiceImpl implements UserService {
             helper.setTo(email);
             helper.setSubject("Password Reset Request");
 
-            String resetLink = frontendUrl + "/auth/verify-token?token=" + resetToken;
+            String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
+
             String emailContent = "<html><body>" +
                     "<h2>Password Change Request</h2>" +
                     "<p>Please click the link below to reset your password:</p>" +
@@ -398,7 +438,8 @@ public class UserServiceImpl implements UserService {
             helper.setTo(user.getEmail());
             helper.setSubject("Verify Your Email Address");
 
-            String verificationLink = frontendUrl + "/auth/verify-email?token=" + user.getHash();
+            String verificationLink = frontendUrl + "/verify-email?token=" + user.getHash();
+
             String emailContent = "<html><body>" +
                     "<h2>Email Verification</h2>" +
                     "<p>Thank you for registering! Please click the link below to verify your email address:</p>" +
@@ -412,5 +453,42 @@ public class UserServiceImpl implements UserService {
         } catch (MessagingException e) {
             throw new RuntimeException("Failed to send verification email", e);
         }
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserDTO> getUsersWithFilters(Boolean role, String search, Pageable pageable) {
+        Specification<User> spec = Specification.where(null);
+
+        // Add role filter if provided
+        if (role != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("role"), role));
+        }
+
+        // Add search filter if provided
+        if (search != null && !search.trim().isEmpty()) {
+            String searchTerm = "%" + search.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) ->
+                    cb.or(
+                            cb.like(cb.lower(root.get("userName")), searchTerm),
+                            cb.like(cb.lower(root.get("email")), searchTerm),
+                            cb.like(cb.lower(root.get("phone")), searchTerm),
+                            cb.like(cb.lower(root.get("address")), searchTerm),
+                            cb.like(cb.lower(root.get("surName")), searchTerm),
+                            cb.like(cb.lower(root.get("lastName")), searchTerm),
+                            cb.like(cb.lower(root.get("gender")), searchTerm),
+                            cb.like(cb.function("DATE_FORMAT", String.class, root.get("dateOfBirth"), cb.literal("%Y-%m-%d")), "%" + search + "%"),
+                            cb.like(cb.function("DATE_FORMAT", String.class, root.get("createAt"), cb.literal("%Y-%m-%d %H:%i:%s")), "%" + search + "%"),
+                            cb.like(cb.lower(root.get("loginTimes").as(String.class)), searchTerm),
+                            cb.like(cb.lower(root.get("active").as(String.class)), searchTerm)
+                    )
+            );
+        }
+
+        // Execute the query with the specification
+        Page<User> userPage = userRepository.findAll(spec, pageable);
+
+        // Map to DTOs
+        return userPage.map(this::mapUserToDTO);
     }
 }

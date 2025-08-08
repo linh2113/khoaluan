@@ -26,7 +26,7 @@ type ResetPasswordType = z.infer<typeof ResetPasswordSchema>
 
 export default function ResetPassword() {
    const searchParams = useSearchParams()
-   const token = searchParams.get('token')
+   const token = searchParams?.get('token')
    const { mutate, isPending } = useResetPassword()
 
    const form = useForm<ResetPasswordType>({

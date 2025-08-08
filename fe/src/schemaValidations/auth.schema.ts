@@ -23,9 +23,9 @@ export const RegisterBody = z
             const today = new Date()
             const birthDate = new Date(date)
             const age = today.getFullYear() - birthDate.getFullYear()
-            return age >= 18
+            return age >= 16
          },
-         { message: 'Bạn phải đủ 18 tuổi' }
+         { message: 'Bạn phải đủ 16 tuổi' }
       ),
       gender: z.enum(['male', 'female', 'other'], {
          errorMap: () => ({ message: 'Vui lòng chọn giới tính' })

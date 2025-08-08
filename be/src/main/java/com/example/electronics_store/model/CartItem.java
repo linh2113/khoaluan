@@ -15,7 +15,8 @@ public class CartItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
+    @Column(name = "selected", nullable = false)
+    private Boolean selected = false;
     @ManyToOne
     @JoinColumn(name = "id_product", nullable = false)
     private Product product;

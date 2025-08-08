@@ -1,10 +1,10 @@
 package com.example.electronics_store.controller;
 
-import com.example.electronics_store.dto.ApiResponse;
-import com.example.electronics_store.dto.OrderCreateDTO;
-import com.example.electronics_store.dto.OrderDTO;
+import com.example.electronics_store.dto.*;
 import com.example.electronics_store.service.OrderService;
 // import com.example.electronics_store.service.ProductRecommendationService;
+import com.example.electronics_store.service.PaymentMethodService;
+import com.example.electronics_store.service.ShippingMethodService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,12 +20,15 @@ public class OrderController {
 
     private final OrderService orderService;
     // private final ProductRecommendationService recommendationService;
-
+    private final PaymentMethodService paymentMethodService;
+    private final ShippingMethodService shippingMethodService;
     @Autowired
-    public OrderController(OrderService orderService
-                          /* ProductRecommendationService recommendationService */) {
+    public OrderController(OrderService orderService, PaymentMethodService paymentMethodService, ShippingMethodService shippingMethodService
+            /* ProductRecommendationService recommendationService */) {
         this.orderService = orderService;
         // this.recommendationService = recommendationService;
+        this.paymentMethodService = paymentMethodService;
+        this.shippingMethodService = shippingMethodService;
     }
 
     @PostMapping
@@ -131,4 +134,26 @@ public class OrderController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
+    @GetMapping("/payment-methods")
+    public ResponseEntity<ApiResponse<?>> getAllActivePaymentMethods() {
+        try {
+            List<PaymentMethodDTO> paymentMethods = paymentMethodService.getAllActivePaymentMethods();
+            return ResponseEntity.ok(ApiResponse.success(paymentMethods));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/shipping-methods")
+    public ResponseEntity<ApiResponse<?>> getAllActiveShippingMethods() {
+        try {
+            List<ShippingMethodDTO> shippingMethods = shippingMethodService.getAllActiveShippingMethods();
+            return ResponseEntity.ok(ApiResponse.success(shippingMethods));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
 }

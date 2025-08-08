@@ -2,22 +2,17 @@ package com.example.electronics_store.service.impl;
 
 import com.example.electronics_store.dto.CartDTO;
 import com.example.electronics_store.dto.CartItemDTO;
-import com.example.electronics_store.model.Cart;
-import com.example.electronics_store.model.CartItem;
-import com.example.electronics_store.model.Product;
-import com.example.electronics_store.model.User;
-import com.example.electronics_store.repository.CartItemRepository;
-import com.example.electronics_store.repository.CartRepository;
-import com.example.electronics_store.repository.ProductRepository;
-import com.example.electronics_store.repository.UserRepository;
+import com.example.electronics_store.model.*;
+import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.CartService;
+import com.example.electronics_store.service.DiscountService;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,21 +22,24 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    
+    private final DiscountService discountService;
+    @PersistenceContext
+    private EntityManager entityManager;
     @Autowired
     public CartServiceImpl(
             CartRepository cartRepository,
             CartItemRepository cartItemRepository,
             UserRepository userRepository,
-            ProductRepository productRepository) {
+            ProductRepository productRepository,  DiscountService discountService) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.discountService = discountService;
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CartDTO getCartByUserId(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -90,9 +88,8 @@ public class CartServiceImpl implements CartService {
             cartItem.setCart(cart);
             cartItem.setProduct(product);
             cartItem.setQuantity(quantity);
-            Float price = product.getDiscount() != null
-                    ? (float) (product.getPrice() * (1 - product.getDiscount().getValue() / 100))
-                    : product.getPrice().floatValue();
+            cartItem.setSelected(false);
+            Float price = calculateDiscountedPrice(product);
             cartItem.setPrice(price);
             cart.getCartItems().add(cartItem);
         }
@@ -103,6 +100,10 @@ public class CartServiceImpl implements CartService {
         cart = cartRepository.findByUser(user).orElseThrow();
 
         return mapCartToDTO(cart);
+    }
+
+    private Float calculateDiscountedPrice(Product product) {
+        return discountService.calculateProductPrice(product.getId());
     }
 
     @Override
@@ -162,7 +163,7 @@ public class CartServiceImpl implements CartService {
         // Delete the cart item
         cartItemRepository.delete(cartItem);
         // Save the updated cart
-        cart = cartRepository.save(cart);
+        cartRepository.save(cart);
         // Refresh cart data
         cart = cartRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -199,27 +200,68 @@ public class CartServiceImpl implements CartService {
         
         return cartRepository.findByUser(user);
     }
-    
+
+    @Override
+    @Transactional
+    public CartDTO updateSelectedCartItems(Integer userId, List<Integer> selectedCartItemIds) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        if (selectedCartItemIds.isEmpty()) {
+            cartItemRepository.deselectOtherCartItems(Collections.emptyList(), cart.getId());
+        } else {
+            // Chọn các item trong danh sách
+            cartItemRepository.selectCartItems(selectedCartItemIds, cart.getId());
+            // Bỏ chọn các item không nằm trong danh sách
+            cartItemRepository.deselectOtherCartItems(selectedCartItemIds, cart.getId());
+        }
+
+        // Flush để đảm bảo các thay đổi được ghi vào database
+        entityManager.flush();
+
+        // Refresh đối tượng cart để cập nhật dữ liệu từ database
+        entityManager.refresh(cart);
+
+        // Refresh các cartItems
+        for (CartItem item : cart.getCartItems()) {
+            entityManager.refresh(item);
+            Float newPrice = calculateDiscountedPrice(item.getProduct());
+            item.setPrice(newPrice);
+            cartItemRepository.save(item);
+        }
+
+        return mapCartToDTO(cart);
+    }
+
     // Helper methods
     private CartDTO mapCartToDTO(Cart cart) {
-        // Đảm bảo cartItems không null
         List<CartItem> cartItems = cart.getCartItems() != null ? cart.getCartItems() : new ArrayList<>();
-
-        // Map sang DTOs
+    
         List<CartItemDTO> cartItemDTOs = cartItems.stream()
                 .map(this::mapCartItemToDTO)
                 .collect(Collectors.toList());
-
-        // Tính tổng số lượng sản phẩm
+    
         Integer totalItems = cartItems.stream()
                 .mapToInt(CartItem::getQuantity)
                 .sum();
-
-        // Tính tổng tiền
+    
         Float totalPrice = cartItems.stream()
-                .map(item -> item.getPrice() * item.getQuantity())
+                .map(item -> calculateDiscountedPrice(item.getProduct()) * item.getQuantity())
                 .reduce(0f, Float::sum);
-
+    
+        Integer selectedTotalItems = cartItems.stream()
+                .filter(CartItem::getSelected)
+                .mapToInt(CartItem::getQuantity)
+                .sum();
+    
+        Float selectedTotalPrice = cartItems.stream()
+                .filter(CartItem::getSelected)
+                .map(item -> calculateDiscountedPrice(item.getProduct()) * item.getQuantity())
+                .reduce(0f, Float::sum);
+    
         return CartDTO.builder()
                 .id(cart.getId())
                 .userId(cart.getUser().getId())
@@ -227,22 +269,28 @@ public class CartServiceImpl implements CartService {
                 .items(cartItemDTOs)
                 .totalPrice(totalPrice)
                 .totalItems(totalItems)
+                .selectedTotalPrice(selectedTotalPrice)
+                .selectedTotalItems(selectedTotalItems)
                 .build();
     }
 
-    private CartItemDTO mapCartItemToDTO(CartItem cartItem) {
-        // Tính totalPrice cho từng item
-        Float totalPrice = cartItem.getPrice() * cartItem.getQuantity();
 
+    private CartItemDTO mapCartItemToDTO(CartItem cartItem) {
+        Float price = calculateDiscountedPrice(cartItem.getProduct());
+        Float totalPrice = price * cartItem.getQuantity();
+        Integer originalPrice = cartItem.getProduct().getPrice();
         return CartItemDTO.builder()
                 .id(cartItem.getId())
                 .productId(cartItem.getProduct().getId())
                 .productName(cartItem.getProduct().getName())
                 .productImage(cartItem.getProduct().getImage())
                 .quantity(cartItem.getQuantity())
-                .price(cartItem.getPrice())
+                .originalPrice(originalPrice)
+                .price(price)
                 .totalPrice(totalPrice)
                 .createAt(cartItem.getCreateAt())
+                .stock(cartItem.getProduct().getStock())
+                .selected(cartItem.getSelected())
                 .build();
     }
 }

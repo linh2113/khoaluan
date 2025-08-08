@@ -15,7 +15,6 @@ public interface ProductService {
     ProductDTO updateProduct(Integer id, ProductUpdateDTO productUpdateDTO);
     
     ProductDTO getProductById(Integer id);
-
     //for user
     Page<ProductDTO> getAllProducts(ProductFilterRequest filterRequest);
     //for admin
@@ -40,7 +39,6 @@ public interface ProductService {
 
     List<ProductDTO> getNewArrivals();
 
-    List<ProductDTO> getDiscountedProducts();
     
     List<ProductDTO> getLowStockProducts();
 
@@ -60,4 +58,7 @@ public interface ProductService {
     Optional<Product> getProductEntityById(Integer id);
     
     List<ProductDTO> compareProducts(List<Integer> productIds);
+    
+    Page<ProductDTO> getProductsWithSearch(String search, Pageable pageable);
+    List<ProductDTO> getProductsByIdStrings(List<String> productIdStrings);
 }

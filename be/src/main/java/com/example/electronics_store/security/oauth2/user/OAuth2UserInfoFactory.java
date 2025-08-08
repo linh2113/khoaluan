@@ -9,6 +9,8 @@ public class OAuth2UserInfoFactory {
             return new GoogleOAuth2UserInfo(attributes);
         } else if (registrationId.equalsIgnoreCase("facebook")) {
             return new FacebookOAuth2UserInfo(attributes);
+        } else if (registrationId.equalsIgnoreCase("discord")) {
+            return new DiscordOAuth2UserInfo(attributes);
         } else {
             throw new IllegalArgumentException("Unsupported OAuth2 provider: " + registrationId);
         }

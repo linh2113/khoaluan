@@ -1,0 +1,14 @@
+{
+   "configurations": [
+      {
+         "type": "java",
+         "name": "Spring Boot-ElectronicsStoreApplication<tech-store>",
+         "request": "launch",
+         "cwd": "${workspaceFolder}",
+         "mainClass": "com.example.electronics_store.ElectronicsStoreApplication",
+         "projectName": "tech-store",
+         "args": "",
+         "envFile": "${workspaceFolder}/.env"
+      }
+   ]
+}

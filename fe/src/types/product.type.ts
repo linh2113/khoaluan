@@ -1,32 +1,23 @@
-import { ResponseData } from '@/types/utils.type'
+import { ResponseData, ResponseDataWithPaginate } from '@/types/utils.type'
 
-export type GetAllProductType = ResponseData<Data>
+export type GetAllProductType = ResponseData<ResponseDataWithPaginate<ProductType[]>>
 
-export interface Data {
-   content: Content[]
-   pageable: Pageable
-   last: boolean
-   totalPages: number
-   totalElements: number
-   size: number
-   number: number
-   sort: Sort2
-   numberOfElements: number
-   first: boolean
-   empty: boolean
-}
-
-export interface Content {
+export interface ProductType {
    id: number
    categoryId: number
    categoryName: string
-   discountId: any
-   discountName: any
+   brandId: number
+   brandName: string
    name: string
-   brand: string
-   image?: string
+   image: string
    price: number
    discountedPrice: number
+   discountStartDate: string
+   discountEndDate: string
+   isDiscountActive: boolean
+   discountType: string
+   discountPercentage: number
+   discountId: number
    description: string
    warranty: string
    weight: number
@@ -35,12 +26,19 @@ export interface Content {
    createBy: string
    status: boolean
    updateAt: string
-   updateBy?: string
-   stock: number
+   updateBy: any
+   stock: any
+   soldQuantity: number
    averageRating: number
    reviewCount: number
-   imageUrls: any[]
-   productDetail?: ProductDetail
+   productImages: ProductImage[]
+   productDetail: ProductDetail | null
+}
+export interface ProductImage {
+   id: number
+   imageUrl: string
+   isPrimary: boolean
+   displayOrder: number
 }
 
 export interface ProductDetail {
@@ -57,37 +55,18 @@ export interface ProductDetail {
    connectivity: string
    otherFeatures: string
 }
-
-export interface Pageable {
-   pageNumber: number
-   pageSize: number
-   sort: Sort
-   offset: number
-   paged: boolean
-   unpaged: boolean
-}
-
-export interface Sort {
-   empty: boolean
-   sorted: boolean
-   unsorted: boolean
-}
-
-export interface Sort2 {
-   empty: boolean
-   sorted: boolean
-   unsorted: boolean
-}
-
 //////GetProductQueryParamsType
 export interface GetProductQueryParamsType {
    page?: number
    size?: number
-   sortBy?: number
-   discountId?: number
-   name?: string
-   price?: string
-   sort?: string
-   order?: string
+   sortBy?: string | 'id'
+   sortDir?: string | 'desc'
+   keyword?: string
+   brand?: string
+   minPrice?: number
+   maxPrice?: number
    categoryId?: number
+   isDiscount?: boolean
+   inStock?: boolean
+   filterType?: 'ALL' | 'TOP_SELLING' | 'NEW_ARRIVALS' | 'TOP_RATED' | 'RELATED' | 'DISCOUNTED'
 }

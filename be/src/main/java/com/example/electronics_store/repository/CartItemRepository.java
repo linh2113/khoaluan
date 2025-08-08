@@ -19,7 +19,16 @@ public interface CartItemRepository extends JpaRepository<CartItem, Integer> {
     @Modifying
     @Query("DELETE FROM CartItem ci WHERE ci.cart.id = :cartId")
     void deleteAllByCartId(@Param("cartId") Integer cartId);
-    
+    @Modifying
+    @Query("UPDATE CartItem ci SET ci.selected = true WHERE ci.id IN :ids AND ci.cart.id = :cartId")
+    void selectCartItems(@Param("ids") List<Integer> ids, @Param("cartId") Integer cartId);
+    @Modifying
+    @Query("DELETE FROM CartItem ci WHERE ci.id IN :ids")
+    void deleteAllByIds(@Param("ids") List<Integer> ids);
+    @Modifying
+    @Query("UPDATE CartItem ci SET ci.selected = false WHERE ci.id NOT IN :ids AND ci.cart.id = :cartId")
+    void deselectOtherCartItems(@Param("ids") List<Integer> ids, @Param("cartId") Integer cartId);
+    List<CartItem> findByCartAndSelected(Cart cart, Boolean selected);
     @Modifying
     @Query("UPDATE CartItem ci SET ci.quantity = :quantity WHERE ci.id = :id")
     void updateQuantity(@Param("id") Integer id, @Param("quantity") Integer quantity);

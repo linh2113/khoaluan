@@ -1,17 +1,26 @@
 package com.example.electronics_store.service.impl;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.electronics_store.dto.RatingDTO;
 import com.example.electronics_store.model.Product;
 import com.example.electronics_store.model.Rating;
 import com.example.electronics_store.model.User;
+import com.example.electronics_store.repository.OrderDetailRepository;
 import com.example.electronics_store.repository.ProductRepository;
 import com.example.electronics_store.repository.RatingRepository;
 import com.example.electronics_store.repository.UserRepository;
 import com.example.electronics_store.service.RatingService;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,15 +30,19 @@ public class RatingServiceImpl implements RatingService {
     private final RatingRepository ratingRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-
+    private final OrderDetailRepository orderDetailRepository;
+    private Cloudinary cloudinary;
     @Autowired
     public RatingServiceImpl(
             RatingRepository ratingRepository,
             UserRepository userRepository,
-            ProductRepository productRepository) {
+            ProductRepository productRepository, Cloudinary cloudinary,
+            OrderDetailRepository orderDetailRepository) {
         this.ratingRepository = ratingRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.cloudinary = cloudinary;
+        this.orderDetailRepository = orderDetailRepository;
     }
 
     @Override
@@ -42,9 +55,15 @@ public class RatingServiceImpl implements RatingService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
         // Check if user has already rated this product
-        Optional<Rating> existingRating = ratingRepository.findByProductAndUser(product, user);
+        Optional<Rating> existingRating = ratingRepository.findByProductAndUserAndParentIsNull(product, user);
         if (existingRating.isPresent()) {
-            throw new RuntimeException("You have already rated this product");
+            throw new RuntimeException("Bạn đã đánh giá sản phẩm này rồi");
+        }
+
+        // Kiểm tra xem người dùng đã mua sản phẩm này chưa
+        boolean hasPurchased = orderDetailRepository.existsByProductIdAndUserIdAndOrderCompleted(productId, userId);
+        if (!hasPurchased) {
+            throw new RuntimeException("Bạn chỉ có thể đánh giá khi mua sản phẩm này");
         }
 
         Rating rating = new Rating();
@@ -52,25 +71,28 @@ public class RatingServiceImpl implements RatingService {
         rating.setProduct(product);
         rating.setRating(ratingDTO.getRating());
         rating.setComment(ratingDTO.getComment());
-
+        rating.setParent(null);
         Rating savedRating = ratingRepository.save(rating);
+        // Cập nhật trạng thái đã review trong order detail
+        orderDetailRepository.updateReviewStatusForProductAndUser(productId, userId, true);
         return mapRatingToDTO(savedRating);
     }
 
+//    @Override
+//    @Transactional
+//    public RatingDTO updateRating(Integer id, RatingDTO ratingDTO) {
+//        Rating rating = ratingRepository.findById(id)
+//                .orElseThrow(() -> new RuntimeException("Rating not found"));
+//
+//        rating.setRating(ratingDTO.getRating());
+//        rating.setComment(ratingDTO.getComment());
+//
+//        Rating updatedRating = ratingRepository.save(rating);
+//        return mapRatingToDTO(updatedRating);
+//    }
+
     @Override
-    @Transactional
-    public RatingDTO updateRating(Integer id, RatingDTO ratingDTO) {
-        Rating rating = ratingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rating not found"));
-
-        rating.setRating(ratingDTO.getRating());
-        rating.setComment(ratingDTO.getComment());
-
-        Rating updatedRating = ratingRepository.save(rating);
-        return mapRatingToDTO(updatedRating);
-    }
-
-    @Override
+    @Transactional (readOnly = true)
     public RatingDTO getRatingById(Integer id) {
         Rating rating = ratingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Rating not found"));
@@ -78,23 +100,17 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<RatingDTO> getRatingsByProductId(Integer productId) {
-        if (productId == null) {
-            // Return all ratings if productId is null
-            return ratingRepository.findAll().stream()
-                    .map(this::mapRatingToDTO)
-                    .collect(Collectors.toList());
-        }
-        
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        return ratingRepository.findByProduct(product).stream()
+        return ratingRepository.findByProductAndParentIsNull(product).stream()
                 .map(this::mapRatingToDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional (readOnly = true)
     public List<RatingDTO> getRatingsByUserId(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -106,7 +122,7 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     @Transactional
-    public RatingDTO replyToRating(Integer userId, Integer parentRatingId, RatingDTO ratingDTO) {
+    public RatingDTO replyToRating(Integer userId, Integer parentRatingId, String comment) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -117,7 +133,7 @@ public class RatingServiceImpl implements RatingService {
         reply.setUser(user);
         reply.setProduct(parentRating.getProduct());
         reply.setRating(null); // No rating for replies
-        reply.setComment(ratingDTO.getComment());
+        reply.setComment(comment.trim());
         reply.setParent(parentRating);
 
         Rating savedReply = ratingRepository.save(reply);
@@ -125,6 +141,7 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
+    @Transactional (readOnly = true)
     public List<RatingDTO> getRepliesByParentId(Integer parentId) {
         Rating parentRating = ratingRepository.findById(parentId)
                 .orElseThrow(() -> new RuntimeException("Parent rating not found"));
@@ -144,6 +161,7 @@ public class RatingServiceImpl implements RatingService {
         return ratingRepository.countRatingsByProduct(productId);
     }
 
+
     @Override
     public Map<Integer, Long> getRatingDistributionForProduct(Integer productId) {
         List<Object[]> distribution = ratingRepository.getRatingDistributionForProduct(productId);
@@ -158,18 +176,124 @@ public class RatingServiceImpl implements RatingService {
         return result;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<RatingDTO> getRatingsWithSearch(String search, Pageable pageable) {
+        Specification<Rating> spec = Specification.where(null);
+        if (search != null && !search.trim().isEmpty()) {
+            String searchTerm = "%" + search.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                Integer ratingId = null;
+                Integer productId = null;
+                Integer userId = null;
+                Integer ratingValue = null;
 
+                try {
+                    //Prioritize
+                    ratingId = Integer.parseInt(search);
+                    productId = ratingId;
+                    userId = ratingId; //second
+                    // Check if it's a valid rating value (1-5)
+                    if (ratingId >= 1 && ratingId <= 5) { //first
+                        ratingValue = ratingId;
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+                if (ratingId != null) predicates.add(cb.equal(root.get("id"), ratingId));
 
+                if (productId != null) predicates.add(cb.equal(root.get("product").get("id"), productId));
+
+                if (userId != null) predicates.add(cb.equal(root.get("user").get("id"), userId));
+
+                if (ratingValue != null) predicates.add(cb.equal(root.get("rating"), ratingValue));
+
+                // Add text search predicates
+                predicates.add(cb.like(cb.lower(root.get("comment")), searchTerm));
+                // Search in related product fields
+                predicates.add(cb.like(cb.lower(root.get("product").get("name")), searchTerm));
+                // Search in related user fields
+                predicates.add(cb.like(cb.lower(root.get("user").get("userName")), searchTerm));
+                predicates.add(cb.like(cb.lower(root.get("user").get("surName")), searchTerm));
+                predicates.add(cb.like(cb.lower(root.get("user").get("lastName")), searchTerm));
+                if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
+                    predicates.add(cb.like(
+                            cb.function("DATE_FORMAT", String.class, root.get("createAt"), cb.literal("%Y-%m-%d")),
+                            search + "%"
+                    ));
+                }
+                return cb.or(predicates.toArray(new Predicate[0]));
+            });
+        }
+        spec = spec.and((root, query, cb) -> cb.isNull(root.get("parent")));
+        Page<Rating> ratingPage = ratingRepository.findAll(spec, pageable);
+
+        return ratingPage.map(this::mapRatingToDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<RatingDTO> getRatingsByProductIdWithPagination(Integer productId, Pageable pageable) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        Page<Rating> ratingPage = ratingRepository.findByProductAndParentIsNull(product, pageable);
+        return ratingPage.map(this::mapRatingToDTO);
+    }
+
+    @Override
+    @Transactional
+    public List<String> uploadRatingImages(Integer ratingId, List<MultipartFile> files) {
+        try {
+            Rating rating = ratingRepository.findById(ratingId)
+                    .orElseThrow(() -> new RuntimeException("Rating not found"));
+
+            List<String> imageUrls = new ArrayList<>();
+
+            for (MultipartFile file : files) {
+                if (file != null && !file.isEmpty()) {
+                    // Upload ảnh lên Cloudinary
+                    Map<String, Object> uploadParams = ObjectUtils.asMap(
+                            "folder", "ratings/" + ratingId,
+                            "resource_type", "auto"
+                    );
+                    Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
+                    String imageUrl = uploadResult.get("secure_url").toString();
+                    imageUrls.add(imageUrl);
+                }
+            }
+
+            // Cập nhật danh sách URL ảnh cho rating
+            if (!imageUrls.isEmpty()) {
+                if (rating.getImageUrls() == null) {
+                    rating.setImageUrls(new ArrayList<>());
+                }
+                rating.getImageUrls().addAll(imageUrls);
+                ratingRepository.save(rating);
+            }
+
+            return imageUrls;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload images: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<RatingDTO> getRatingsByStarWithPagination(Integer starRating, Pageable pageable) {
+        Page<Rating> ratingPage = ratingRepository.findByRatingAndParentIsNull(starRating, pageable);
+        return ratingPage.map(this::mapRatingToDTO);
+    }
     @Override
     public Optional<Rating> getRatingEntityById(Integer id) {
         return ratingRepository.findById(id);
     }
 
-    // Helper method
     private RatingDTO mapRatingToDTO(Rating rating) {
         RatingDTO dto = new RatingDTO();
         dto.setId(rating.getId());
         dto.setProductId(rating.getProduct().getId());
+        dto.setProductPicture(rating.getProduct().getImage());
         dto.setProductName(rating.getProduct().getName());
         dto.setUserId(rating.getUser().getId());
         dto.setUserName(rating.getUser().getUserName());
@@ -177,18 +301,19 @@ public class RatingServiceImpl implements RatingService {
         dto.setRating(rating.getRating());
         dto.setComment(rating.getComment());
         dto.setCreateAt(rating.getCreateAt());
-        
+        dto.setImageUrls(rating.getImageUrls());
+
         if (rating.getParent() != null) {
             dto.setParentId(rating.getParent().getId());
         }
-        
+
         // Get replies if any
         if (rating.getReplies() != null && !rating.getReplies().isEmpty()) {
             dto.setReplies(rating.getReplies().stream()
                     .map(this::mapRatingToDTO)
                     .collect(Collectors.toList()));
         }
-        
+
         return dto;
     }
 }

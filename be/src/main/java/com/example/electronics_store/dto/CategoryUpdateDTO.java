@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.Transient;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @Builder
@@ -11,5 +13,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CategoryUpdateDTO {
     private String categoryName;
-    private Integer status;
+    private Boolean status;
+    private String imageUrl;
+    @Transient
+    private transient MultipartFile imageFile;
 }

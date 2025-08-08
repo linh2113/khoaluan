@@ -17,7 +17,10 @@ public class CartItemDTO {
     private String productName;
     private String productImage;
     private Integer quantity;
+    private Integer originalPrice;
     private Float price;
     private Float totalPrice;
     private LocalDateTime createAt;
+    private Integer stock;
+    private Boolean selected;
 }

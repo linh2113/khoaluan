@@ -7,6 +7,7 @@ import com.example.electronics_store.model.Wishlist;
 import com.example.electronics_store.repository.ProductRepository;
 import com.example.electronics_store.repository.UserRepository;
 import com.example.electronics_store.repository.WishlistRepository;
+import com.example.electronics_store.service.DiscountService;
 import com.example.electronics_store.service.WishlistService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,15 +22,16 @@ public class WishlistServiceImpl implements WishlistService {
     private final WishlistRepository wishlistRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-
+    private final DiscountService  discountService;
     @Autowired
     public WishlistServiceImpl(
             WishlistRepository wishlistRepository,
             UserRepository userRepository,
-            ProductRepository productRepository) {
+            ProductRepository productRepository, DiscountService discountService) {
         this.wishlistRepository = wishlistRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.discountService = discountService;
     }
 
     @Override
@@ -72,6 +74,7 @@ public class WishlistServiceImpl implements WishlistService {
     }
 
     @Override
+    @Transactional (readOnly = true)
     public List<WishlistDTO> getWishlistByUserId(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -102,16 +105,25 @@ public class WishlistServiceImpl implements WishlistService {
         return wishlistRepository.countUsersByProduct(productId);
     }
 
+
     // Helper method
     private WishlistDTO mapWishlistToDTO(Wishlist wishlist) {
-        return WishlistDTO.builder()
-                .id(wishlist.getId())
-                .userId(wishlist.getUser().getId())
-                .productId(wishlist.getProduct().getId())
-                .productName(wishlist.getProduct().getName())
-                .productImage(wishlist.getProduct().getImage())
-                .productPrice(wishlist.getProduct().getPrice())
-                .addedAt(wishlist.getAddedAt())
-                .build();
-    }
+    // Tính giá đã giảm cho sản phẩm
+    Float discountedPrice = discountService.calculateProductPrice(wishlist.getProduct().getId());
+    
+    // Tính phần trăm giảm giá
+    Integer originalPrice = wishlist.getProduct().getPrice();
+    return WishlistDTO.builder()
+            .id(wishlist.getId())
+            .userId(wishlist.getUser().getId())
+            .productId(wishlist.getProduct().getId())
+            .productName(wishlist.getProduct().getName())
+            .productImage(wishlist.getProduct().getImage())
+            .productPrice(originalPrice)
+            .discountedPrice(Math.round(discountedPrice))
+            .addedAt(wishlist.getAddedAt())
+            .build();
+}
+    
+ 
 }

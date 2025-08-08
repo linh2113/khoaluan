@@ -13,7 +13,7 @@ public class ProductUpdateDTO {
     private Integer categoryId;
     private Integer discountId;
     private String name;
-    private String brand;
+    private Integer brandId;
     private Integer price;
     private String description;
     private String warranty;

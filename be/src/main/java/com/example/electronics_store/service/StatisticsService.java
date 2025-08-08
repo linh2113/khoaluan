@@ -26,6 +26,8 @@ public interface StatisticsService {
     Map<String, Object> getSalesByShippingMethod();
     
     Map<String, Object> getRevenueByMonth(Integer year);
-    
+
     Map<String, Object> getRevenueByDay(LocalDateTime startDate, LocalDateTime endDate);
+    Map<String, Object> getRevenueByTimeInterval(LocalDateTime startDate, LocalDateTime endDate, String interval);
+    Map<String, Object> getRevenueByCategoryPieChart(LocalDateTime startDate, LocalDateTime endDate);
 }

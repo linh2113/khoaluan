@@ -8,7 +8,14 @@ import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.CartService;
 import com.example.electronics_store.service.DiscountService;
 import com.example.electronics_store.service.OrderService;
+import com.example.electronics_store.service.ProductSalesService;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,14 +30,16 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
     private final UserRepository userRepository;
-    private final CartService cartService;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final ShippingMethodRepository shippingMethodRepository;
     private final PaymentMethodRepository paymentMethodRepository;
+    private final FlashSaleItemRepository flashSaleItemRepository;
+    private final ProductSalesService productSalesService;
     private final DiscountService discountService;
-    
+    private final EntityManager entityManager;
+
     @Autowired
     public OrderServiceImpl(
             OrderRepository orderRepository,
@@ -42,17 +51,19 @@ public class OrderServiceImpl implements OrderService {
             ProductRepository productRepository,
             ShippingMethodRepository shippingMethodRepository,
             PaymentMethodRepository paymentMethodRepository,
-            DiscountService discountService) {
+            DiscountService discountService, FlashSaleItemRepository flashSaleItemRepository, ProductSalesService productSalesService, EntityManager entityManager) {
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
         this.userRepository = userRepository;
-        this.cartService = cartService;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
         this.shippingMethodRepository = shippingMethodRepository;
         this.paymentMethodRepository = paymentMethodRepository;
+        this.flashSaleItemRepository = flashSaleItemRepository;
+        this.productSalesService = productSalesService;
         this.discountService = discountService;
+        this.entityManager = entityManager;
     }
 
     @Override
@@ -60,83 +71,95 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO createOrder(Integer userId, OrderCreateDTO orderCreateDTO) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         Cart cart = cartRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Cart is empty"));
-        
-        List<CartItem> cartItems = cartItemRepository.findByCart(cart);
-        if (cartItems.isEmpty()) {
-            throw new RuntimeException("Cart is empty");
+
+        // Lấy các sản phẩm đã được chọn
+        List<CartItem> selectedCartItems = cartItemRepository.findByCartAndSelected(cart, true);
+        if (selectedCartItems.isEmpty()) {
+            throw new RuntimeException("No items selected for checkout");
         }
-        
-        // Check if all products are in stock
-        for (CartItem cartItem : cartItems) {
+
+        // Check if all products are in stock and validate flash sale items
+        LocalDateTime orderTime = LocalDateTime.now();
+        for (CartItem cartItem : selectedCartItems) {
             Product product = cartItem.getProduct();
             if (product.getStock() < cartItem.getQuantity()) {
                 throw new RuntimeException("Not enough stock for product: " + product.getName());
             }
+
+            // Kiểm tra flash sale stock limit
+            Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(
+                    product.getId(), orderTime);
+            if (flashSaleItem.isPresent()) {
+                FlashSaleItem item = flashSaleItem.get();
+                if (item.getStockLimit() != null) {
+                    int availableFlashSaleStock = item.getStockLimit() - item.getSoldCount();
+                    if (availableFlashSaleStock < cartItem.getQuantity()) {
+                        throw new RuntimeException("Not enough flash sale stock for product: " + product.getName());
+                    }
+                }
+            }
         }
-        
+
         // Get shipping method
         ShippingMethod shippingMethod = shippingMethodRepository.findById(orderCreateDTO.getShippingMethodId())
                 .orElseThrow(() -> new RuntimeException("Shipping method not found"));
-        
+
         // Get payment method
         PaymentMethod paymentMethod = paymentMethodRepository.findById(orderCreateDTO.getPaymentMethodId())
                 .orElseThrow(() -> new RuntimeException("Payment method not found"));
-        
-        // Calculate total price
-        Float totalPrice = cartItems.stream()
-                .map(item -> item.getPrice() * item.getQuantity())
-                .reduce(0f, Float::sum);
-        
-        // Apply discount if provided
-        if (orderCreateDTO.getDiscountCode() != null && !orderCreateDTO.getDiscountCode().isEmpty()) {
-            if (discountService.isDiscountValid(orderCreateDTO.getDiscountCode())) {
-                totalPrice = discountService.applyDiscount(orderCreateDTO.getDiscountCode(), totalPrice);
-                // Mark discount as used
-                discountService.useDiscount(orderCreateDTO.getDiscountCode());
-            } else {
-                throw new RuntimeException("Invalid or expired discount code");
-            }
-        }
-        
+
+        Float totalPrice = 0f;
+
         // Create order
         Order order = new Order();
         order.setUser(user);
-        order.setTotalPrice(totalPrice);
         order.setShippingFee(shippingMethod.getBaseCost());
         order.setAddress(orderCreateDTO.getAddress());
         order.setPhoneNumber(orderCreateDTO.getPhoneNumber());
         order.setShippingMethod(shippingMethod);
         order.setPaymentMethod(paymentMethod);
+
         order.setPaymentStatus("Pending");
         order.setOrderStatus(0); // 0: Pending, 1: Processing, 2: Shipped, 3: Delivered, 4: Completed, 5: Cancelled
-        
-        Order savedOrder = orderRepository.save(order);
-        
+
         // Create order details
         List<OrderDetail> orderDetails = new ArrayList<>();
-        for (CartItem cartItem : cartItems) {
+        List<Integer> cartItemIds = new ArrayList<>();
+        for (CartItem cartItem : selectedCartItems) {
             OrderDetail orderDetail = new OrderDetail();
-            orderDetail.setOrder(savedOrder);
+            orderDetail.setOrder(order);
             orderDetail.setProduct(cartItem.getProduct());
             orderDetail.setQuantity(cartItem.getQuantity());
             orderDetail.setReviewStatus(false);
-            
+            Float currentPrice = calculateDiscountedPriceAtTime(cartItem.getProduct(), orderTime);
+            orderDetail.setPrice(currentPrice);
+            totalPrice += currentPrice * cartItem.getQuantity();
             orderDetails.add(orderDetail);
-            
+
             // Update product stock
             Product product = cartItem.getProduct();
             product.setStock(product.getStock() - cartItem.getQuantity());
             productRepository.save(product);
+
+            // Update flash sale sold count if product is in flash sale
+            Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(
+                    product.getId(), orderTime);
+            if (flashSaleItem.isPresent()) {
+                flashSaleItemRepository.updateSoldCount(flashSaleItem.get().getId(), cartItem.getQuantity());
+            }
+
+            cartItemIds.add(cartItem.getId());
         }
-        
+        order.setTotalPrice(totalPrice);
         orderDetailRepository.saveAll(orderDetails);
-        
-        // Clear cart
-        cartService.clearCart(userId);
-        
+        Order savedOrder = orderRepository.save(order);
+        cartItemRepository.deleteAllByIds(cartItemIds);
+
+        entityManager.flush(); // đẩy các thay đổi cho orderdetail trước khi map
+       
         return mapOrderToDTO(savedOrder);
     }
 
@@ -151,7 +174,7 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDTO> getOrdersByUserId(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         return orderRepository.findByUser(user).stream()
                 .map(this::mapOrderToDTO)
                 .collect(Collectors.toList());
@@ -179,33 +202,152 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<OrderDTO> getOrdersWithSearch(String search, Pageable pageable) {
+        Specification<Order> spec = Specification.where(null);
+        if (search != null && !search.trim().isEmpty()) {
+            Integer orderId = null;
+            try {
+                orderId = Integer.parseInt(search);
+            } catch (NumberFormatException ignored) {
+            }
+            Integer orderStatus = null;
+            if ("pending".equalsIgnoreCase(search)) orderStatus = 0;
+            else if ("processing".equalsIgnoreCase(search)) orderStatus = 1;
+            else if ("shipped".equalsIgnoreCase(search)) orderStatus = 2;
+            else if ("delivered".equalsIgnoreCase(search)) orderStatus = 3;
+            else if ("completed".equalsIgnoreCase(search)) orderStatus = 4;
+            else if ("cancelled".equalsIgnoreCase(search)) orderStatus = 5;
+            final Integer finalOrderId = orderId;
+            final Integer finalOrderStatus = orderStatus;
+
+            // only search by ID
+            if (finalOrderId != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("id"), finalOrderId));
+            }
+            // only search by status
+            else if (finalOrderStatus != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("orderStatus"), finalOrderStatus));
+            }
+            else {
+                String searchTerm = "%" + search.toLowerCase() + "%";
+                spec = spec.and((root, query, cb) -> {
+                    List<Predicate> predicates = new ArrayList<>();
+                    predicates.add(cb.like(cb.lower(root.get("id").as(String.class)), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("totalPrice").as(String.class)), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("shippingFee").as(String.class)), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("address")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("phoneNumber")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("trackingNumber")), searchTerm));
+                    if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
+                        predicates.add(cb.like(cb.function("DATE_FORMAT", String.class, root.get("createAt"), cb.literal("%Y-%m-%d")), search + "%"));
+                    }
+                    predicates.add(cb.like(cb.lower(root.get("paymentStatus")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("orderStatus").as(String.class)), searchTerm));
+
+                    // Search in related user fields
+                    predicates.add(cb.like(cb.lower(root.get("user").get("userName")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("user").get("email")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("user").get("surName")), searchTerm));
+                    predicates.add(cb.like(cb.lower(root.get("user").get("lastName")), searchTerm));
+
+                    // Search in related shipping method
+                    predicates.add(cb.like(cb.lower(root.get("shippingMethod").get("methodName")), searchTerm));
+
+                    // Search in related payment method
+                    predicates.add(cb.like(cb.lower(root.get("paymentMethod").get("methodName")), searchTerm));
+
+                    return cb.or(predicates.toArray(new Predicate[0]));
+                });
+            }
+        }
+
+
+        Page<Order> orderPage = orderRepository.findAll(spec, pageable);
+
+        // Map to DTOs
+        return orderPage.map(this::mapOrderToDTO);
+    }
+    @Override
     public List<OrderDTO> getOrdersInDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         return orderRepository.findOrdersInDateRange(startDate, endDate).stream()
                 .map(this::mapOrderToDTO)
                 .collect(Collectors.toList());
     }
-
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderDTO> getAllOrdersWithPagination(Pageable pageable) {
+        Page<Order> orderPage = orderRepository.findAll(pageable);
+        return orderPage.map(this::mapOrderToDTO);
+    }
+    
     @Override
     @Transactional
     public OrderDTO updateOrderStatus(Integer id, Integer status) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-        
+
         // Validate status
         if (status < 0 || status > 5) {
             throw new RuntimeException("Invalid order status");
         }
         
-        // If cancelling order, restore product stock
+        // Kiểm tra logic chuyển trạng thái
+        if (status == 5) { // Nếu đang hủy đơn hàng
+            // Chỉ cho phép hủy đơn hàng ở trạng thái Pending hoặc Processing
+            if (order.getOrderStatus() != 0 && order.getOrderStatus() != 1) {
+                throw new RuntimeException("Only pending or processing orders can be cancelled");
+            }
+        } else if (status == 4) { // Nếu đang xác nhận hoàn thành
+            // Chỉ cho phép xác nhận hoàn thành đơn hàng ở trạng thái Delivered
+            if (order.getOrderStatus() != 3) {
+                throw new RuntimeException("Only delivered orders can be completed");
+            }
+        } else if (status <= order.getOrderStatus() && order.getOrderStatus() != 5) {
+            // Không cho phép chuyển về trạng thái trước đó (trừ khi đơn hàng đã bị hủy)
+            throw new RuntimeException("Cannot change to a previous status");
+        }
+
+        // If cancelling order, restore product stock and decrease sold quantity
         if (status == 5 && order.getOrderStatus() != 5) {
             List<OrderDetail> orderDetails = orderDetailRepository.findByOrder(order);
             for (OrderDetail orderDetail : orderDetails) {
                 Product product = orderDetail.getProduct();
+                
+                // Khôi phục số lượng sản phẩm trong kho
                 product.setStock(product.getStock() + orderDetail.getQuantity());
                 productRepository.save(product);
+                
+                // Giảm số lượng đã bán nếu đơn hàng đã được tính vào số lượng bán
+                if (order.getOrderStatus() == 4) {
+                    // Nếu đơn hàng đã hoàn thành, giảm số lượng đã bán
+                    if (product.getSoldQuantity() != null && product.getSoldQuantity() >= orderDetail.getQuantity()) {
+                        product.setSoldQuantity(product.getSoldQuantity() - orderDetail.getQuantity());
+                        productRepository.save(product);
+                    }
+                }
+                
+                // Nếu sản phẩm đang trong flash sale, cập nhật lại số lượng đã bán
+                Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(
+                        product.getId(), LocalDateTime.now());
+                if (flashSaleItem.isPresent() && flashSaleItem.get().getSoldCount() >= orderDetail.getQuantity()) {
+                    // Giảm số lượng đã bán trong flash sale
+                    FlashSaleItem item = flashSaleItem.get();
+                    item.setSoldCount(item.getSoldCount() - orderDetail.getQuantity());
+                    flashSaleItemRepository.save(item);
+                }
             }
         }
         
+        // If completing order, update sold quantity
+        if (status == 4 && order.getOrderStatus() != 4) {
+            List<OrderDetail> orderDetails = orderDetailRepository.findByOrder(order);
+            for (OrderDetail orderDetail : orderDetails) {
+                productSalesService.updateSoldQuantity(orderDetail.getProduct().getId(), orderDetail.getQuantity());
+            }
+        }
+
+        // Update order status
         order.setOrderStatus(status);
         Order updatedOrder = orderRepository.save(order);
         
@@ -217,15 +359,15 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO updatePaymentStatus(Integer id, String paymentStatus) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-        
+
         // Validate payment status
         if (!Arrays.asList("Pending", "Paid", "Failed", "Refunded").contains(paymentStatus)) {
             throw new RuntimeException("Invalid payment status");
         }
-        
+
         order.setPaymentStatus(paymentStatus);
         Order updatedOrder = orderRepository.save(order);
-        
+
         return mapOrderToDTO(updatedOrder);
     }
 
@@ -234,10 +376,10 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO updateTrackingNumber(Integer id, String trackingNumber) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-        
+
         order.setTrackingNumber(trackingNumber);
         Order updatedOrder = orderRepository.save(order);
-        
+
         return mapOrderToDTO(updatedOrder);
     }
 
@@ -260,7 +402,7 @@ public class OrderServiceImpl implements OrderService {
     public Long countOrdersByUser(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         return orderRepository.countOrdersByUser(user);
     }
 
@@ -269,28 +411,28 @@ public class OrderServiceImpl implements OrderService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String startDateStr = startDate.format(formatter);
         String endDateStr = endDate.format(formatter);
-        
+
         List<Object[]> orderCountByDay = orderRepository.getOrderCountByDay(startDateStr, endDateStr);
         List<Object[]> salesByDay = orderRepository.getSalesByDay(startDateStr, endDateStr);
-        
+
         Map<String, Long> orderCountMap = new LinkedHashMap<>();
         for (Object[] row : orderCountByDay) {
             String date = row[0].toString();
             Long count = ((Number) row[1]).longValue();
             orderCountMap.put(date, count);
         }
-        
+
         Map<String, Float> salesMap = new LinkedHashMap<>();
         for (Object[] row : salesByDay) {
             String date = row[0].toString();
             Float sales = ((Number) row[1]).floatValue();
             salesMap.put(date, sales);
         }
-        
+
         Map<String, Object> result = new HashMap<>();
         result.put("orderCountByDay", orderCountMap);
         result.put("salesByDay", salesMap);
-        
+
         return result;
     }
 
@@ -298,14 +440,14 @@ public class OrderServiceImpl implements OrderService {
     public Optional<Order> getOrderEntityById(Integer id) {
         return orderRepository.findById(id);
     }
-    
+
     // Helper methods
     private OrderDTO mapOrderToDTO(Order order) {
         List<OrderDetail> orderDetails = orderDetailRepository.findByOrder(order);
         List<OrderDetailDTO> orderDetailDTOs = orderDetails.stream()
                 .map(this::mapOrderDetailToDTO)
                 .collect(Collectors.toList());
-        
+
         String orderStatusText;
         switch (order.getOrderStatus()) {
             case 0:
@@ -329,7 +471,7 @@ public class OrderServiceImpl implements OrderService {
             default:
                 orderStatusText = "Unknown";
         }
-        
+
         return OrderDTO.builder()
                 .id(order.getId())
                 .userId(order.getUser().getId())
@@ -350,16 +492,11 @@ public class OrderServiceImpl implements OrderService {
                 .orderDetails(orderDetailDTOs)
                 .build();
     }
-    
+
     private OrderDetailDTO mapOrderDetailToDTO(OrderDetail orderDetail) {
-        Float price = orderDetail.getProduct().getPrice().floatValue();
-        if (orderDetail.getProduct().getDiscount() != null) {
-            double discountValue = orderDetail.getProduct().getDiscount().getValue();
-            price = (float) (price * (1 - discountValue / 100));
-        }
-        
+        Float price = orderDetail.getPrice();
         Float totalPrice = price * orderDetail.getQuantity();
-        
+
         return OrderDetailDTO.builder()
                 .id(orderDetail.getId())
                 .orderId(orderDetail.getOrder().getId())
@@ -371,5 +508,8 @@ public class OrderServiceImpl implements OrderService {
                 .totalPrice(totalPrice)
                 .reviewStatus(orderDetail.getReviewStatus())
                 .build();
+    }
+    private Float calculateDiscountedPriceAtTime(Product product, LocalDateTime orderTime) {
+       return discountService.calculateProductPriceAtTime(product.getId(), orderTime);
     }
 }

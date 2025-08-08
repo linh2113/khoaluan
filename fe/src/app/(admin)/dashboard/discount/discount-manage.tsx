@@ -227,7 +227,7 @@ export default function DiscountManage() {
          formData.append('banner', bannerFile)
       }
 
-      createDiscount.mutate(formData, {
+      createDiscount.mutate(formData as any, {
          onSuccess: () => {
             setIsAddDialogOpen(false)
             setNewDiscount({
@@ -553,7 +553,7 @@ export default function DiscountManage() {
                            </TableCell>
                            <TableCell className='font-medium'>{formatDiscountValue(discount.value)}</TableCell>
                            <TableCell>
-                              {discount.bannerUrl ? (
+                              {(discount.bannerUrl as any) ? (
                                  <Image
                                     src={discount.bannerUrl || '/placeholder.svg'}
                                     alt='Banner'

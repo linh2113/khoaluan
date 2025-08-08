@@ -26,6 +26,7 @@ import {
    DialogTitle,
    DialogTrigger
 } from '@/components/ui/dialog'
+import Image from 'next/image'
 
 export default function Profile() {
    const { userId } = useAppContext()
@@ -188,13 +189,15 @@ export default function Profile() {
                   {/* Avatar và thông tin cơ bản */}
                   <div className='w-full md:w-1/3 flex flex-col items-center gap-4 mb-6 md:mb-0'>
                      <div className='relative group rounded-full overflow-hidden'>
-                        <Avatar className='w-32 h-32 md:w-40 md:h-40'>
-                           <AvatarImage src={userInfo.picture || 'https://github.com/shadcn.png'} />
-                           <AvatarFallback>
-                              {userInfo.surName?.[0]?.toUpperCase()}
-                              {userInfo.lastName?.[0]?.toUpperCase()}
-                           </AvatarFallback>
-                        </Avatar>
+                        {userInfo.picture && (
+                           <Image
+                              src={userInfo.picture}
+                              alt=''
+                              className='w-32 h-32 md:w-40 md:h-40 rounded-full'
+                              width={40}
+                              height={40}
+                           />
+                        )}
                         {isUploading ? (
                            <div className='absolute inset-0 flex items-center justify-center'>
                               <div className='w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin' />

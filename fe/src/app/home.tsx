@@ -16,6 +16,7 @@ import ProductSection from '@/components/product-section'
 import { decodeHTML } from '@/lib/utils'
 import { useGetAllRecommendedProducts } from '@/queries/useProduct'
 import { useAppContext } from '@/context/app.context'
+import Link from 'next/link'
 
 export default function Home() {
    const router = useRouter()
@@ -192,17 +193,17 @@ export default function Home() {
             />
 
             {/* Sản phẩm giá rẻ */}
-            <ProductSection
+            {/* <ProductSection
                title='💰 Giá rẻ bất ngờ'
-               subtitle='Sản phẩm chất lượng với giá dưới 5 triệu'
+               subtitle='Sản phẩm chất lượng với giá dưới 1 triệu'
                icon={<DollarSign className='h-6 w-6 text-purple-500' />}
                products={budgetProducts.data}
                isLoading={budgetProducts.isLoading}
                backgroundColor='bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20'
-               viewAllLink='/products?maxPrice=5000000'
+               viewAllLink='/products?maxPrice=1000000'
                onSelectForCompare={handleSelectProductForCompare}
                selectedProducts={selectedProducts}
-            />
+            /> */}
 
             {/* Sản phẩm cao cấp */}
             <ProductSection
@@ -225,14 +226,15 @@ export default function Home() {
                   <p className='text-lg mb-6 opacity-90'>
                      Hàng ngàn sản phẩm chính hãng với giá tốt nhất thị trường đang chờ bạn
                   </p>
-                  <Button
-                     size='lg'
-                     variant='secondary'
-                     onClick={() => router.push('/products')}
-                     className='bg-white text-primaryColor hover:bg-gray-100 font-semibold px-8 py-3'
-                  >
-                     Xem tất cả sản phẩm
-                  </Button>
+                  <Link href={'/products'}>
+                     <Button
+                        size='lg'
+                        variant='secondary'
+                        className='bg-white text-primaryColor hover:bg-gray-100 font-semibold px-8 py-3'
+                     >
+                        Xem tất cả sản phẩm
+                     </Button>
+                  </Link>
                </div>
             </div>
          </div>

@@ -48,3 +48,4 @@ be/src/main/resources/application-test.properties
 be/src/test/
 be/test_data.sql
 
+logs/*.log

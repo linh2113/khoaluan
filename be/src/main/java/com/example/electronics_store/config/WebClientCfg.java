@@ -16,7 +16,7 @@ public class WebClientCfg {
                         @Value("${python.api.url}") String base) {
         return builder.baseUrl(base)
                 .clientConnector(new ReactorClientHttpConnector(
-                        HttpClient.create().responseTimeout(Duration.ofSeconds(2))))
+                        HttpClient.create().responseTimeout(Duration.ofSeconds(100))))
                 .build();
     }
 }

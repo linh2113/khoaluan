@@ -203,12 +203,13 @@ export default function ProductFilter({
                               </Label>
                            </div>
                         ))}
+                        p
                      </RadioGroup>
-                     {categories.length > 8 && (
+                     {/* {categories.length > 8 && (
                         <Button variant='ghost' size='sm' className='w-full text-primary'>
                            Xem thêm {categories.length - 8} danh mục
                         </Button>
-                     )}
+                     )} */}
                   </CardContent>
                </CollapsibleContent>
             </Collapsible>
@@ -255,11 +256,11 @@ export default function ProductFilter({
                            </div>
                         ))}
                      </RadioGroup>
-                     {brands.length > 10 && (
+                     {/* {brands.length > 10 && (
                         <Button variant='ghost' size='sm' className='w-full text-primary'>
                            Xem thêm {brands.length - 10} thương hiệu
                         </Button>
-                     )}
+                     )} */}
                   </CardContent>
                </CollapsibleContent>
             </Collapsible>

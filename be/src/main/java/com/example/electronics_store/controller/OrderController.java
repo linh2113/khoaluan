@@ -35,7 +35,6 @@ public class OrderController {
     public ResponseEntity<ApiResponse<?>> createOrder(
             @RequestParam Integer userId,
             @Valid @RequestBody OrderCreateDTO orderCreateDTO) {
-        try {
             OrderDTO order = orderService.createOrder(userId, orderCreateDTO);
 
             // Record transaction events for each product in the order
@@ -45,59 +44,36 @@ public class OrderController {
             });
             */
 
-            return ResponseEntity.ok(ApiResponse.success("Order created successfully", order));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+            return ResponseEntity.ok(ApiResponse.success("Tạo thành công đơn hàng", order));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> getOrderById(@PathVariable Integer id) {
-        try {
             OrderDTO order = orderService.getOrderById(id);
             return ResponseEntity.ok(ApiResponse.success(order));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+    
     }
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<?>> getOrdersByUserId(@PathVariable Integer userId) {
-        try {
             List<OrderDTO> orders = orderService.getOrdersByUserId(userId);
             return ResponseEntity.ok(ApiResponse.success(orders));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
     @PutMapping("/{id}/status")
     public ResponseEntity<ApiResponse<?>> updateOrderStatus(
             @PathVariable Integer id,
             @RequestParam Integer status) {
-        try {
             OrderDTO order = orderService.updateOrderStatus(id, status);
-            return ResponseEntity.ok(ApiResponse.success("Order status updated", order));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+            return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đơn hàng thành công", order));
     }
 
     @PutMapping("/{id}/payment")
     public ResponseEntity<ApiResponse<?>> updatePaymentStatus(
             @PathVariable Integer id,
             @RequestParam String paymentStatus) {
-        try {
             OrderDTO order = orderService.updatePaymentStatus(id, paymentStatus);
-            return ResponseEntity.ok(ApiResponse.success("Payment status updated", order));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+            return ResponseEntity.ok(ApiResponse.success("Cập nhật phương thức thành toán thành công!", order));
     }
 
     @PutMapping("/{id}/tracking")
@@ -115,45 +91,27 @@ public class OrderController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> deleteOrder(@PathVariable Integer id) {
-        try {
             orderService.deleteOrder(id);
             return ResponseEntity.ok(ApiResponse.success("Order deleted successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
     @GetMapping("/count")
     public ResponseEntity<ApiResponse<?>> countOrdersByUser(@RequestParam Integer userId) {
-        try {
             Long count = orderService.countOrdersByUser(userId);
             return ResponseEntity.ok(ApiResponse.success(count));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
     }
     @GetMapping("/payment-methods")
     public ResponseEntity<ApiResponse<?>> getAllActivePaymentMethods() {
-        try {
             List<PaymentMethodDTO> paymentMethods = paymentMethodService.getAllActivePaymentMethods();
             return ResponseEntity.ok(ApiResponse.success(paymentMethods));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
     }
 
     @GetMapping("/shipping-methods")
     public ResponseEntity<ApiResponse<?>> getAllActiveShippingMethods() {
-        try {
             List<ShippingMethodDTO> shippingMethods = shippingMethodService.getAllActiveShippingMethods();
             return ResponseEntity.ok(ApiResponse.success(shippingMethods));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
 }

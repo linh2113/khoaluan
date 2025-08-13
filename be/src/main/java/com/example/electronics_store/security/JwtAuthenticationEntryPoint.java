@@ -17,22 +17,28 @@ import java.time.LocalDateTime;
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    @Override
+     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
-                         AuthenticationException authException) throws IOException, ServletException {
+                        AuthenticationException authException) throws IOException, ServletException {
         
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         
+        String message = "Phiên đăng nhập đã hết hạn hoặc token không hợp lệ";
+        if (authException.getMessage().contains("expired")) {
+            message = "Phiên đăng nhập đã hết hạn";
+        } else if (authException.getMessage().contains("malformed")) {
+            message = "Token không đúng định dạng";
+        }
         ApiResponse<?> apiResponse = ApiResponse.builder()
                 .success(false)
-                .message("Unauthorized: " + authException.getMessage())
+                .message(message)
                 .timestamp(LocalDateTime.now())
                 .build();
         
         OutputStream outputStream = response.getOutputStream();
         ObjectMapper mapper = new ObjectMapper();
-        mapper.findAndRegisterModules(); // For LocalDateTime serialization
+        mapper.findAndRegisterModules();
         mapper.writeValue(outputStream, apiResponse);
         outputStream.flush();
     }

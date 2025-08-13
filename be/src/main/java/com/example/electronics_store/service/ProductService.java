@@ -53,7 +53,6 @@ public interface ProductService {
     
     ProductDetailDTO updateProductDetail(Integer productId, ProductDetailDTO productDetailDTO);
     
-    List<String> getAllBrands();
     
     Optional<Product> getProductEntityById(Integer id);
     

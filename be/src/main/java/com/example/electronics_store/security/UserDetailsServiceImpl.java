@@ -25,10 +25,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUserName(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với tên: " + username));
 
         if (user.getActive() != 1) {
-            throw new UsernameNotFoundException("User is not active");
+            throw new UsernameNotFoundException("Tài khoản chưa được kích hoạt");
         }
 
         return new org.springframework.security.core.userdetails.User(

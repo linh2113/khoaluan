@@ -28,7 +28,7 @@ public class ShippingMethodServiceImpl implements ShippingMethodService {
     public ShippingMethodDTO createShippingMethod(ShippingMethodDTO shippingMethodDTO) {
         // Kiểm tra tên phương thức vận chuyển đã tồn tại chưa
         if (shippingMethodRepository.existsByMethodName(shippingMethodDTO.getMethodName())) {
-            throw new RuntimeException("Shipping method name already exists");
+            throw new RuntimeException("Tên phương thức vận chuyển đã tồn tại");
         }
 
         ShippingMethod shippingMethod = new ShippingMethod();
@@ -46,7 +46,7 @@ public class ShippingMethodServiceImpl implements ShippingMethodService {
     @Transactional
     public ShippingMethodDTO updateShippingMethod(Integer id, ShippingMethodDTO shippingMethodDTO) {
         ShippingMethod shippingMethod = shippingMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Shipping method not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức vận chuyển"));
 
         // Chỉ cập nhật tên nếu có thay đổi và không trùng với tên khác
         if (shippingMethodDTO.getMethodName() != null && 
@@ -54,7 +54,7 @@ public class ShippingMethodServiceImpl implements ShippingMethodService {
             
             // Kiểm tra tên mới đã tồn tại chưa
             if (shippingMethodRepository.existsByMethodName(shippingMethodDTO.getMethodName())) {
-                throw new RuntimeException("Shipping method name already exists");
+                throw new RuntimeException("Tên phương thức vận chuyển đã tồn tại");
             }
             shippingMethod.setMethodName(shippingMethodDTO.getMethodName());
         }
@@ -84,7 +84,7 @@ public class ShippingMethodServiceImpl implements ShippingMethodService {
     @Override
     public ShippingMethodDTO getShippingMethodById(Integer id) {
         ShippingMethod shippingMethod = shippingMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Shipping method not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức vận chuyển"));
         return mapShippingMethodToDTO(shippingMethod);
     }
 
@@ -106,7 +106,7 @@ public class ShippingMethodServiceImpl implements ShippingMethodService {
     @Transactional
     public void deleteShippingMethod(Integer id) {
         if (!shippingMethodRepository.existsById(id)) {
-            throw new RuntimeException("Shipping method not found");
+            throw new RuntimeException("Không tìm thấy phương thức vận chuyển");
         }
         shippingMethodRepository.deleteById(id);
     }
@@ -115,7 +115,7 @@ public class ShippingMethodServiceImpl implements ShippingMethodService {
     @Transactional
     public void toggleShippingMethodStatus(Integer id) {
         ShippingMethod shippingMethod = shippingMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Shipping method not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức vận chuyển"));
         
         shippingMethod.setIsActive(!shippingMethod.getIsActive());
         shippingMethodRepository.save(shippingMethod);

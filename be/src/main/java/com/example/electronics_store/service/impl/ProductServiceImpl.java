@@ -7,12 +7,13 @@ import com.example.electronics_store.model.*;
 import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.DiscountService;
 import com.example.electronics_store.service.ProductService;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -49,7 +50,7 @@ public class ProductServiceImpl implements ProductService {
     private Cloudinary cloudinary;
     @Value("${app.upload.dir:${user.home}/techstore/uploads}")
     private String uploadDir;
-
+    private final CacheManager cacheManager;
     @Autowired
     public ProductServiceImpl(
             ProductRepository productRepository,
@@ -58,7 +59,7 @@ public class ProductServiceImpl implements ProductService {
             ProductImageRepository productImageRepository,
             RatingRepository ratingRepository, BrandRepository brandRepository, DiscountService discountService,
             FlashSaleItemRepository flashSaleItemRepository, ProductDiscountRepository productDiscountRepository,
-            CategoryDiscountRepository categoryDiscountRepository) {
+            CategoryDiscountRepository categoryDiscountRepository, CacheManager cacheManager) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.productDetailRepository = productDetailRepository;
@@ -69,21 +70,25 @@ public class ProductServiceImpl implements ProductService {
         this.flashSaleItemRepository = flashSaleItemRepository;
         this.productDiscountRepository = productDiscountRepository;
         this.categoryDiscountRepository = categoryDiscountRepository;
+        this.cacheManager = cacheManager;
 
     }
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "productLists", allEntries = true)
+    })
     public ProductDTO createProduct(ProductCreateDTO productCreateDTO) {
         // Get category
         Category category = categoryRepository.findById(productCreateDTO.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
 
         // Get brand if provided
         Brand brand = null;
         if (productCreateDTO.getBrandId() != null) {
             brand = brandRepository.findById(productCreateDTO.getBrandId())
-                    .orElseThrow(() -> new RuntimeException("Brand not found"));
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu"));
         }
 
         // Create product
@@ -124,15 +129,19 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "products", key = "#id"),
+            @CacheEvict(value = "productLists", allEntries = true),
+    })
     @Transactional
     public ProductDTO updateProduct(Integer id, ProductUpdateDTO productUpdateDTO) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
         // Update category only if provided
         if (productUpdateDTO.getCategoryId() != null) {
             Category category = categoryRepository.findById(productUpdateDTO.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Category not found"));
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
             product.setCategory(category);
         }
 
@@ -143,7 +152,7 @@ public class ProductServiceImpl implements ProductService {
         // Update brand if provided
         if (productUpdateDTO.getBrandId() != null) {
             Brand brand = brandRepository.findById(productUpdateDTO.getBrandId())
-                    .orElseThrow(() -> new RuntimeException("Brand not found"));
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu"));
             product.setBrand(brand);
         }
         if (productUpdateDTO.getPrice() != null) {
@@ -226,9 +235,10 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "#id")
     public ProductDTO getProductById(Integer id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
         return mapProductToDTO(product);
     }
 
@@ -237,12 +247,10 @@ public class ProductServiceImpl implements ProductService {
     public Page<ProductDTO> getAllProducts(ProductFilterRequest filter) {
         Pageable pageable = filter.getPageable();
 
-        // Nếu không có filter type, xử lý như filter thông thường
         if (filter.getFilterType() == null) {
             return handleDefaultFilter(filter, pageable);
         }
 
-        // Xử lý theo filter type
         return switch (filter.getFilterType()) {
             case TOP_SELLING -> handleTopSellingProducts(pageable);
             case NEW_ARRIVALS -> handleNewArrivals(pageable);
@@ -302,14 +310,14 @@ public class ProductServiceImpl implements ProductService {
         // Nếu có lọc theo giá, lấy tất cả sản phẩm phù hợp với các điều kiện khác
         // và xử lý phân trang thủ công
         List<Product> allFilteredProducts = productRepository.findAll(spec);
-        
+
         // Lọc theo khoảng giá và áp dụng phân trang thủ công
         LocalDateTime now = LocalDateTime.now();
         List<ProductDTO> priceFilteredProducts = allFilteredProducts.stream()
             .map(product -> {
                 // Tính giá đã giảm cho sản phẩm
                 Float discountedPrice = null;
-                
+
                 // Kiểm tra flash sale
                 Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(product.getId(), now);
                 if (flashSaleItem.isPresent()) {
@@ -337,7 +345,7 @@ public class ProductServiceImpl implements ProductService {
                         }
                     }
                 }
-                
+
                 // Kiểm tra nếu giá nằm trong khoảng lọc
                 if ((filter.getMinPrice() == null || discountedPrice >= filter.getMinPrice()) &&
                     (filter.getMaxPrice() == null || discountedPrice <= filter.getMaxPrice())) {
@@ -349,49 +357,45 @@ public class ProductServiceImpl implements ProductService {
             })
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
-        
+
         // Áp dụng phân trang thủ công
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), priceFilteredProducts.size());
-        
+
         if (start > priceFilteredProducts.size()) {
             return new PageImpl<>(Collections.emptyList(), pageable, priceFilteredProducts.size());
         }
-    
+
         List<ProductDTO> pageContent = priceFilteredProducts.subList(start, end);
         return new PageImpl<>(pageContent, pageable, priceFilteredProducts.size());
     }
-
     private Page<ProductDTO> handleTopSellingProducts(Pageable pageable) {
         return productRepository.findTopSellingProducts(pageable)
                 .map(this::mapProductToDTO);
     }
-
     private Page<ProductDTO> handleNewArrivals(Pageable pageable) {
         return productRepository.findByOrderByCreateAtDesc(pageable)
                 .map(this::mapProductToDTO);
     }
-
     private Page<ProductDTO> handleTopRated(Pageable pageable) {
         return productRepository.findTopRatedProducts(pageable)
                 .map(this::mapProductToDTO);
     }
-
     private Page<ProductDTO> handleDiscountedProducts(Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
         List<Integer> productIds = productRepository.findProductIdsWithActiveDiscounts(now);
         if (productIds.isEmpty()) {
             return Page.empty(pageable);
         }
-    
+
         // Sử dụng Specification đơn giản
         Specification<Product> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-        
+
             // Sản phẩm phải active
             predicates.add(cb.isTrue(root.get("status")));
             predicates.add(root.get("id").in(productIds));
-        
+
             return cb.and(predicates.toArray(new Predicate[0]));
     };
         return productRepository.findAll(spec, pageable).map(this::mapProductToDTO);
@@ -410,16 +414,17 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductDTO> getAllActiveProducts(Pageable pageable) {
+     public Page<ProductDTO> getAllActiveProducts(Pageable pageable) {
         return productRepository.findAllActiveProducts(pageable)
                 .map(this::mapProductToDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "productLists", key = "'byCategory:' + #categoryId")
     public List<ProductDTO> getProductsByCategory(Integer categoryId) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
 
         return productRepository.findByCategory(category).stream()
                 .map(this::mapProductToDTO)
@@ -489,6 +494,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "productLists", key = "'price:' + #minPrice + ':' + #maxPrice")
     public List<ProductDTO> getProductsByPriceRange(Integer minPrice, Integer maxPrice) {
         return productRepository.findByPriceRange(minPrice, maxPrice).stream()
                 .map(this::mapProductToDTO)
@@ -497,11 +503,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "productLists", key = "'byBrand:' + #brandName")
     public List<ProductDTO> getProductsByBrand(String brandName) {
         Brand brand = brandRepository.findByBrandName(brandName)
                 .orElseThrow(() -> new RuntimeException("Brand not found: " + brandName));
 
-        // Tìm sản phẩm dựa trên Brand entity
         return productRepository.findByBrandAndStatusTrue(brand).stream()
                 .map(this::mapProductToDTO)
                 .collect(Collectors.toList());
@@ -509,6 +515,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "productLists", key = "'topSelling'")
     public List<ProductDTO> getTopSellingProducts() {
         return productRepository.findTopSellingProducts().stream()
                 .map(this::mapProductToDTO)
@@ -524,6 +531,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "productLists", key = "'recommended:' + #userId")
     public List<ProductDTO> getRecommendedProducts(Integer userId) {
         return getTopSellingProducts();
     }
@@ -531,8 +539,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "productLists", key = "'newArrivals'")
     public List<ProductDTO> getNewArrivals() {
-        // Get the 10 most recently added products
         return productRepository.findAll().stream()
                 .sorted(Comparator.comparing(Product::getCreateAt).reversed())
                 .limit(10)
@@ -544,6 +552,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "productLists", key = "'lowStock'")
     public List<ProductDTO> getLowStockProducts() {
         return productRepository.findLowStockProducts().stream()
                 .map(this::mapProductToDTO)
@@ -553,6 +562,10 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "products", key = "#id"),
+            @CacheEvict(value = "productLists", allEntries = true)
+    })
     public void updateProductStock(Integer id, Integer quantity) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -561,21 +574,24 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "products", key = "#productId"),
+            @CacheEvict(value = "productLists", allEntries = true)
+    })
     @Override
     @Transactional
     public String uploadProductImage(Integer productId, MultipartFile file, boolean isPrimary) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
         try {
             // Upload to Cloudinary
-            Map<String, Object> uploadParams = ObjectUtils.asMap(
-                    "folder", "products/" + productId,
-                    "resource_type", "auto"
-            );
-
-            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
-            String imageUrl = uploadResult.get("secure_url").toString();
+            Map<String, Object> uploadParams = new HashMap<>();
+            uploadParams.put("folder", "products/" + productId);
+            uploadParams.put("resource_type", "auto");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> uploadResult = (Map<String, Object>) cloudinary.uploader().upload(file.getBytes(), uploadParams);
+            String imageUrl = String.valueOf(uploadResult.get("secure_url"));
 
             // Save image info to database
             ProductImage productImage = new ProductImage();
@@ -594,9 +610,7 @@ public class ProductServiceImpl implements ProductService {
                 product.setImage(imageUrl);
                 productRepository.save(product);
             }
-
             productImageRepository.save(productImage);
-
             return imageUrl;
 
         } catch (IOException e) {
@@ -608,8 +622,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void deleteProductImage(Integer imageId) {
         ProductImage productImage = productImageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found"));
-
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy ảnh"));
         Product product = productImage.getProduct();
         String imageUrl = productImage.getImageUrl();
         try {
@@ -630,9 +643,10 @@ public class ProductServiceImpl implements ProductService {
 
             // Delete from database
             productImageRepository.delete(productImage);
-
+            cacheManager.getCache("products").evict(product.getId());
+            cacheManager.getCache("productLists").clear();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to delete image: " + e.getMessage());
+            throw new RuntimeException("Lỗi khi xóa ảnh:  " + e.getMessage());
         }
     }
 
@@ -640,7 +654,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void updatePrimaryImage(Integer imageId) {
         ProductImage newPrimaryImage = productImageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy ảnh"));
         Product product = newPrimaryImage.getProduct();
 
         // Set all other images as non-primary
@@ -657,24 +671,30 @@ public class ProductServiceImpl implements ProductService {
         // Update product's main image
         product.setImage(newPrimaryImage.getImageUrl());
         productRepository.save(product);
+        cacheManager.getCache("products").evict(product.getId());
+        cacheManager.getCache("productLists").clear();
     }
 
     @Override
     public ProductDetailDTO getProductDetail(Integer productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("không tìm thấy sản phẩm"));
 
         ProductDetail productDetail = productDetailRepository.findByProduct(product)
-                .orElseThrow(() -> new RuntimeException("Product detail not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy chi tiết sản phẩm"));
 
         return mapProductDetailToDTO(productDetail);
     }
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "products", key = "#productId"),
+            @CacheEvict(value = "productLists", allEntries = true)
+    })
     public ProductDetailDTO updateProductDetail(Integer productId, ProductDetailDTO productDetailDTO) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
         ProductDetail productDetail = productDetailRepository.findByProduct(product)
                 .orElse(new ProductDetail());
@@ -696,13 +716,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<String> getAllBrands() {
-        return brandRepository.findAllActiveBrands().stream()
-                .map(Brand::getBrandName)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public Optional<Product> getProductEntityById(Integer id) {
         return productRepository.findById(id);
     }
@@ -711,18 +724,19 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<ProductDTO> compareProducts(List<Integer> productIds) {
         if (productIds.size() < 2 || productIds.size() > 4) {
-            throw new RuntimeException("You can compare between 2 and 4 products");
+            throw new RuntimeException("Bạn chỉ có thể so sánh 2-4 sản phẩm");
         }
 
         return productIds.stream()
                 .map(id -> productRepository.findById(id)
-                        .orElseThrow(() -> new RuntimeException("Product not found: " + id)))
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm" + id)))
                 .map(this::mapProductToDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "productLists", key = "'byIdStrings:' + T(java.lang.String).join(',', #productIdStrings)")
     public List<ProductDTO> getProductsByIdStrings(List<String> productIdStrings) {
         List<Product> products = productRepository.findByProductIdStringsInOrder(productIdStrings);
         return products.stream()

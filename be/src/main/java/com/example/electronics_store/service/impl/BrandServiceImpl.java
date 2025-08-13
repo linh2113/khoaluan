@@ -1,8 +1,6 @@
 package com.example.electronics_store.service.impl;
 
 import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-import com.example.electronics_store.config.CloudinaryConfig;
 import com.example.electronics_store.dto.BrandDTO;
 import com.example.electronics_store.model.Brand;
 import com.example.electronics_store.repository.BrandRepository;
@@ -11,6 +9,9 @@ import com.example.electronics_store.util.CloudinaryUtils;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,18 +34,21 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "brands", allEntries = true),
+            @CacheEvict(value = "productLists", allEntries = true),
+            @CacheEvict(value = "brandList", allEntries = true)
+    })
     public BrandDTO createBrand(BrandDTO brandDTO) {
-        // Check if brand name already exists
         if (brandRepository.existsByBrandName(brandDTO.getBrandName())) {
-            throw new RuntimeException("Brand name already exists");
+            throw new RuntimeException("Tên thương hiệu đã tồn tại");
         }
-        // Upload ảnh nếu có
         if (brandDTO.getImageFile() != null && !brandDTO.getImageFile().isEmpty()) {
             try {
                 String imageUrl = CloudinaryUtils.uploadImage(cloudinary, brandDTO.getImageFile(), "brands");
                 brandDTO.setImageUrl(imageUrl);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to upload image: " + e.getMessage());
+                throw new RuntimeException("Lỗi khi upload ảnh: " + e.getMessage());
             }
         }
         Brand brand = new Brand();
@@ -59,22 +63,25 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "brands", allEntries = true),
+            @CacheEvict(value = "productLists", allEntries = true),
+            @CacheEvict(value = "brandList", allEntries = true)
+    })
     public BrandDTO updateBrand(Integer id, BrandDTO brandDTO) {
         Brand brand = brandRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Brand not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu"));
 
-        // Chỉ cập nhật brandName nếu có giá trị mới và khác giá trị hiện tại
         if (brandDTO.getBrandName() != null && !brandDTO.getBrandName().equals(brand.getBrandName())) {
             Optional<Brand> existingBrand = brandRepository.findByBrandName(brandDTO.getBrandName());
             if (existingBrand.isPresent() && !existingBrand.get().getId().equals(id)) {
-                throw new RuntimeException("Brand name already exists");
+                throw new RuntimeException("Tên thương hiệu đã tồn tại");
             }
             brand.setBrandName(brandDTO.getBrandName());
         }
         if (brandDTO.getDescription() != null) {
             brand.setDescription(brandDTO.getDescription());
         }
-        // Upload ảnh mới nếu có
         if (brandDTO.getImageFile() != null && !brandDTO.getImageFile().isEmpty()) {
             try {
                 String imageUrl = CloudinaryUtils.replaceImage(
@@ -85,7 +92,7 @@ public class BrandServiceImpl implements BrandService {
                 );
                 brand.setImageUrl(imageUrl);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to upload image: " + e.getMessage());
+                throw new RuntimeException("Lỗi khi upload ảnh: " + e.getMessage());
             }
         } else if (brandDTO.getImageUrl() != null) {
             brand.setImageUrl(brandDTO.getImageUrl());
@@ -100,9 +107,10 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
+    @Cacheable(value = "brands", key = "#id")
     public BrandDTO getBrandById(Integer id) {
         Brand brand = brandRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Brand not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu"));
         return mapBrandToDTO(brand);
     }
 
@@ -115,6 +123,7 @@ public class BrandServiceImpl implements BrandService {
 
 
     @Override
+    @Cacheable(value = "brandList", key = "'active' ")
     public List<BrandDTO> getAllActiveBrands() {
         return brandRepository.findAllActiveBrands().stream()
                 .map(this::mapBrandToDTO)
@@ -123,14 +132,18 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "brands", allEntries = true),
+            @CacheEvict(value = "brandList", allEntries = true),
+            @CacheEvict(value = "productLists", allEntries = true)
+    })
     public void deleteBrand(Integer id) {
         Brand brand = brandRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Brand not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu"));
 
-        // Check if brand has products
         Long productCount = brandRepository.countProductsByBrand(id);
         if (productCount > 0) {
-            throw new RuntimeException("Cannot delete brand with associated products");
+            throw new RuntimeException("Không thể xóa thương hiệu có sản phẩm liên quan");
         }
 
         brandRepository.delete(brand);
@@ -144,11 +157,13 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
+    @Cacheable(value = "brands", key = "'entityById:' + #id")
     public Optional<Brand> getBrandEntityById(Integer id) {
         return brandRepository.findById(id);
     }
 
     @Override
+    @Cacheable(value = "brands", key = "'entityByName:' + (#brandName==null?'':#brandName.trim().toLowerCase())")
     public Optional<Brand> getBrandEntityByName(String brandName) {
         return brandRepository.findByBrandName(brandName);
     }
@@ -162,8 +177,7 @@ public class BrandServiceImpl implements BrandService {
                 try {
                     Integer brandId = Integer.parseInt(search);
                     predicates.add(cb.equal(root.get("id"), brandId));
-                } catch (NumberFormatException ignored) {
-                }
+                } catch (NumberFormatException ignored) {}
                 predicates.add(cb.like(cb.lower(root.get("brandName")), searchTerm));
                 predicates.add(cb.like(cb.lower(root.get("description")), searchTerm));
                 try {
@@ -171,13 +185,7 @@ public class BrandServiceImpl implements BrandService {
                     if (status == 0 || status == 1) {
                         predicates.add(cb.equal(root.get("status"), status));
                     }
-                } catch (NumberFormatException ignored) {
-                }
-                if ("active".equalsIgnoreCase(search) || "1".equals(search)) {
-                    predicates.add(cb.equal(root.get("status"), 1));
-                } else if ("inactive".equalsIgnoreCase(search) || "0".equals(search)) {
-                    predicates.add(cb.equal(root.get("status"), 0));
-                }
+                } catch (NumberFormatException ignored) {}
                 if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
                     predicates.add(cb.like(
                             cb.function("DATE_FORMAT", String.class, root.get("createdAt"), cb.literal("%Y-%m-%d")),

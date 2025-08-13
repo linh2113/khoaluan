@@ -37,17 +37,13 @@ public class RatingController {
             @RequestParam Integer productId,
             @RequestParam(required = false) List<MultipartFile> images,
             @RequestPart("rating") @Valid RatingDTO ratingDTO) {
-        try {
             RatingDTO rating = ratingService.createRating(userId, productId, ratingDTO);
             if (images != null && !images.isEmpty()) {
                 List<String> imageUrls = ratingService.uploadRatingImages(rating.getId(), images);
                 rating.setImageUrls(imageUrls);
             }
-            return ResponseEntity.ok(ApiResponse.success("Rating created successfully", rating));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+            return ResponseEntity.ok(ApiResponse.success("Đánh giá thành công", rating));
+        
     }
 
 //    @PutMapping("/{id}")
@@ -65,13 +61,8 @@ public class RatingController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> getRatingById(@PathVariable Integer id) {
-        try {
             RatingDTO rating = ratingService.getRatingById(id);
             return ResponseEntity.ok(ApiResponse.success(rating));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
     @GetMapping("/product/{productId}")
@@ -81,7 +72,6 @@ public class RatingController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
             Sort sort = sortDir.equalsIgnoreCase("desc") ?
                     Sort.by(sortBy).descending() :
                     Sort.by(sortBy).ascending();
@@ -90,21 +80,13 @@ public class RatingController {
             Page<RatingDTO> ratings = ratingService.getRatingsByProductIdWithPagination(productId, pageable);
 
             return ResponseEntity.ok(ApiResponse.success(ratings));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+     
     }
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<?>> getRatingsByUserId(@PathVariable Integer userId) {
-        try {
             List<RatingDTO> ratings = ratingService.getRatingsByUserId(userId);
             return ResponseEntity.ok(ApiResponse.success(ratings));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
     @GetMapping("/star/{starRating}")
@@ -114,10 +96,9 @@ public class RatingController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
             if (starRating < 1 || starRating > 5) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.error("Star rating must be between 1 and 5"));
+                        .body(ApiResponse.error("Đánh giá phải từ 1-5"));
             }
             Sort sort = sortDir.equalsIgnoreCase("desc") ?
                     Sort.by(sortBy).descending() :
@@ -125,10 +106,6 @@ public class RatingController {
             Pageable pageable = PageRequest.of(page, size, sort);
             Page<RatingDTO> ratings = ratingService.getRatingsByStarWithPagination(starRating, pageable);
             return ResponseEntity.ok(ApiResponse.success(ratings));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
     @PostMapping(value = "/reply", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -137,62 +114,39 @@ public class RatingController {
             @RequestParam Integer parentRatingId,
             @RequestParam(required = false) List<MultipartFile> images,
             @RequestPart("reply") @Valid ReplyDTO replyDTO) {
-        try {
             RatingDTO reply = ratingService.replyToRating(userId, parentRatingId, replyDTO.getComment());
             if (images != null && !images.isEmpty()) {
                 List<String> imageUrls = ratingService.uploadRatingImages(reply.getId(), images);
                 reply.setImageUrls(imageUrls);
             }
-            return ResponseEntity.ok(ApiResponse.success("Reply added successfully", reply));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+            return ResponseEntity.ok(ApiResponse.success("Trả lời thành công", reply));
     }
 
 
     @GetMapping("/replies/{parentId}")
     public ResponseEntity<ApiResponse<?>> getRepliesByParentId(@PathVariable Integer parentId) {
-        try {
             List<RatingDTO> replies = ratingService.getRepliesByParentId(parentId);
             return ResponseEntity.ok(ApiResponse.success(replies));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+       
     }
 
     @GetMapping("/product/{productId}/average")
     public ResponseEntity<ApiResponse<?>> getAverageRatingForProduct(@PathVariable Integer productId) {
-        try {
             Double averageRating = ratingService.getAverageRatingForProduct(productId);
             return ResponseEntity.ok(ApiResponse.success(averageRating));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+       
     }
 
     @GetMapping("/product/{productId}/count")
     public ResponseEntity<ApiResponse<?>> countRatingsByProduct(@PathVariable Integer productId) {
-        try {
             Long count = ratingService.countRatingsByProduct(productId);
             return ResponseEntity.ok(ApiResponse.success(count));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
     @GetMapping("/product/{productId}/distribution")
     public ResponseEntity<ApiResponse<?>> getRatingDistributionForProduct(@PathVariable Integer productId) {
-        try {
             Map<Integer, Long> distribution = ratingService.getRatingDistributionForProduct(productId);
             return ResponseEntity.ok(ApiResponse.success(distribution));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
 

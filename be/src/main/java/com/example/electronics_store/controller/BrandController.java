@@ -29,35 +29,20 @@ public class BrandController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getAllActiveBrands() {
-        try {
-            List<BrandDTO> brands = brandService.getAllActiveBrands();
-            return ResponseEntity.ok(ApiResponse.success(brands));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        List<BrandDTO> brands = brandService.getAllActiveBrands();
+        return ResponseEntity.ok(ApiResponse.success(brands));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> getBrandById(@PathVariable Integer id) {
-        try {
-            BrandDTO brand = brandService.getBrandById(id);
-            return ResponseEntity.ok(ApiResponse.success(brand));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        BrandDTO brand = brandService.getBrandById(id);
+        return ResponseEntity.ok(ApiResponse.success(brand));
     }
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<?>> searchBrands(@RequestParam String keyword) {
-        try {
-            List<BrandDTO> brands = brandService.searchBrands(keyword);
-            return ResponseEntity.ok(ApiResponse.success(brands));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        List<BrandDTO> brands = brandService.searchBrands(keyword);
+        return ResponseEntity.ok(ApiResponse.success(brands));
     }
 
 }

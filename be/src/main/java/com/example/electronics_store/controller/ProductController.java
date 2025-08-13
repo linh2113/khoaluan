@@ -53,8 +53,6 @@ public class ProductController {
             @RequestParam(required = false) Boolean isDiscount,
             @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) ProductFilterRequest.FilterType filterType) {
-
-        try {
             ProductFilterRequest filter = ProductFilterRequest.builder()
                     .page(page)
                     .size(size)
@@ -72,22 +70,14 @@ public class ProductController {
 
             Page<ProductDTO> products = productService.getAllProducts(filter);
             return ResponseEntity.ok(ApiResponse.success(products));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
     }
 
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> getProductById(@PathVariable Integer id) {
-        try {
             ProductDTO product = productService.getProductById(id);
             return ResponseEntity.ok(ApiResponse.success(product));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
 
@@ -120,13 +110,8 @@ public class ProductController {
 
     @GetMapping("/compare")
     public ResponseEntity<ApiResponse<?>> compareProducts(@RequestParam List<Integer> ids) {
-        try {
             List<ProductDTO> products = productService.compareProducts(ids);
             return ResponseEntity.ok(ApiResponse.success(products));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
 
@@ -152,7 +137,6 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
             Sort sort = sortDir.equalsIgnoreCase("desc") ?
                     Sort.by(sortBy).descending() :
                     Sort.by(sortBy).ascending();
@@ -161,10 +145,7 @@ public class ProductController {
             Page<CategoryDTO> categoryPage = categoryService.getCategoriesWithSearch(search, pageable);
 
             return ResponseEntity.ok(ApiResponse.success(categoryPage));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
     }
     @GetMapping("/allBrands")
     public ResponseEntity<ApiResponse<?>> getAllBrands(
@@ -173,7 +154,6 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
             Sort sort = sortDir.equalsIgnoreCase("desc") ?
                     Sort.by(sortBy).descending() :
                     Sort.by(sortBy).ascending();
@@ -182,10 +162,7 @@ public class ProductController {
             Page<BrandDTO> brandPage = brandService.getBrandsWithSearch(search, pageable);
 
             return ResponseEntity.ok(ApiResponse.success(brandPage));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
     }
 
 }

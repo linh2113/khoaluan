@@ -2,6 +2,7 @@ package com.example.electronics_store.service;
 
 import com.example.electronics_store.dto.DiscountDTO;
 import com.example.electronics_store.dto.DiscountUpdateDTO;
+import com.example.electronics_store.dto.ProductDTO;
 import com.example.electronics_store.model.Discount;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,5 +39,6 @@ public interface DiscountService {
    Integer removeCategoriesFromDiscount(Integer discountId, List<Integer> categoryIds);
     List<DiscountDTO> getCategoryDiscountsByCategoryId(Integer categoryId);
     List<DiscountDTO> getActiveCategoryDiscountsByCategoryId(Integer categoryId);
-    List<DiscountDTO> getAllCategoryDiscounts();;
+    List<DiscountDTO> getAllCategoryDiscounts();
+    List<ProductDTO> getProductsByDiscountId(Integer discountId);
 }

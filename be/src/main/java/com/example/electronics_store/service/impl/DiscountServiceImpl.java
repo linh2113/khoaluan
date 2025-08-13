@@ -4,6 +4,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.electronics_store.dto.DiscountDTO;
 import com.example.electronics_store.dto.DiscountUpdateDTO;
+import com.example.electronics_store.dto.ProductDTO;
 import com.example.electronics_store.model.*;
 import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.DiscountService;
@@ -23,6 +24,11 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+
 @Service
 public class DiscountServiceImpl implements DiscountService {
 
@@ -34,13 +40,14 @@ public class DiscountServiceImpl implements DiscountService {
     private final FlashSaleItemRepository flashSaleItemRepository;
     private final DiscountEligibilityService discountEligibilityService;
     private Cloudinary cloudinary;
+    private final CacheManager cacheManager;
     @Autowired
     public DiscountServiceImpl(
             DiscountRepository discountRepository,
             ProductDiscountRepository productDiscountRepository,
             CategoryDiscountRepository categoryDiscountRepository,
             ProductRepository productRepository,
-            CategoryRepository categoryRepository, FlashSaleItemRepository flashSaleItemRepository, DiscountEligibilityService discountEligibilityService, Cloudinary cloudinary) {
+            CategoryRepository categoryRepository, FlashSaleItemRepository flashSaleItemRepository, DiscountEligibilityService discountEligibilityService, Cloudinary cloudinary, CacheManager cacheManager) {
         this.discountRepository = discountRepository;
         this.productDiscountRepository = productDiscountRepository;
         this.categoryDiscountRepository = categoryDiscountRepository;
@@ -49,17 +56,23 @@ public class DiscountServiceImpl implements DiscountService {
         this.flashSaleItemRepository = flashSaleItemRepository;
         this.discountEligibilityService = discountEligibilityService;
         this.cloudinary = cloudinary;
+        this.cacheManager = cacheManager;
     }
 
     @Override
     @Transactional
+    @Caching(evict = {
+    @CacheEvict(value = "discounts", allEntries = true),
+    @CacheEvict(value = "productLists", allEntries = true)
+    })
+
     public DiscountDTO createDiscount(DiscountDTO discountDTO) {
         if (discountDTO.getBannerFile() != null && !discountDTO.getBannerFile().isEmpty()) {
             try {
                 String bannerUrl = CloudinaryUtils.uploadImage(cloudinary, discountDTO.getBannerFile(), "discounts");
                 discountDTO.setBannerUrl(bannerUrl);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to upload banner image: " + e.getMessage());
+                throw new RuntimeException("Lỗi khi upload ảnh: " + e.getMessage());
             }
         }
         // Tạo discount
@@ -101,10 +114,14 @@ public class DiscountServiceImpl implements DiscountService {
     //update các trường cơ bản của discount
     @Override
     @Transactional
+    @Caching(evict = {
+    @CacheEvict(value = "discounts", allEntries = true),
+    @CacheEvict(value = "productLists", allEntries = true)
+    })
     public DiscountDTO updateDiscount(Integer id, DiscountUpdateDTO discountUpdateDTO) {
     // Tìm discount trong bảng Discount chính
     Discount discount = discountRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Discount not found with ID: " + id));
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy mã giảm giá với ID" + id));
     boolean updateDiscount = false;
     if (discountUpdateDTO.getBannerFile() != null && !discountUpdateDTO.getBannerFile().isEmpty()) {
         try {
@@ -116,7 +133,7 @@ public class DiscountServiceImpl implements DiscountService {
             );
             discount.setBannerUrl(bannerUrl);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload banner image: " + e.getMessage());
+            throw new RuntimeException("Lỗi khi upload ảnh" + e.getMessage());
         }
     } else if (discountUpdateDTO.getBannerUrl() != null) {
         discount.setBannerUrl(discountUpdateDTO.getBannerUrl());
@@ -125,38 +142,40 @@ public class DiscountServiceImpl implements DiscountService {
         discount.setName(discountUpdateDTO.getName());
         updateDiscount = true;
     }
-    
     if (discountUpdateDTO.getValue() != null && !discountUpdateDTO.getValue().equals(discount.getValue())) {
         discount.setValue(discountUpdateDTO.getValue());
         updateDiscount = true;
     }
-    
+
     if (discountUpdateDTO.getStartDate() != null && !discountUpdateDTO.getStartDate().equals(discount.getStartDate())) {
         discount.setStartDate(discountUpdateDTO.getStartDate());
         updateDiscount = true;
     }
-    
+
     if (discountUpdateDTO.getEndDate() != null && !discountUpdateDTO.getEndDate().equals(discount.getEndDate())) {
         discount.setEndDate(discountUpdateDTO.getEndDate());
         updateDiscount = true;
     }
-    
+
     if (discountUpdateDTO.getIsActive() != null && !discountUpdateDTO.getIsActive().equals(discount.getIsActive())) {
         discount.setIsActive(discountUpdateDTO.getIsActive());
         updateDiscount = true;
     }
+
     if (updateDiscount) {
         discount.setUpdatedAt(LocalDateTime.now());
         discountRepository.save(discount);
+        cacheManager.getCache("products").clear();
     }
     return mapToDTO(discount);
     }
 
     @Override
+    @Cacheable(value = "discounts", key = "#id")
     public DiscountDTO getDiscountById(Integer id) {
-    Discount discount = discountRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Discount not found with ID: " + id));
-    return mapToDTO(discount);
+        Discount discount = discountRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã giảm giá với ID: " + id));
+        return mapToDTO(discount);
     }
 
 
@@ -172,13 +191,12 @@ public class DiscountServiceImpl implements DiscountService {
     }
 
 
-    
+
     @Override
+    @Cacheable(value = "discounts", key = "'active'")
     public List<DiscountDTO> getAllActiveDiscounts() {
     LocalDateTime now = LocalDateTime.now();
-    // Lấy tất cả discount đang active
     List<Discount> activeDiscounts = discountRepository.findAllEffectiveDiscounts(now);
-    // Map sang DTO
     return activeDiscounts.stream()
             .map(this::mapToDTO)
             .collect(Collectors.toList());
@@ -198,10 +216,10 @@ public class DiscountServiceImpl implements DiscountService {
     @Override
     public List<DiscountDTO> getAllUpcomingDiscounts() {
         LocalDateTime now = LocalDateTime.now();
-    
+
         // Lấy tất cả discount sắp tới
         List<Discount> upcomingDiscounts = discountRepository.findAllUpcomingDiscounts(now);
-    
+
         // Map sang DTO
         return upcomingDiscounts.stream()
             .map(this::mapToDTO)
@@ -226,15 +244,15 @@ public class DiscountServiceImpl implements DiscountService {
     @Override
     public Float calculateProductPrice(Integer productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
         LocalDateTime now = LocalDateTime.now();
-        
+
         // Kiểm tra flash sale trước
         Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(product.getId(), now);
         if (flashSaleItem.isPresent()) {
             return flashSaleItem.get().getFlashPrice().floatValue();
         }
-        
+
         // Kiểm tra product discount
         List<ProductDiscount> productDiscounts = productDiscountRepository.findEffectiveDiscountsByProduct(product, now);
         if (!productDiscounts.isEmpty()) {
@@ -246,7 +264,7 @@ public class DiscountServiceImpl implements DiscountService {
                 return (float) (product.getPrice() * (1 - discountValue / 100));
             }
         }
-        
+
         // Kiểm tra category discount
         List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findEffectiveDiscountsByCategory(product.getCategory(), now);
         if (!categoryDiscounts.isEmpty()) {
@@ -254,7 +272,7 @@ public class DiscountServiceImpl implements DiscountService {
             double discountValue = categoryDiscount.getDiscount().getValue();
             return (float) (product.getPrice() * (1 - discountValue / 100));
         }
-        
+
         // Không có giảm giá
         return product.getPrice().floatValue();
     }
@@ -262,7 +280,7 @@ public class DiscountServiceImpl implements DiscountService {
     @Override
     public Float calculateProductPriceAtTime(Integer productId, LocalDateTime time) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
         // Kiểm tra flash sale tại thời điểm cụ thể
         Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findByProductAndTimeRange(product.getId(), time);
@@ -281,7 +299,7 @@ public class DiscountServiceImpl implements DiscountService {
                 return (float) (product.getPrice() * (1 - discountValue / 100));
             }
         }
-        
+
         // Kiểm tra category discount tại thời điểm cụ thể
         List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findByCategoryAndTimeRange(product.getCategory().getId(), time);
         if (!categoryDiscounts.isEmpty()) {
@@ -289,7 +307,7 @@ public class DiscountServiceImpl implements DiscountService {
             double discountValue = categoryDiscount.getDiscount().getValue();
             return (float) (product.getPrice() * (1 - discountValue / 100));
         }
-        
+
         return product.getPrice().floatValue();
     }
 
@@ -313,7 +331,7 @@ public class DiscountServiceImpl implements DiscountService {
                 LocalDateTime now = LocalDateTime.now();
                 // Tìm kiếm theo tên discount
                 predicates.add(cb.like(cb.lower(root.get("name")), searchTerm));
-                
+
                 // Tìm kiếm theo giá trị giảm giá
                 predicates.add(cb.like(cb.lower(root.get("value").as(String.class)), searchTerm));
                 // Tìm kiếm theo loại discount
@@ -344,7 +362,7 @@ public class DiscountServiceImpl implements DiscountService {
                 ));
                 }
 
-                
+
                 // Tìm kiếm theo ngày (định dạng YYYY-MM-DD)
                 if (search.matches("\\d{4}-\\d{2}(-\\d{2})?")) {
                     predicates.add(cb.like(cb.function("DATE_FORMAT", String.class, root.get("startDate"), cb.literal("%Y-%m-%d")), search + "%"));
@@ -370,8 +388,8 @@ public class DiscountServiceImpl implements DiscountService {
         Page<Discount> discountPage = discountRepository.findAll(spec, pageable);
         return discountPage.map(this::mapToBasicDTO);
     }
-    
-    
+
+
     @Override
     public Optional<Discount> getDiscountEntityById(Integer id) {
         return discountRepository.findById(id);
@@ -379,65 +397,62 @@ public class DiscountServiceImpl implements DiscountService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "discounts", allEntries = true),
+            @CacheEvict(value = "productLists", allEntries = true)
+    })
     public Integer assignDiscountToProducts(Integer discountId, List<Integer> productIds, Map<Integer, Integer> discountedPrices) {
         Discount discount = discountRepository.findById(discountId)
-                .orElseThrow(() -> new RuntimeException("Discount not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã giảm giá"));
 
-        // Kiểm tra loại discount
         if (discount.getType() != Discount.DiscountType.PRODUCT) {
-            throw new RuntimeException("This discount is not applicable to products");
+            throw new RuntimeException("Mã giảm giá này không áp dụng cho sản phẩm");
         }
 
-        // Kiểm tra discount còn hạn hay không
         LocalDateTime now = LocalDateTime.now();
         if (discount.getEndDate().isBefore(now)) {
-            throw new RuntimeException("This discount has expired");
+            throw new RuntimeException("Mã giảm giá này đã hết hạn");
         }
 
-         // Lọc ra các sản phẩm không có discount chồng chéo thời gian
         List<Integer> eligibleProductIds = discountEligibilityService.getEligibleProductIds(
                 productIds, discount.getStartDate(), discount.getEndDate());
          if (eligibleProductIds.isEmpty()) {
-            throw new RuntimeException("No eligible products found. All products already have discounts in this time period.");
+            throw new RuntimeException("Không có sản phẩm nào được áp dụng mã giảm giá");
         }
 
         int successCount = 0;
         List<ProductDiscount> newProductDiscounts = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
-        // Xử lý từng sản phẩm đủ điều kiện
         for (Integer productId : eligibleProductIds) {
             try {
-                // Kiểm tra sản phẩm có tồn tại không
                 Product product = productRepository.findById(productId)
-                        .orElseThrow(() -> new RuntimeException("Product ID " + productId + " not found"));
+                        .orElseThrow(() -> new RuntimeException("Product ID " + productId + " Không tồn tại"));
 
-                // Tạo ProductDiscount mới
                 ProductDiscount productDiscount = new ProductDiscount();
                 productDiscount.setProduct(product);
                 productDiscount.setDiscount(discount);
                 productDiscount.setCreatedAt(LocalDateTime.now());
 
-                // Thiết lập giá đã giảm nếu có
                 if (discountedPrices != null && discountedPrices.containsKey(productId)) {
                     productDiscount.setDiscountedPrice(discountedPrices.get(productId));
                 }else {
-                // Tự động tính giá giảm dựa trên giá gốc và phần trăm giảm giá
                 double discountValue = discount.getValue();
                 int calculatedPrice = (int) Math.round(product.getPrice() * (1 - discountValue / 100));
                 productDiscount.setDiscountedPrice(calculatedPrice);
                 }
-                
+
 
                 newProductDiscounts.add(productDiscount);
                 successCount++;
             } catch (Exception e) {
-                errors.add("Error processing product ID " + productId + ": " + e.getMessage());
+                errors.add("Lỗi khi áp dụng mã giảm giá cho sản phẩm " + productId + ": " + e.getMessage());
             }
         }
-        // Lưu tất cả các ProductDiscount mới
         if (!newProductDiscounts.isEmpty()) {
             productDiscountRepository.saveAll(newProductDiscounts);
+            productIds.forEach(pid -> cacheManager.getCache("products").evict(pid));
+
         }
         return successCount;
     }
@@ -447,7 +462,7 @@ public class DiscountServiceImpl implements DiscountService {
     @Override
     public List<DiscountDTO> getProductDiscountsByProductId(Integer productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
         return productDiscountRepository.findByProduct(product).stream()
                 .map(this::mapProductDiscountToDTO)
                 .collect(Collectors.toList());
@@ -462,7 +477,7 @@ public class DiscountServiceImpl implements DiscountService {
                 .map(this::mapProductDiscountToDTO)
                 .collect(Collectors.toList());
     }
-    
+
 
     @Override
     public List<DiscountDTO> getAllProductDiscounts() {
@@ -474,10 +489,14 @@ public class DiscountServiceImpl implements DiscountService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+    @CacheEvict(value = "discounts", allEntries = true),
+    @CacheEvict(value = "productLists", allEntries = true)
+    })
     public Integer removeProductsFromDiscount(Integer discountId, List<Integer> productIds) {
     int successCount = 0;
     List<String> errors = new ArrayList<>();
-    
+
     // Xử lý từng sản phẩm
     for (Integer productId : productIds) {
         try {
@@ -488,74 +507,80 @@ public class DiscountServiceImpl implements DiscountService {
                 productDiscountRepository.delete(productDiscount.get());
                 successCount++;
             } else {
-                errors.add("Product ID " + productId + " not found in this discount");
+                errors.add("Product ID " + productId + "Không tìm thấy trong mã giảm giá này");
             }
         } catch (Exception e) {
-            errors.add("Error processing product ID " + productId + ": " + e.getMessage());
+            errors.add("Lỗi khi xóa sản phẩm " + productId + ": " + e.getMessage());
         }
     }
-    
+
     // Nếu không có sản phẩm nào được xóa thành công
     if (successCount == 0 && !errors.isEmpty()) {
         throw new RuntimeException("Failed to remove products: " + String.join(", ", errors));
     }
-    
+    productIds.forEach(pid -> cacheManager.getCache("products").evict(pid));
     return successCount;
     }
 
     @Override
     @Transactional
+   @Caching(evict = {
+    @CacheEvict(value = "discounts", allEntries = true),
+    @CacheEvict(value = "productLists", allEntries = true)
+    })
     public Integer updateProductDiscountPrices(Integer discountId, Map<Integer, Integer> productPrices) {
     int successCount = 0;
     List<String> errors = new ArrayList<>();
     List<ProductDiscount> updatedDiscounts = new ArrayList<>();
-    
-    // Xử lý từng sản phẩm
+
     for (Map.Entry<Integer, Integer> entry : productPrices.entrySet()) {
         Integer productId = entry.getKey();
         Integer discountedPrice = entry.getValue();
-        
+
         try {
-            // Tìm product discount
             Optional<ProductDiscount> optionalProductDiscount = productDiscountRepository.findByDiscountIdAndProductId(discountId, productId);
-            
+
             if (optionalProductDiscount.isPresent()) {
                 ProductDiscount productDiscount = optionalProductDiscount.get();
-                // Cập nhật giá đã giảm
                 productDiscount.setDiscountedPrice(discountedPrice);
                 updatedDiscounts.add(productDiscount);
                 successCount++;
             } else {
-                errors.add("Product ID " + productId + " not found in this discount");
+                errors.add("Product ID " + productId + " KHông tìm thấy trong mã giảm giá này");
             }
         } catch (Exception e) {
-            errors.add("Error processing product ID " + productId + ": " + e.getMessage());
+            errors.add("Lỗi khi cập nhật giá sản phẩm " + productId + ": " + e.getMessage());
         }
     }
-    
-    // Lưu tất cả các thay đổi
+
     if (!updatedDiscounts.isEmpty()) {
         productDiscountRepository.saveAll(updatedDiscounts);
+        productPrices.keySet().forEach(pid -> cacheManager.getCache("products").evict(pid));
+
     }
-    
-    // Nếu không có sản phẩm nào được cập nhật thành công
+
     if (successCount == 0 && !errors.isEmpty()) {
-        throw new RuntimeException("Failed to update product prices: " + String.join(", ", errors));
+        throw new RuntimeException("Lỗi khi cập nhật giá sản phẩm: " + String.join(", ", errors));
     }
-    
+
     return successCount;
     }
 
 
     @Override
     @Transactional
+    @Caching(evict = {
+    @CacheEvict(value = "discounts", allEntries = true),
+    @CacheEvict(value = "productLists", allEntries = true)
+    })
+
     public Integer assignDiscountToCategories(Integer discountId, List<Integer> categoryIds) {
         Discount discount = discountRepository.findById(discountId)
-                .orElseThrow(() -> new RuntimeException("Discount not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã giảm giá"));
 
         // Kiểm tra loại discount
         if (discount.getType() != Discount.DiscountType.CATEGORY) {
-            throw new RuntimeException("This discount is not applicable to categories");
+            throw new RuntimeException("Lỗi loại mã giảm giá");
         }
 
         int successCount = 0;
@@ -571,18 +596,18 @@ public class DiscountServiceImpl implements DiscountService {
             try {
                 // Bỏ qua nếu danh mục đã có discount này
                 if (existingCategoryIds.contains(categoryId)) {
-                    errors.add("Category ID " + categoryId + " already has this discount");
+                    errors.add("Category ID " + categoryId + "Đã có mã giảm giá này");
                     continue;
                 }
                 // Sử dụng domain service để kiểm tra eligibility
                 if (!discountEligibilityService.isCategoryEligibleForDiscount(categoryId, discount.getStartDate(), discount.getEndDate())) {
-                    errors.add("Category ID " + categoryId + " is not eligible for discount");
+                    errors.add("Category ID " + categoryId + " không đủ điều kiện để áp dụng mã giảm giá");
                     continue;
                 }
 
                 // Kiểm tra danh mục có tồn tại không
                 Category category = categoryRepository.findById(categoryId)
-                        .orElseThrow(() -> new RuntimeException("Category ID " + categoryId + " not found"));
+                        .orElseThrow(() -> new RuntimeException("Category ID " + categoryId + " Không tồn tại"));
 
                 // Tạo CategoryDiscount mới
                 CategoryDiscount categoryDiscount = new CategoryDiscount();
@@ -593,7 +618,7 @@ public class DiscountServiceImpl implements DiscountService {
                 newCategoryDiscounts.add(categoryDiscount);
                 successCount++;
             } catch (Exception e) {
-                errors.add("Error processing category ID " + categoryId + ": " + e.getMessage());
+                errors.add("Lỗi khi áp dụng mã giảm giá cho danh mục " + categoryId + ": " + e.getMessage());
             }
         }
 
@@ -603,13 +628,15 @@ public class DiscountServiceImpl implements DiscountService {
         }
         // Ghi log các lỗi nếu có
         if (!errors.isEmpty()) {
-            System.out.println("Errors during batch assignment: " + String.join(", ", errors));
+            System.out.println("Lỗi khi áp dụng mã giảm giá cho danh mục: " + String.join(", ", errors));
         }
+        cacheManager.getCache("products").clear();
         return successCount;
     }
 
     //Phương thức thêm
     @Override
+    @Cacheable(value = "discounts", key = "'byCategory:' + #categoryId")
     public List<DiscountDTO> getCategoryDiscountsByCategoryId(Integer categoryId) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -619,6 +646,7 @@ public class DiscountServiceImpl implements DiscountService {
     }
 
     @Override
+    @Cacheable(value = "discounts", key = "'activeByCategory:' + #categoryId")
     public List<DiscountDTO> getActiveCategoryDiscountsByCategoryId(Integer categoryId) {
         LocalDateTime now = LocalDateTime.now();
         return categoryDiscountRepository.findEffectiveDiscountsByCategoryId(categoryId, now).stream()
@@ -638,7 +666,7 @@ public class DiscountServiceImpl implements DiscountService {
     @Override
     public Map<String, Object> getProductDiscountInfo(Integer productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
         Map<String, Object> result = new HashMap<>();
         LocalDateTime now = LocalDateTime.now();
@@ -704,38 +732,79 @@ public class DiscountServiceImpl implements DiscountService {
 
         return result;
     }
-    //Phương thức xóa hàng loạt category từ discount 
+    //Phương thức xóa hàng loạt category từ discount
     @Override
     @Transactional
+    @Caching(evict = {
+    @CacheEvict(value = "discounts", allEntries = true),
+    @CacheEvict(value = "productLists", allEntries = true)
+    })
     public Integer removeCategoriesFromDiscount(Integer discountId, List<Integer> categoryIds) {
     int successCount = 0;
     List<String> errors = new ArrayList<>();
-    
-    // Xử lý từng danh mục
+
     for (Integer categoryId : categoryIds) {
         try {
-            // Tìm category discount
             Optional<CategoryDiscount> categoryDiscount = categoryDiscountRepository.findByDiscountIdAndCategoryId(discountId, categoryId);
-            
+
             if (categoryDiscount.isPresent()) {
-                // Xóa category discount
                 categoryDiscountRepository.delete(categoryDiscount.get());
                 successCount++;
             } else {
-                errors.add("Category ID " + categoryId + " not found in this discount");
+                errors.add("Category ID " + categoryId + " Không tìm thấy trong mã giảm giá này");
             }
         } catch (Exception e) {
-            errors.add("Error processing category ID " + categoryId + ": " + e.getMessage());
+            errors.add("Lỗi khi xóa danh mục " + categoryId + ": " + e.getMessage());
         }
     }
-    // Nếu không có danh mục nào được xóa thành công
     if (successCount == 0 && !errors.isEmpty()) {
-        throw new RuntimeException("Failed to remove categories: " + String.join(", ", errors));
+        throw new RuntimeException("Lỗi khi xóa danh mục: " + String.join(", ", errors));
     }
+    cacheManager.getCache("products").clear();
     return successCount;
     }
 
+    @Override
+    public List<ProductDTO> getProductsByDiscountId(Integer discountId) {
+        // Kiểm tra discount có tồn tại không
+        Discount discount = discountRepository.findById(discountId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy discounnt với id này:" + discountId));
+        
+        // Lấy tất cả ProductDiscount theo discountId
+        List<ProductDiscount> productDiscounts = productDiscountRepository.findByDiscountId(discountId);
+        
+        // Map sang ProductDTO
+        return productDiscounts.stream()
+                .map(pd -> mapProductToDTO(pd.getProduct()))
+                .collect(Collectors.toList());
+    }
 
+    private ProductDTO mapProductToDTO(Product product) {
+        // Lấy thông tin discount của sản phẩm
+        Map<String, Object> discountInfo = getProductDiscountInfo(product.getId());
+        
+        return ProductDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .price(product.getPrice())
+                .discountedPrice((Integer) discountInfo.get("discountedPrice"))
+                .discountPercentage((Double) discountInfo.get("discountPercentage"))
+                .discountType((String) discountInfo.get("discountType"))
+                .discountId((Integer) discountInfo.get("discountId"))
+                .discountStartDate((LocalDateTime) discountInfo.get("discountStartDate"))
+                .discountEndDate((LocalDateTime) discountInfo.get("discountEndDate"))
+                .isDiscountActive((Boolean) discountInfo.get("isDiscountActive"))
+                .categoryId(product.getCategory().getId())
+                .categoryName(product.getCategory().getCategoryName())
+                .brandId(product.getBrand().getId())
+                .brandName(product.getBrand().getBrandName())
+                .image(product.getImage())
+                .description(product.getDescription())
+                .stock(product.getStock())
+                .status(product.getStatus())
+                .productIdString(product.getProductIdString())
+                .build();
+    }
 
     private boolean isDiscountEffective(Discount discount, LocalDateTime time) {
     return discount.getIsActive() && // Admin cho phép active
@@ -757,15 +826,15 @@ public class DiscountServiceImpl implements DiscountService {
     // Phương thức map cho Discount với danh sách sản phẩm
     private DiscountDTO mapDiscountWithProducts(Discount discount) {
     DiscountDTO baseDTO = mapToBasicDTO(discount);
-    
+
     // Lấy tất cả ProductDiscount liên quan đến discount này
     List<ProductDiscount> productDiscounts = productDiscountRepository.findByDiscountId(discount.getId());
-    
+
     // Tạo danh sách productIds và discountedPrices
     List<Integer> productIds = new ArrayList<>();
     Map<Integer, Integer> discountedPrices = new HashMap<>();
     List<String> productNames = new ArrayList<>();
-    
+
     for (ProductDiscount pd : productDiscounts) {
         Product product = pd.getProduct();
         productIds.add(product.getId());
@@ -774,38 +843,38 @@ public class DiscountServiceImpl implements DiscountService {
             discountedPrices.put(product.getId(), pd.getDiscountedPrice());
         }
     }
-    
+
     // Cập nhật DTO với thông tin sản phẩm
     baseDTO.setProductIds(productIds);
     baseDTO.setProductNames(productNames);
     baseDTO.setDiscountedPrices(discountedPrices);
     baseDTO.setAssignedCount(productDiscounts.size());
-    
+
     return baseDTO;
     }
 
     // Phương thức map cho Discount với danh sách danh mục
     private DiscountDTO mapDiscountWithCategories(Discount discount) {
     DiscountDTO baseDTO = mapToBasicDTO(discount);
-    
+
     // Lấy tất cả CategoryDiscount liên quan đến discount này
     List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findByDiscountId(discount.getId());
-    
+
     // Tạo danh sách categoryIds và categoryNames
     List<Integer> categoryIds = new ArrayList<>();
     List<String> categoryNames = new ArrayList<>();
-    
+
     for (CategoryDiscount cd : categoryDiscounts) {
         Category category = cd.getCategory();
         categoryIds.add(category.getId());
         categoryNames.add(category.getCategoryName());
     }
-    
+
     // Cập nhật DTO với thông tin danh mục
     baseDTO.setCategoryIds(categoryIds);
     baseDTO.setCategoryNames(categoryNames);
     baseDTO.setAssignedCount(categoryDiscounts.size());
-    
+
     return baseDTO;
     }
 
@@ -814,14 +883,14 @@ public class DiscountServiceImpl implements DiscountService {
     private DiscountDTO mapProductDiscountToDTO(ProductDiscount productDiscount) {
         Discount discount = productDiscount.getDiscount();
         Product product = productDiscount.getProduct();
-    
+
         LocalDateTime now = LocalDateTime.now();
         boolean isActive = isDiscountEffective(discount, now);
 
     // Tạo danh sách productIds chỉ chứa ID của sản phẩm hiện tại
     List<Integer> productIds = new ArrayList<>();
     productIds.add(product.getId());
-    
+
     // Tạo map discountedPrices nếu có giá đã giảm
     Map<Integer, Integer> discountedPrices = null;
     if (productDiscount.getDiscountedPrice() != null) {
@@ -848,11 +917,12 @@ public class DiscountServiceImpl implements DiscountService {
             .discountedPrices(discountedPrices)
             .build();
     }
+
     // Map cho CategoryDiscount
     private DiscountDTO mapCategoryDiscountToDTO(CategoryDiscount categoryDiscount) {
         Discount discount = categoryDiscount.getDiscount();
         Category category = categoryDiscount.getCategory();
-    
+
         LocalDateTime now = LocalDateTime.now();
         boolean isDiscountEffective = isDiscountEffective(discount, now);
 

@@ -40,7 +40,7 @@ public class PaymentController {
             Map<String, String> response = new HashMap<>();
             response.put("paymentUrl", paymentUrl);
             
-            return ResponseEntity.ok(ApiResponse.success("Payment URL created successfully", response));
+            return ResponseEntity.ok(ApiResponse.success("Tạo thành công phương thức thanh toán", response));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
@@ -79,7 +79,7 @@ public class PaymentController {
             PaymentResponseDTO response = vnPayService.processPaymentReturn(requestParams);
 
             if (response.isSuccess()) {
-                return ResponseEntity.ok(ApiResponse.success("Payment processed successfully", response));
+                return ResponseEntity.ok(ApiResponse.success("Tạo thành công phương thức thanh toán", response));
             } else {
                 return ResponseEntity.ok(ApiResponse.error(response.getMessage()));
             }

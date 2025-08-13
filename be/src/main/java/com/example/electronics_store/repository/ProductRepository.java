@@ -61,15 +61,14 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
     List<Product> findTopRatedProducts();
 
     @Query(value = """
-        SELECT p.* FROM products p
-        LEFT JOIN order_details od ON p.id = od.id_product
-        WHERE p.status = true
-        GROUP BY p.id
-        ORDER BY COUNT(od.id) DESC
-        """,
-            countQuery = "SELECT COUNT(DISTINCT p.id) FROM products p LEFT JOIN order_details od ON p.id = od.id_product WHERE p.status = true",
-            nativeQuery = true)
+    SELECT * FROM products p
+    WHERE p.status = 1
+    ORDER BY p.sold_quantity DESC, p.id ASC
+    """,
+    countQuery = "SELECT COUNT(*) FROM products p WHERE p.status = 1",
+    nativeQuery = true)
     Page<Product> findTopSellingProducts(Pageable pageable);
+
 
     @Query(value = """
     SELECT p.* FROM products p
@@ -113,7 +112,13 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
             nativeQuery = true)
     Page<Product> findActiveFlashSaleProducts(@Param("now") LocalDateTime now, Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.status = true ORDER BY p.createAt DESC")
+    @Query(value = """
+    SELECT * FROM products p
+    WHERE p.status = 1
+    ORDER BY p.create_at DESC, p.id DESC
+    """,
+    countQuery = "SELECT COUNT(*) FROM products p WHERE p.status = 1",
+    nativeQuery = true)
     Page<Product> findByOrderByCreateAtDesc(Pageable pageable);
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);
 
@@ -138,7 +143,9 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
     void recalculateAllSoldQuantities();
 
     // Get products ordered by sold quantity (best sellers)
-    @Query("SELECT p FROM Product p WHERE p.status = true ORDER BY p.soldQuantity DESC")
+     @Query(value = "SELECT * FROM products p WHERE p.status = 1 ORDER BY p.sold_quantity DESC, p.id ASC",
+           countQuery = "SELECT COUNT(*) FROM products p WHERE p.status = 1",
+           nativeQuery = true)
     Page<Product> findBestSellingProducts(Pageable pageable);
 
     @Query("SELECT DISTINCT pd.product.id FROM ProductDiscount pd " +

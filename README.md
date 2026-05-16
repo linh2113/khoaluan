@@ -11,13 +11,13 @@ Hệ thống e-commerce bán sản phẩm công nghệ tích hợp AI gợi ý s
 
 ## 📝 Tổng Quan Dự Án
 
-* **Mục tiêu:** Xây dựng website bán hàng công nghệ hoàn chỉnh từ giao diện người dùng đến trang quản trị (Admin), đồng thời ứng dụng thuật toán để cá nhân hóa trải nghiệm mua sắm.
+* **Mục tiêu:** Xây dựng website bán hàng công nghệ trực tuyến từ giao diện người dùng đến trang quản trị viên, và sử dụng thuật toán Collaborative Filtering.
 * **Công nghệ cốt lõi:**
   * **Backend:** Java 21 + Spring Boot 3.2.3 (REST API, Spring Security, JWT, OAuth2)
-  * **Frontend:** Next.js 15 + TypeScript + Tailwind CSS (Radix UI)
+  * **Frontend:** Next.js 15 + TypeScript + Tailwind CSS 
   * **Database & Cache:** MySQL + Redis Caching
   * **AI Service:** Python triển khai thuật toán Lọc cộng tác (*Collaborative Filtering*)
-  * **Tích hợp bên thứ ba:** Cloudinary (Lưu trữ ảnh), VNPay (Cổng thanh toán)
+  * **Tích hợp bên thứ ba:** Cloudinary (Lưu trữ ảnh online), VNPay (Cổng thanh toán)
 
 ### 🏗️ Kiến trúc hệ thống (System Architecture)
 <p align="center">
@@ -34,13 +34,13 @@ Hệ thống e-commerce bán sản phẩm công nghệ tích hợp AI gợi ý s
 * **Xác thực:** Đăng ký/đăng nhập tài khoản thường hoặc qua Google, Facebook, Discord.
 * **Mua sắm:** Xem danh mục, thương hiệu, bộ lọc nâng cao, quản lý giỏ hàng.
 * **Thanh toán:** Tích hợp thanh toán trực tuyến qua cổng VNPay.
-* **AI Recommendation:** Đề xuất sản phẩm liên quan dựa trên lịch sử xem và tương tác của người dùng.
+* **AI Recommendation:** Đề xuất sản phẩm liên quan dựa trên lịch sử mua hàng của người dùng.
 * **Tương tác:** Đánh giá (Rating) và bình luận (Review) sản phẩm.
 * **Giao diện:** Chế độ tối (Dark Mode).
 
 ### 👨‍💼 Quản trị viên (Admin Dashboard)
 * **Quản lý tổng thể:** CRUD Sản phẩm, Danh mục, Thương hiệu, Đơn hàng, Người dùng.
-* **Chiến dịch:** Tạo và quản lý các sự kiện đếm ngược Flash Sale.
+* **Chiến dịch:** Tạo và quản lý các sự kiện giảm giá và Flash Sale.
 * **Thống kê:** Biểu đồ theo dõi doanh thu, sản phẩm bán chạy theo thời gian thực.
 
 ---

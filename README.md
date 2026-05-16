@@ -16,7 +16,7 @@ Hệ thống e-commerce bán sản phẩm công nghệ tích hợp AI gợi ý s
   * **Backend:** Java 21 + Spring Boot 3.2.3 (REST API, Spring Security, JWT, OAuth2)
   * **Frontend:** Next.js 15 + TypeScript + Tailwind CSS (Radix UI)
   * **Database & Cache:** MySQL + Redis Caching
-  * **AI Service:** Python (Flask) triển khai thuật toán Lọc cộng tác (*Collaborative Filtering*)
+  * **AI Service:** Python triển khai thuật toán Lọc cộng tác (*Collaborative Filtering*)
   * **Tích hợp bên thứ ba:** Cloudinary (Lưu trữ ảnh), VNPay (Cổng thanh toán)
 
 ### 🏗️ Kiến trúc hệ thống (System Architecture)

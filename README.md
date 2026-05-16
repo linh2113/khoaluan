@@ -49,10 +49,10 @@ Hệ thống e-commerce bán sản phẩm công nghệ tích hợp AI gợi ý s
 
 ### 1️⃣ Clone dự án
 ```bash
-git clone [https://github.com/uyent/khoaluan.git](https://github.com/uyent/khoaluan.git)
+git clone https://github.com/linh2113/khoaluan.git
 cd khoaluan
 ```
-2️⃣ Cấu hình Backend (Spring Boot)
+### 2️⃣ Cấu hình Backend (Spring Boot)
 * Mở file be/src/main/resources/application.properties điền các thông tin kết nối:
 
   * **Database** (URL, Username, Password)
@@ -66,7 +66,7 @@ cd be
 ```
 (Chạy tại: http://localhost:8080/api/v1)
 
-3️⃣ Cấu hình Frontend (Next.js)
+### 3️⃣ Cấu hình Frontend (Next.js)
 
 * Tạo file fe/.env.local với nội dung:
   
@@ -82,7 +82,7 @@ npm run dev
 ```
 (Chạy tại: http://localhost:3000)
 
-4️⃣ Cấu hình AI Service (Python)
+### 4️⃣ Cấu hình AI Service (Python)
 ```bash
 cd ../APIRecommend
 python -m venv venv

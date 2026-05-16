@@ -1,104 +1,106 @@
-# ======================
-# 🔧 Server Configuration
-# ======================
-server.port=8080
-server.servlet.context-path=/api/v1
-python.api.url=http://localhost:8001   
-
-# ==========================
-# 🗄️ Database Configuration
-# ==========================
-spring.datasource.url=jdbc:mysql://localhost:3306/techstorefinal?createDatabaseIfNotExist=true
-spring.datasource.username=DB_USERNAME
-spring.datasource.password=DB_PASSWORD
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-
-spring.datasource.hikari.maximum-pool-size=10
-spring.datasource.hikari.minimum-idle=5
-spring.datasource.hikari.idle-timeout=300000
-
-# ====================
-# 🔐 JWT Configuration
-# ====================
-jwt.secret=BhdFp++FHu7jWopVw6x0tL0ntmvufd7wmvLsbMiGSu7c/CQe/ecyI9IHL49sdXDdUXdsp+HoTqDiUcNG3KsBbg==
-jwt.expiration=86400000
-jwt.refresh-token.expiration=604800000  
-
-# =======================
-# 📨 Mail Configuration
-# =======================
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=linhson208@gmail.com
-spring.mail.password=towk gnyo yraf ohhh
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
-
-# =================================
-# 🌐 OAuth2 Login (Google, Facebook, Discord)
-# =================================
-# Google
-spring.security.oauth2.client.registration.google.client-id=66573799121-mtn3va166kro3k2d1e7p04iutm7i3i4o.apps.googleusercontent.com
-spring.security.oauth2.client.registration.google.client-secret=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
+# 🚀 Tech Store - E-Commerce Platform with AI Recommendations
 
 
-# Discord
-spring.security.oauth2.client.registration.discord.client-id=1255854814747689012
-spring.security.oauth2.client.registration.discord.client-secret=WNIbPCy7EChlZt29JpggKjWjcyDoxOG1
+[![Java](https://img.shields.io/badge/Java-21-red?style=flat-square)](https://spring.io/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.3-green?style=flat-square)](https://spring.io/projects/spring-boot)
+[![Next.js](https://img.shields.io/badge/Next.js-15.4-black?style=flat-square)](https://nextjs.org/)
 
-# Common redirect URI
-app.oauth2.authorized-redirect-uri=http://localhost:3000/oauth2/callback
+Hệ thống e-commerce bán sản phẩm công nghệ tích hợp AI gợi ý sản phẩm thông minh dựa trên hành vi người dùng.
 
-# ====================
-# ☁️ Cloudinary Config
-# ====================
-cloudinary.cloud-name=dvxnipyk4
-cloudinary.api-key=692147617982258
-cloudinary.api-secret=hfXoMc2I3MMYYDPEBQ1Iw_8kJwI
+---
 
-# ====================
-# 💳 VNPay Integration
-# ====================
-vnpay.terminal-id=CO15G38U
-vnpay.secret-key=E8D8CZ8PITHCQQBZQGMR11GXLOUXSC5K
-vnpay.payment-url=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+## 📝 Tổng Quan Dự Án
 
-# ==========================
-# 💾 File Upload
-# ==========================
-app.upload.dir=${user.home}/techstore/uploads
+* **Mục tiêu:** Xây dựng website bán hàng công nghệ hoàn chỉnh từ giao diện người dùng đến trang quản trị (Admin), đồng thời ứng dụng thuật toán để cá nhân hóa trải nghiệm mua sắm.
+* **Công nghệ cốt lõi:**
+  * **Backend:** Java 21 + Spring Boot 3.2.3 (REST API, Spring Security, JWT, OAuth2)
+  * **Frontend:** Next.js 15 + TypeScript + Tailwind CSS (Radix UI)
+  * **Database & Cache:** MySQL + Redis Caching
+  * **AI Service:** Python (Flask) triển khai thuật toán Lọc cộng tác (*Collaborative Filtering*)
+  * **Tích hợp bên thứ ba:** Cloudinary (Lưu trữ ảnh), VNPay (Cổng thanh toán)
 
-# =======================
-# 📊 Logging Configuration
-# =======================
-logging.file.name=logs/techstore.log
-logging.level.root=WARN
-logging.level.org.springframework.web=INFO
-logging.level.org.hibernate=ERROR
-logging.level.com.ecommerce.techstore=DEBUG
+### 🏗️ Kiến trúc hệ thống (System Architecture)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/43c7ad25-4336-4c5d-b57f-f2f194c27d06" alt="System Architecture Diagram" width="800">
+  <br>
+  <em>Sơ đồ kiến trúc hệ thống</em>
+</p>
 
-# ====================
-# 🔒 Admin Access
-# ====================
-spring.security.user.name=admin
-spring.security.user.password=admin
+---
 
-# ========================
-# 🔧 Misc Configurations
-# ========================
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=false
-spring.jpa.open-in-view=false
+## ✨ Tính Năng Chính
 
+### 👤 Khách hàng (User Web App)
+* **Xác thực:** Đăng ký/đăng nhập tài khoản thường hoặc qua Google, Facebook, Discord.
+* **Mua sắm:** Xem danh mục, thương hiệu, bộ lọc nâng cao, quản lý giỏ hàng.
+* **Thanh toán:** Tích hợp thanh toán trực tuyến qua cổng VNPay.
+* **AI Recommendation:** Đề xuất sản phẩm liên quan dựa trên lịch sử xem và tương tác của người dùng.
+* **Tương tác:** Đánh giá (Rating) và bình luận (Review) sản phẩm.
+* **Giao diện:** Chế độ tối (Dark Mode).
 
-# Cache
-spring.cache.type=redis
-spring.cache.redis.time-to-live=3600000
+### 👨‍💼 Quản trị viên (Admin Dashboard)
+* **Quản lý tổng thể:** CRUD Sản phẩm, Danh mục, Thương hiệu, Đơn hàng, Người dùng.
+* **Chiến dịch:** Tạo và quản lý các sự kiện đếm ngược Flash Sale.
+* **Thống kê:** Biểu đồ theo dõi doanh thu, sản phẩm bán chạy theo thời gian thực.
 
-# Swagger
-springdoc.api-docs.path=/api-docs
-springdoc.swagger-ui.path=/swagger-ui
+---
 
-# Actuator
-management.endpoints.web.exposure.include=health,info,metrics
-management.endpoint.health.show-details=when_authorized
+## 🛠️ Hướng Dẫn Cài Đặt
+
+### 1️⃣ Clone dự án
+```bash
+git clone [https://github.com/uyent/khoaluan.git](https://github.com/uyent/khoaluan.git)
+cd khoaluan
+```
+2️⃣ Cấu hình Backend (Spring Boot)
+* Mở file be/src/main/resources/application.properties điền các thông tin kết nối:
+
+  * **Database** (URL, Username, Password)
+
+  * **Cấu hình JWT, Email, OAuth2, Cloudinary, VNPay và Redis.**
+
+* Khởi chạy Backend:
+```bash
+cd be
+./mvnw clean spring-boot:run
+```
+(Chạy tại: http://localhost:8080/api/v1)
+
+3️⃣ Cấu hình Frontend (Next.js)
+
+* Tạo file fe/.env.local với nội dung:
+  
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+NEXT_PUBLIC_PYTHON_API_URL=http://localhost:8001
+```
+* Khởi chạy Frontend:
+```bash
+cd ../fe
+npm install
+npm run dev
+```
+(Chạy tại: http://localhost:3000)
+
+4️⃣ Cấu hình AI Service (Python)
+```bash
+cd ../APIRecommend
+python -m venv venv
+# Kích hoạt venv và cài thư viện
+source venv/bin/activate  # Trên Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
+(Chạy tại: http://localhost:8001)
+
+---
+
+## 📂 Cấu Trúc Thư Mục
+
+```text
+khoaluan/
+├── be/                # Phân hệ Backend (Spring Boot API)
+├── fe/                # Phân hệ Frontend (Next.js Web App)
+├── APIRecommend/      # Dịch vụ gợi ý sản phẩm (Python)
+└── README.md          # Tài liệu hướng dẫn
+```

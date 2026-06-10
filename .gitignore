@@ -29,8 +29,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# env files (can opt-in for committing if needed)
-.env*
 
 # vercel
 .vercel
@@ -45,7 +43,7 @@ be/spring-boot-parameters-guide.md
 be/target/
 
 # Local development environment files
-.env 
+.env
 .idea/
 .vscode/
 logs/

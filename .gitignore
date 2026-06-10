@@ -42,9 +42,7 @@ fe/next-env.d.ts
 
 # Ignore API documentation files
 be/DISCOUNT_API_DOCUMENTATION.md
-be/FLASH_SALES_API_DOCUMENTATION.md
 be/spring-boot-parameters-guide.md
-be/VNPAY_API_DOCUMENTATION.md
 be/target/
 
 # Local development environment files
@@ -52,5 +50,4 @@ be/target/
 .idea/
 .vscode/
 logs/
-mysql-init/
 README.md

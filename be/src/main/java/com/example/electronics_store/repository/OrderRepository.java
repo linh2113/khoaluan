@@ -45,4 +45,19 @@ public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpeci
     @Query("SELECT o FROM Order o WHERE o.orderStatus = 3 AND o.updatedAt <= :cutoffDate")
     List<Order> findOrdersToAutoComplete(@Param("cutoffDate") LocalDateTime cutoffDate);
 
+@Query("SELECT COUNT(o) FROM Order o WHERE o.createAt >= :startOfDay")
+Long countNewOrdersToday(@Param("startOfDay") LocalDateTime startOfDay);
+
+@Query("SELECT o.orderStatus, COUNT(o) FROM Order o GROUP BY o.orderStatus")
+List<Object[]> countOrdersByStatus();
+
+@Query(value = """
+    SELECT o.id, o.id_user, u.user_name, o.total_price, o.create_at, o.order_status
+    FROM orders o 
+    JOIN users u ON o.id_user = u.id
+    ORDER BY o.create_at DESC 
+    LIMIT 5
+    """, nativeQuery = true)
+List<Object[]> findRecentOrders();
+
 }

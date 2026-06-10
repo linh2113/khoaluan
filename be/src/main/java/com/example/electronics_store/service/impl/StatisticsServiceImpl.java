@@ -1,11 +1,8 @@
 package com.example.electronics_store.service.impl;
 
-import com.example.electronics_store.dto.DashboardStatsDTO;
 import com.example.electronics_store.model.Order;
 import com.example.electronics_store.model.Product;
-import com.example.electronics_store.model.User;
 import com.example.electronics_store.repository.*;
-import com.example.electronics_store.service.OrderService;
 import com.example.electronics_store.service.StatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,134 +38,128 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     @Override
-    public Map<String, Object> getDashboardStatistics() {
-        // Get counts
-        long totalUsers = userRepository.count();
-        long totalProducts = productRepository.count();
-        long totalOrders = orderRepository.count();
+public Map<String, Object> getDashboardStatistics() {
+    LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+    
+    // Parallel execution for independent queries
+    CompletableFuture<Long> totalUsersFuture = CompletableFuture.supplyAsync(() -> userRepository.count());
+    CompletableFuture<Long> totalProductsFuture = CompletableFuture.supplyAsync(() -> productRepository.count());
+    CompletableFuture<Long> totalOrdersFuture = CompletableFuture.supplyAsync(() -> orderRepository.count());
+    
+    CompletableFuture<Float> totalRevenueFuture = CompletableFuture.supplyAsync(() -> 
+        orderRepository.calculateTotalSalesInDateRange(LocalDateTime.now().minusYears(100), LocalDateTime.now()));
+    
+    CompletableFuture<Long> newUsersTodayFuture = CompletableFuture.supplyAsync(() -> 
+        userRepository.countNewUsersToday(startOfDay));
+    
+    CompletableFuture<Long> newOrdersTodayFuture = CompletableFuture.supplyAsync(() -> 
+        orderRepository.countNewOrdersToday(startOfDay));
+    
+    CompletableFuture<Float> revenueTodayFuture = CompletableFuture.supplyAsync(() -> 
+        orderRepository.calculateTotalSalesInDateRange(startOfDay, LocalDateTime.now()));
+    
+    CompletableFuture<List<Object[]>> orderStatusFuture = CompletableFuture.supplyAsync(() -> 
+        orderRepository.countOrdersByStatus());
+    
+    CompletableFuture<Long> lowStockFuture = CompletableFuture.supplyAsync(() -> 
+        (long) productRepository.findLowStockProducts().size());
+    
+    CompletableFuture<List<Object[]>> recentOrdersFuture = CompletableFuture.supplyAsync(() -> 
+        orderRepository.findRecentOrders());
+    
+    CompletableFuture<List<Object[]>> topProductsFuture = CompletableFuture.supplyAsync(() -> 
+        orderDetailRepository.findTopSellingProductsForDashboard());
+    
+    CompletableFuture<List<Object[]>> topCustomersFuture = CompletableFuture.supplyAsync(() -> 
+        userRepository.findTopCustomers());
+    
+    try {
+        // Wait for all futures to complete
+        CompletableFuture.allOf(totalUsersFuture, totalProductsFuture, totalOrdersFuture,
+                totalRevenueFuture, newUsersTodayFuture, newOrdersTodayFuture,
+                revenueTodayFuture, orderStatusFuture, lowStockFuture,
+                recentOrdersFuture, topProductsFuture, topCustomersFuture).join();
         
-        // Get revenue
-        Float totalRevenue = orderRepository.calculateTotalSalesInDateRange(
-                LocalDateTime.now().minusYears(100), LocalDateTime.now());
+        // Get results
+        long totalUsers = totalUsersFuture.get();
+        long totalProducts = totalProductsFuture.get();
+        long totalOrders = totalOrdersFuture.get();
+        Float totalRevenue = totalRevenueFuture.get();
+        long newUsersToday = newUsersTodayFuture.get();
+        long newOrdersToday = newOrdersTodayFuture.get();
+        Float revenueToday = revenueTodayFuture.get();
         
-        // Get today's stats
-        LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+        // Process order status counts
+        Map<Integer, Long> statusCounts = new HashMap<>();
+        for (Object[] row : orderStatusFuture.get()) {
+            statusCounts.put((Integer) row[0], (Long) row[1]);
+        }
         
-        long newUsersToday = userRepository.findAll().stream()
-                .filter(user -> user.getCreateAt() != null && user.getCreateAt().isAfter(startOfDay))
-                .count();
-        
-        long newOrdersToday = orderRepository.findAll().stream()
-                .filter(order -> order.getCreateAt() != null && order.getCreateAt().isAfter(startOfDay))
-                .count();
-        
-        Float revenueToday = orderRepository.calculateTotalSalesInDateRange(startOfDay, LocalDateTime.now());
-        
-        // Get order status counts
-        long pendingOrders = orderRepository.findByOrderStatus(0).size();
-        long processingOrders = orderRepository.findByOrderStatus(1).size();
-        long shippedOrders = orderRepository.findByOrderStatus(2).size();
-        long deliveredOrders = orderRepository.findByOrderStatus(3).size();
-        long cancelledOrders = orderRepository.findByOrderStatus(5).size();
-        long completedOrders = orderRepository.findByOrderStatus(4).size();
-        
-        // Get low stock products
-        long lowStockProducts = productRepository.findLowStockProducts().size();
-        
-        // Get recent orders
-        List<Map<String, Object>> recentOrders = orderRepository.findAll().stream()
-                .sorted(Comparator.comparing(Order::getCreateAt).reversed())
-                .limit(5)
-                .map(order -> {
+        // Process recent orders
+        List<Map<String, Object>> recentOrders = recentOrdersFuture.get().stream()
+                .map(row -> {
                     Map<String, Object> orderMap = new HashMap<>();
-                    orderMap.put("id", order.getId());
-                    orderMap.put("userId", order.getUser().getId());
-                    orderMap.put("userName", order.getUser().getUserName());
-                    orderMap.put("totalPrice", order.getTotalPrice());
-                    orderMap.put("createAt", order.getCreateAt());
-                    orderMap.put("orderStatus", order.getOrderStatus());
+                    orderMap.put("id", row[0]);
+                    orderMap.put("userId", row[1]);
+                    orderMap.put("userName", row[2]);
+                    orderMap.put("totalPrice", row[3]);
+                    orderMap.put("createAt", row[4]);
+                    orderMap.put("orderStatus", row[5]);
                     return orderMap;
                 })
                 .collect(Collectors.toList());
         
-        // Get top selling products
-        List<Object[]> topSellingProductsData = orderDetailRepository.findTopSellingProducts(null);
-        List<Map<String, Object>> topSellingProducts = new ArrayList<>();
+        // Process top selling products
+        List<Map<String, Object>> topSellingProducts = topProductsFuture.get().stream()
+                .map(row -> {
+                    Map<String, Object> productMap = new HashMap<>();
+                    productMap.put("id", row[0]);
+                    productMap.put("name", row[1]);
+                    productMap.put("price", row[2]);
+                    productMap.put("soldQuantity", row[3]);
+                    return productMap;
+                })
+                .collect(Collectors.toList());
         
-        for (Object[] row : topSellingProductsData) {
-            Integer productId = (Integer) row[0];
-            Long soldQuantity = (Long) row[1];
-            
-            Optional<Product> optionalProduct = productRepository.findById(productId);
-            if (optionalProduct.isPresent()) {
-                Product product = optionalProduct.get();
-                Map<String, Object> productMap = new HashMap<>();
-                productMap.put("id", product.getId());
-                productMap.put("name", product.getName());
-                productMap.put("price", product.getPrice());
-                productMap.put("soldQuantity", soldQuantity);
-                topSellingProducts.add(productMap);
-            }
-        }
-        
-        // Get top customers
-        List<Map<String, Object>> topCustomers = userRepository.findAll().stream()
-                .sorted(Comparator.comparing(user -> orderRepository.countOrdersByUser(user), Comparator.reverseOrder()))
-                .limit(5)
-                .map(user -> {
+        // Process top customers
+        List<Map<String, Object>> topCustomers = topCustomersFuture.get().stream()
+                .map(row -> {
                     Map<String, Object> userMap = new HashMap<>();
-                    userMap.put("id", user.getId());
-                    userMap.put("userName", user.getUserName());
-                    userMap.put("email", user.getEmail());
-                    userMap.put("role", user.getRole() ? "Admin" : "Customer"); // Thêm Role
-                    userMap.put("orderCount", orderRepository.countOrdersByUser(user));
+                    userMap.put("id", row[0]);
+                    userMap.put("userName", row[1]);
+                    userMap.put("email", row[2]);
+                    userMap.put("role", "Customer");
+                    userMap.put("orderCount", row[3]);
                     return userMap;
                 })
                 .collect(Collectors.toList());
         
-        // Build the response
-        DashboardStatsDTO stats = DashboardStatsDTO.builder()
-                .totalUsers(totalUsers)
-                .totalProducts(totalProducts)
-                .totalOrders(totalOrders)
-                .totalRevenue(totalRevenue != null ? totalRevenue : 0f)
-                .newUsersToday(newUsersToday)
-                .newOrdersToday(newOrdersToday)
-                .revenueToday(revenueToday != null ? revenueToday : 0f)
-                .pendingOrders(pendingOrders)
-                .processingOrders(processingOrders)
-                .completedOrders(completedOrders)
-                .shippedOrders(shippedOrders)
-                .deliveredOrders(deliveredOrders)
-                .cancelledOrders(cancelledOrders)
-                .lowStockProducts(lowStockProducts)
-                .recentOrders(recentOrders)
-                .topSellingProducts(topSellingProducts)
-                .topCustomers(topCustomers)
-                .build();
-        
-        // Convert to map
+        // Build response directly as Map
         Map<String, Object> result = new HashMap<>();
-        result.put("totalUsers", stats.getTotalUsers());
-        result.put("totalProducts", stats.getTotalProducts());
-        result.put("totalOrders", stats.getTotalOrders());
-        result.put("totalRevenue", stats.getTotalRevenue());
-        result.put("newUsersToday", stats.getNewUsersToday());
-        result.put("newOrdersToday", stats.getNewOrdersToday());
-        result.put("revenueToday", stats.getRevenueToday());
-        result.put("pendingOrders", stats.getPendingOrders());
-        result.put("processingOrders", stats.getProcessingOrders());
-        result.put("completedOrders", stats.getCompletedOrders());
-        result.put("shippedOrders", stats.getShippedOrders());
-        result.put("deliveredOrders", stats.getDeliveredOrders());
-        result.put("cancelledOrders", stats.getCancelledOrders());
-        result.put("lowStockProducts", stats.getLowStockProducts());
-        result.put("recentOrders", stats.getRecentOrders());
-        result.put("topSellingProducts", stats.getTopSellingProducts());
-        result.put("topCustomers", stats.getTopCustomers());
+        result.put("totalUsers", totalUsers);
+        result.put("totalProducts", totalProducts);
+        result.put("totalOrders", totalOrders);
+        result.put("totalRevenue", totalRevenue != null ? totalRevenue : 0f);
+        result.put("newUsersToday", newUsersToday);
+        result.put("newOrdersToday", newOrdersToday);
+        result.put("revenueToday", revenueToday != null ? revenueToday : 0f);
+        result.put("pendingOrders", statusCounts.getOrDefault(0, 0L));
+        result.put("processingOrders", statusCounts.getOrDefault(1, 0L));
+        result.put("shippedOrders", statusCounts.getOrDefault(2, 0L));
+        result.put("deliveredOrders", statusCounts.getOrDefault(3, 0L));
+        result.put("completedOrders", statusCounts.getOrDefault(4, 0L));
+        result.put("cancelledOrders", statusCounts.getOrDefault(5, 0L));
+        result.put("lowStockProducts", lowStockFuture.get());
+        result.put("recentOrders", recentOrders);
+        result.put("topSellingProducts", topSellingProducts);
+        result.put("topCustomers", topCustomers);
         
         return result;
+        
+    } catch (Exception e) {
+        throw new RuntimeException("Error getting dashboard statistics", e);
     }
+}
 
     @Override
     public Map<String, Object> getSalesStatistics(LocalDateTime startDate, LocalDateTime endDate) {

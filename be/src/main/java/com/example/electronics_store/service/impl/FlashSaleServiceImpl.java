@@ -171,11 +171,6 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         Product product = productRepository.findById(dto.getProductId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        LocalDateTime now = LocalDateTime.now();
-        if (flashSale.getStartTime().isBefore(now)) {
-            throw new RuntimeException("Cannot add product to flash sale that has already started");
-        }
-
         boolean exists = flashSaleItemRepository.findByFlashSaleId(flashSaleId).stream()
                 .anyMatch(item -> item.getProduct().getId().equals(dto.getProductId()));
         if (exists) throw new RuntimeException("Product already exists in this flash sale");

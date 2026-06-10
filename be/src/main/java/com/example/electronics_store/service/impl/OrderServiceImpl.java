@@ -7,6 +7,7 @@ import com.example.electronics_store.model.*;
 import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.CartService;
 import com.example.electronics_store.service.DiscountService;
+import com.example.electronics_store.service.EmailService;
 import com.example.electronics_store.service.OrderService;
 import com.example.electronics_store.service.ProductSalesService;
 
@@ -41,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
     private final DiscountService discountService;
     private final EntityManager entityManager;
     private final CacheManager cacheManager;
+    private final EmailService emailService;
     @Autowired
     public OrderServiceImpl(
             OrderRepository orderRepository,
@@ -52,7 +54,7 @@ public class OrderServiceImpl implements OrderService {
             ProductRepository productRepository,
             ShippingMethodRepository shippingMethodRepository,
             PaymentMethodRepository paymentMethodRepository,
-            DiscountService discountService, FlashSaleItemRepository flashSaleItemRepository, ProductSalesService productSalesService, EntityManager entityManager, CacheManager cacheManager) {
+            DiscountService discountService, FlashSaleItemRepository flashSaleItemRepository, ProductSalesService productSalesService, EntityManager entityManager, CacheManager cacheManager, EmailService emailService) {
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
         this.userRepository = userRepository;
@@ -66,6 +68,7 @@ public class OrderServiceImpl implements OrderService {
         this.discountService = discountService;
         this.entityManager = entityManager;
         this.cacheManager = cacheManager;
+        this.emailService = emailService;
     }
 
     @Override
@@ -159,12 +162,13 @@ public class OrderServiceImpl implements OrderService {
             cartItemIds.add(cartItem.getId());
         }
         order.setTotalPrice(totalPrice);
+        order.setOrderDetails(orderDetails);
         orderDetailRepository.saveAll(orderDetails);
         Order savedOrder = orderRepository.save(order);
         cartItemRepository.deleteAllByIds(cartItemIds);
 
         entityManager.flush(); // đẩy các thay đổi cho orderdetail trước khi map
-       
+        emailService.sendOrderConfirmationEmail(savedOrder);
         return mapOrderToDTO(savedOrder);
     }
 

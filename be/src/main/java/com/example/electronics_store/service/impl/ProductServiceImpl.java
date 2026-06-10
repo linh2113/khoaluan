@@ -265,110 +265,55 @@ public class ProductServiceImpl implements ProductService {
 
 
     private Page<ProductDTO> handleDefaultFilter(ProductFilterRequest filter, Pageable pageable) {
-        // Lấy danh sách sản phẩm theo các điều kiện cơ bản
-        Specification<Product> spec = (root, query, cb) -> {
-            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
-
-            // Thêm điều kiện cơ bản cho sản phẩm active
-            predicates.add(cb.isTrue(root.get("status")));
-
-            // Tìm kiếm theo keyword
-            if (StringUtils.hasText(filter.getKeyword())) {
-                predicates.add(cb.like(cb.lower(root.get("name")),
-                        "%" + filter.getKeyword().toLowerCase() + "%"));
-            }
-
-            // Lọc theo category
-            if (filter.getCategoryId() != null) {
-                predicates.add(cb.equal(root.get("category").get("id"),
-                        filter.getCategoryId()));
-            }
-
-            // Lọc theo brand
-            if (StringUtils.hasText(filter.getBrand())) {
-                predicates.add(cb.equal(root.get("brand").get("brandName"), filter.getBrand()));
-            }
-
-            // Lọc sản phẩm đang giảm giá
-            if (Boolean.TRUE.equals(filter.getIsDiscount())) {
-                predicates.add(cb.isNotNull(root.get("discount")));
-            }
-
-            // Lọc sản phẩm còn hàng
-            if (Boolean.TRUE.equals(filter.getInStock())) {
-                predicates.add(cb.greaterThan(root.get("stock"), 0));
-            }
-
-            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
-        };
-
-        // Nếu không có lọc theo giá, trả về kết quả trực tiếp
-        if (filter.getMinPrice() == null && filter.getMaxPrice() == null) {
-            return productRepository.findAll(spec, pageable).map(this::mapProductToDTO);
-        }
-
-        // Nếu có lọc theo giá, lấy tất cả sản phẩm phù hợp với các điều kiện khác
-        // và xử lý phân trang thủ công
-        List<Product> allFilteredProducts = productRepository.findAll(spec);
-
-        // Lọc theo khoảng giá và áp dụng phân trang thủ công
+    // Nếu có filter giá, sử dụng query tối ưu với native SQL
+        if (filter.getMinPrice() != null || filter.getMaxPrice() != null) {
         LocalDateTime now = LocalDateTime.now();
-        List<ProductDTO> priceFilteredProducts = allFilteredProducts.stream()
-            .map(product -> {
-                // Tính giá đã giảm cho sản phẩm
-                Float discountedPrice = null;
+        return productRepository.findProductsWithPriceFilter(
+            filter.getMinPrice(),
+            filter.getMaxPrice(), 
+            filter.getKeyword(),
+            filter.getCategoryId(),
+            filter.getBrand(),
+            now,
+            pageable
+        ).map(this::mapProductToDTO);
+        }
+        Specification<Product> spec = (root, query, cb) -> {
+        List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
 
-                // Kiểm tra flash sale
-                Optional<FlashSaleItem> flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(product.getId(), now);
-                if (flashSaleItem.isPresent()) {
-                    discountedPrice = flashSaleItem.get().getFlashPrice().floatValue();
-                } else {
-                    // Kiểm tra product discount
-                    List<ProductDiscount> productDiscounts = productDiscountRepository.findEffectiveDiscountsByProduct(product, now);
-                    if (!productDiscounts.isEmpty()) {
-                        ProductDiscount productDiscount = productDiscounts.get(0);
-                        if (productDiscount.getDiscountedPrice() != null) {
-                            discountedPrice = productDiscount.getDiscountedPrice().floatValue();
-                        } else {
-                            double discountValue = productDiscount.getDiscount().getValue();
-                            discountedPrice = (float) (product.getPrice() * (1 - discountValue / 100));
-                        }
-                    } else {
-                        // Kiểm tra category discount
-                        List<CategoryDiscount> categoryDiscounts = categoryDiscountRepository.findEffectiveDiscountsByCategory(product.getCategory(), now);
-                        if (!categoryDiscounts.isEmpty()) {
-                            CategoryDiscount categoryDiscount = categoryDiscounts.get(0);
-                            double discountValue = categoryDiscount.getDiscount().getValue();
-                            discountedPrice = (float) (product.getPrice() * (1 - discountValue / 100));
-                        } else {
-                            discountedPrice = product.getPrice().floatValue();
-                        }
-                    }
-                }
+        // Thêm điều kiện cơ bản cho sản phẩm active
+        predicates.add(cb.isTrue(root.get("status")));
 
-                // Kiểm tra nếu giá nằm trong khoảng lọc
-                if ((filter.getMinPrice() == null || discountedPrice >= filter.getMinPrice()) &&
-                    (filter.getMaxPrice() == null || discountedPrice <= filter.getMaxPrice())) {
-                    ProductDTO dto = mapProductToDTO(product);
-                    dto.setDiscountedPrice(discountedPrice.intValue());
-                    return dto;
-                }
-                return null;
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-
-        // Áp dụng phân trang thủ công
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), priceFilteredProducts.size());
-
-        if (start > priceFilteredProducts.size()) {
-            return new PageImpl<>(Collections.emptyList(), pageable, priceFilteredProducts.size());
+        // Tìm kiếm theo keyword
+        if (StringUtils.hasText(filter.getKeyword())) {
+            predicates.add(cb.like(cb.lower(root.get("name")),
+                    "%" + filter.getKeyword().toLowerCase() + "%"));
         }
 
-        List<ProductDTO> pageContent = priceFilteredProducts.subList(start, end);
-        return new PageImpl<>(pageContent, pageable, priceFilteredProducts.size());
-    }
+        // Lọc theo category
+        if (filter.getCategoryId() != null) {
+            predicates.add(cb.equal(root.get("category").get("id"),
+                    filter.getCategoryId()));
+        }
+
+        // Lọc theo brand
+        if (StringUtils.hasText(filter.getBrand())) {
+            predicates.add(cb.equal(root.get("brand").get("brandName"), filter.getBrand()));
+        }
+
+        // Lọc sản phẩm đang giảm giá
+        if (Boolean.TRUE.equals(filter.getIsDiscount())) {
+            predicates.add(cb.isNotNull(root.get("discount")));
+        }
+
+        // Lọc sản phẩm còn hàng
+        if (Boolean.TRUE.equals(filter.getInStock())) {
+            predicates.add(cb.greaterThan(root.get("stock"), 0));
+        }
+
+        return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+    return productRepository.findAll(spec, pageable).map(this::mapProductToDTO);}
     private Page<ProductDTO> handleTopSellingProducts(Pageable pageable) {
         return productRepository.findTopSellingProducts(pageable)
                 .map(this::mapProductToDTO);

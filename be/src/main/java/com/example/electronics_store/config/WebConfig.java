@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
+import java.util.TimeZone;
 
 
 
@@ -16,8 +16,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Bean
     public MappingJackson2HttpMessageConverter jacksonConverter() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-
         // Giữ thêm media types như bạn đang có
         var mediaTypes = new java.util.ArrayList<>(converter.getSupportedMediaTypes());
         mediaTypes.add(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);

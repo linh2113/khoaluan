@@ -13,7 +13,7 @@ WORKDIR /app
 # copy jar từ stage build
 COPY --from=build /app/target/tech-store-0.0.1-SNAPSHOT.jar app.jar
 
-# (tùy chọn) tạo user không phải root
+# (tùy chọn) tạo user không phải root 
 RUN useradd -ms /bin/bash appuser
 USER appuser
 

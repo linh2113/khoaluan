@@ -1,4 +1,4 @@
-version: "3.9"
+
 
 services:
   # MySQL Database
@@ -10,9 +10,9 @@ services:
       MYSQL_DATABASE: techstorefinal
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d
+      - ./mysql-init:/docker-entrypoint-initdb.d  
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping",   "-h", "localhost"]
       timeout: 20s
       retries: 10
     networks:
@@ -44,15 +44,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_NAME=techstorefinal
-      - DB_USERNAME=root
-      - DB_PASSWORD=son1234567890
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - PYTHON_API_URL=http://fastapi:8001
+      - SPRING_PROFILES_ACTIVE=local
+    env_file:
+      - .env
     depends_on:
       mysql:
         condition: service_healthy
@@ -70,12 +64,8 @@ services:
       context: ./APIRecommend
       dockerfile: Dockerfile
     container_name: fastapi-recommend
-    environment:
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_NAME=techstorefinal
-      - DB_USERNAME=root
-      - DB_PASSWORD=son1234567890
+    env_file:
+      - .env
     depends_on:
       mysql:
         condition: service_healthy

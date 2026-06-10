@@ -48,7 +48,7 @@ public class UserServiceImpl implements UserService {
     @Value("${spring.mail.username:noreply@example.com}")
     private String fromEmail;
 
-    @Value("${app.frontend-url:http://localhost:3000}")
+    @Value("${app.frontend-url:https://fe-i7eo.vercel.app}")
     private String frontendUrl;
 
     @Autowired
@@ -101,8 +101,7 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
 
-        // Send verification email
-        sendVerificationEmail(savedUser);
+        
 
         return mapUserToDTO(savedUser);
     }

@@ -112,7 +112,7 @@ Trong môi trường sandbox, bạn có thể sử dụng các thông tin thẻ 
 -  **Số thẻ**: 9704198526191432198
 -  **Tên chủ thẻ**: NGUYEN VAN A
 -  **Ngày phát hành**: 07/15
--  **Mật khẩu OTP**:
+-  **Mật khẩu OTP**: 123456
 
 ## Mã lỗi VNPay
 

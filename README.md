@@ -65,10 +65,6 @@ Bước 4: Mở Terminal/Command Prompt tại thư mục gốc của đồ án v
 docker compose up -d --build
 ```
 
-Backend (Spring Boot) chạy tại: http://localhost:8080/api/v1
-
-AI Recommend Service (Python) chạy tại: http://localhost:8001
-
 ### 3️⃣ Cấu hình Frontend (Next.js)
 
 * Khởi chạy Frontend:

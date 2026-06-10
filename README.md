@@ -52,55 +52,42 @@ Hệ thống e-commerce bán sản phẩm công nghệ tích hợp AI gợi ý s
 git clone https://github.com/linh2113/khoaluan.git
 cd khoaluan
 ```
-### 2️⃣ Cấu hình Backend (Spring Boot)
-* Mở file be/src/main/resources/application.properties điền các thông tin kết nối:
+### 2️⃣ Cấu hình Docker (Be, Database, Redis, FastAPI)
+Bước 1: Tải và cài đặt Docker Desktop.
 
-  * **Database** (URL, Username, Password)
+Bước 2: Tại thư mục gốc của đồ án, sao chép file .env.example thành file .env. Sau đó, mở file .env ra và điền các mã token bảo mật của bạn (Gmail App Password, OAuth2, Cloudinary, VNPay...).
 
-  * **Cấu hình JWT, Email, OAuth2, Cloudinary, VNPay và Redis.**
+Bước 3: Khởi động ứng dụng Docker Desktop trên máy tính.
 
-* Khởi chạy Backend:
+Bước 4: Mở Terminal/Command Prompt tại thư mục gốc của đồ án và chạy lệnh:
+
 ```bash
-cd be
-./mvnw clean spring-boot:run
+docker compose up -d --build
 ```
-(Chạy tại: http://localhost:8080/api/v1)
+
+Backend (Spring Boot) chạy tại: http://localhost:8080/api/v1
+
+AI Recommend Service (Python) chạy tại: http://localhost:8001
 
 ### 3️⃣ Cấu hình Frontend (Next.js)
 
-* Tạo file fe/.env.local với nội dung:
-  
-```bash
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
-NEXT_PUBLIC_PYTHON_API_URL=http://localhost:8001
-```
 * Khởi chạy Frontend:
 ```bash
 cd ../fe
 npm install
 npm run dev
 ```
-(Chạy tại: http://localhost:3000)
-
-### 4️⃣ Cấu hình AI Service (Python)
-```bash
-cd ../APIRecommend
-python -m venv venv
-# Kích hoạt venv và cài thư viện
-source venv/bin/activate  # Trên Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
-```
-(Chạy tại: http://localhost:8001)
-
----
+Chạy tại: http://localhost:3000
 
 ## 📂 Cấu Trúc Thư Mục
 
 ```text
 khoaluan/
-├── be/                # Phân hệ Backend (Spring Boot API)
-├── fe/                # Phân hệ Frontend (Next.js Web App)
-├── APIRecommend/      # Dịch vụ gợi ý sản phẩm (Python)
-└── README.md          # Tài liệu hướng dẫn
+├── be/                 # Backend (Spring Boot API)
+├── fe/                 # Frontend (Next.js Web App)
+├── APIRecommend/       # API gợi ý sản phẩm bằng AI (Python)
+├── mysql-init/         # SQL dump khởi tạo database ban đầu
+├── .env.example        # File mẫu cấu hình các biến môi trường,
+├── .gitignore          # git ignore
+└── docker-compose.yml  # Khởi chạy các service bằng Docker
 ```

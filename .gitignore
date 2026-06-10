@@ -39,7 +39,6 @@ yarn-error.log*
 *.tsbuildinfo
 fe/next-env.d.ts
 
-
 # Ignore API documentation files
 be/DISCOUNT_API_DOCUMENTATION.md
 be/spring-boot-parameters-guide.md
@@ -51,3 +50,4 @@ be/target/
 .vscode/
 logs/
 README.md
+

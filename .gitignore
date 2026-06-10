@@ -39,7 +39,6 @@ yarn-error.log*
 *.tsbuildinfo
 fe/next-env.d.ts
 
-
 # Ignore API documentation files
 be/DISCOUNT_API_DOCUMENTATION.md
 be/FLASH_SALES_API_DOCUMENTATION.md

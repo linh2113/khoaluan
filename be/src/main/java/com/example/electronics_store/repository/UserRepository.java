@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,6 +62,21 @@ public interface UserRepository extends JpaRepository<User, Integer>, JpaSpecifi
     @Query("UPDATE User u SET u.hash = :hash WHERE u.id = :id")
     void updateHash(@Param("id") Integer id, @Param("hash") String hash);
 
+    @Query("SELECT COUNT(u) FROM User u WHERE u.createAt >= :startOfDay")
+    Long countNewUsersToday(@Param("startOfDay") LocalDateTime startOfDay);
 
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role = false")
+    Long countCustomers();
+
+    @Query(value = """
+        SELECT u.id, u.user_name, u.email, COUNT(o.id) as order_count
+        FROM users u 
+        LEFT JOIN orders o ON u.id = o.id_user 
+        WHERE u.role = false
+        GROUP BY u.id, u.user_name, u.email
+        ORDER BY order_count DESC
+        LIMIT 5
+        """, nativeQuery = true)
+    List<Object[]> findTopCustomers();
 
 }

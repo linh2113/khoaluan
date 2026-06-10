@@ -27,7 +27,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -93,6 +92,8 @@ public class SecurityConfig {
                         "/oauth2/**",
                         "/login/oauth2/code/*",
                         "/products/**",
+                        "/admin/payment-methods",
+                        "/admin/shipping-methods",
                         "/flash-sales/**",
                         "/recommendations/**",
                         "/categories/**",
@@ -128,7 +129,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000")); // Frontend URL
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000","https://fe-i7eo.vercel.app")); // Frontend URL
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

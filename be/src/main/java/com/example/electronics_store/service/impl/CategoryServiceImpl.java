@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+
 @Service
 public class CategoryServiceImpl implements CategoryService {
 
@@ -32,18 +36,20 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "categories", allEntries = true),
+            @CacheEvict(value = "productLists", allEntries = true)
+    })
     public CategoryDTO createCategory(CategoryDTO categoryDTO) {
         if (categoryRepository.existsByCategoryName(categoryDTO.getCategoryName())) {
-            throw new RuntimeException("Category name already exists");
+            throw new RuntimeException("Tên danh mục đã tồn tại");
         }
-        // Upload ảnh nếu có
-        System.out.println(categoryDTO.getImageFile());
         if (categoryDTO.getImageFile() != null && !categoryDTO.getImageFile().isEmpty()) {
             try {
                 String imageUrl = CloudinaryUtils.uploadImage(cloudinary, categoryDTO.getImageFile(), "categories");
                 categoryDTO.setImageUrl(imageUrl);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to upload image: " + e.getMessage());
+                throw new RuntimeException("Lỗi khi upload ảnh: " + e.getMessage());
             }
         }
         Category category = new Category();
@@ -56,19 +62,21 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "categories", allEntries = true),
+            @CacheEvict(value = "productLists", allEntries = true)
+    })
     public CategoryDTO updateCategory(Integer id, CategoryDTO categoryDTO) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
 
-        // Check if categoryName is being updated and if new name exists
         if (categoryDTO.getCategoryName() != null) {
             if (!category.getCategoryName().equals(categoryDTO.getCategoryName()) &&
                     categoryRepository.existsByCategoryName(categoryDTO.getCategoryName())) {
-                throw new RuntimeException("Category name already exists");
+                throw new RuntimeException("Tên danh mục đã tồn tại");
             }
             category.setCategoryName(categoryDTO.getCategoryName());
         }
-        // Upload ảnh mới nếu có
         if (categoryDTO.getImageFile() != null && !categoryDTO.getImageFile().isEmpty()) {
             try {
                 String imageUrl = CloudinaryUtils.replaceImage(
@@ -79,12 +87,11 @@ public class CategoryServiceImpl implements CategoryService {
                 );
                 category.setImageUrl(imageUrl);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to upload image: " + e.getMessage());
+                throw new RuntimeException("Lỗi khi upload ảnh:" + e.getMessage());
             }
         } else if (categoryDTO.getImageUrl() != null) {
             category.setImageUrl(categoryDTO.getImageUrl());
         }
-        // Update status only if it's not null
         if (categoryDTO.getStatus() != null) {
             category.setStatus(categoryDTO.getStatus());
         }
@@ -94,13 +101,15 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Cacheable(value = "categories", key = "#id")
     public CategoryDTO getCategoryById(Integer id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
         return mapCategoryToDTO(category);
     }
 
     @Override
+    @Cacheable(value = "categories", key = "'all'")
     public List<CategoryDTO> getAllCategories() {
         return categoryRepository.findAll().stream()
                 .map(this::mapCategoryToDTO)
@@ -108,6 +117,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Cacheable(value = "categories", key = "'active'")
     public List<CategoryDTO> getAllActiveCategories() {
         return categoryRepository.findAllActiveCategories().stream()
                 .map(this::mapCategoryToDTO)

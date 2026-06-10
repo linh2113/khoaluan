@@ -49,5 +49,15 @@ List<Object[]> findTopSellingProducts(Pageable pageable);
             @Param("productId") Integer productId, 
             @Param("userId") Integer userId, 
             @Param("status") boolean status);        
-
+@Query(value = """
+    SELECT p.id, p.name, p.price, SUM(od.quantity) as sold_quantity
+    FROM order_details od
+    JOIN products p ON od.id_product = p.id
+    JOIN orders o ON od.id_order = o.id
+    WHERE o.order_status = 4
+    GROUP BY p.id, p.name, p.price
+    ORDER BY sold_quantity DESC
+    LIMIT 5
+    """, nativeQuery = true)
+List<Object[]> findTopSellingProductsForDashboard();
 }

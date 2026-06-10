@@ -7,12 +7,14 @@ import com.example.electronics_store.model.*;
 import com.example.electronics_store.repository.*;
 import com.example.electronics_store.service.CartService;
 import com.example.electronics_store.service.DiscountService;
+import com.example.electronics_store.service.EmailService;
 import com.example.electronics_store.service.OrderService;
 import com.example.electronics_store.service.ProductSalesService;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -39,7 +41,8 @@ public class OrderServiceImpl implements OrderService {
     private final ProductSalesService productSalesService;
     private final DiscountService discountService;
     private final EntityManager entityManager;
-
+    private final CacheManager cacheManager;
+    private final EmailService emailService;
     @Autowired
     public OrderServiceImpl(
             OrderRepository orderRepository,
@@ -51,7 +54,7 @@ public class OrderServiceImpl implements OrderService {
             ProductRepository productRepository,
             ShippingMethodRepository shippingMethodRepository,
             PaymentMethodRepository paymentMethodRepository,
-            DiscountService discountService, FlashSaleItemRepository flashSaleItemRepository, ProductSalesService productSalesService, EntityManager entityManager) {
+            DiscountService discountService, FlashSaleItemRepository flashSaleItemRepository, ProductSalesService productSalesService, EntityManager entityManager, CacheManager cacheManager, EmailService emailService) {
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
         this.userRepository = userRepository;
@@ -64,6 +67,8 @@ public class OrderServiceImpl implements OrderService {
         this.productSalesService = productSalesService;
         this.discountService = discountService;
         this.entityManager = entityManager;
+        this.cacheManager = cacheManager;
+        this.emailService = emailService;
     }
 
     @Override
@@ -149,17 +154,21 @@ public class OrderServiceImpl implements OrderService {
                     product.getId(), orderTime);
             if (flashSaleItem.isPresent()) {
                 flashSaleItemRepository.updateSoldCount(flashSaleItem.get().getId(), cartItem.getQuantity());
+                Integer flashSaleId = flashSaleItem.get().getFlashSale().getId();
+                cacheManager.getCache("flashSales").evict("items:" + flashSaleId);
+                cacheManager.getCache("flashSales").evict(flashSaleId);
             }
 
             cartItemIds.add(cartItem.getId());
         }
         order.setTotalPrice(totalPrice);
+        order.setOrderDetails(orderDetails);
         orderDetailRepository.saveAll(orderDetails);
         Order savedOrder = orderRepository.save(order);
         cartItemRepository.deleteAllByIds(cartItemIds);
 
         entityManager.flush(); // đẩy các thay đổi cho orderdetail trước khi map
-       
+        emailService.sendOrderConfirmationEmail(savedOrder);
         return mapOrderToDTO(savedOrder);
     }
 
@@ -335,6 +344,9 @@ public class OrderServiceImpl implements OrderService {
                     FlashSaleItem item = flashSaleItem.get();
                     item.setSoldCount(item.getSoldCount() - orderDetail.getQuantity());
                     flashSaleItemRepository.save(item);
+                     Integer flashSaleId = item.getFlashSale().getId();
+                    cacheManager.getCache("flashSales").evict("items:" + flashSaleId);
+                    cacheManager.getCache("flashSales").evict(flashSaleId);
                 }
             }
         }

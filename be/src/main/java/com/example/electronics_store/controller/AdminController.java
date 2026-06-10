@@ -74,107 +74,70 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
-            Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                    Sort.by(sortBy).descending() :
-                    Sort.by(sortBy).ascending();
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
 
-            Pageable pageable = PageRequest.of(page, size, sort);
-            Page<UserDTO> userPage = userService.getUsersWithFilters(role, search, pageable);
-            return ResponseEntity.ok(ApiResponse.success(userPage));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<UserDTO> userPage = userService.getUsersWithFilters(role, search, pageable);
+        return ResponseEntity.ok(ApiResponse.success(userPage));
     }
 
     @PutMapping("/users/{id}")
     public ResponseEntity<ApiResponse<?>> updateUser(
             @PathVariable Integer id,
             @Valid @RequestBody UserDTO userDTO) {
-        try {
-            UserDTO updatedUser = userService.updateUser(id, userDTO);
-            return ResponseEntity.ok(ApiResponse.success("User updated successfully", updatedUser));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        UserDTO updatedUser = userService.updateUser(id, userDTO);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật người dùng thành công", updatedUser));
     }
-
 
     // Product Management
     @PostMapping("/products")
     public ResponseEntity<ApiResponse<?>> createProduct(@Valid @RequestBody ProductCreateDTO productCreateDTO) {
-        try {
-            ProductDTO product = productService.createProduct(productCreateDTO);
-            return ResponseEntity.ok(ApiResponse.success("Product created successfully", product));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        ProductDTO product = productService.createProduct(productCreateDTO);
+        return ResponseEntity.ok(ApiResponse.success("Tạo thành công sản phẩm", product));
     }
 
     @PutMapping("/products/{id}")
     public ResponseEntity<ApiResponse<?>> updateProduct(
             @PathVariable Integer id,
             @Valid @RequestBody ProductUpdateDTO productUpdateDTO) {
-        try {
-            ProductDTO product = productService.updateProduct(id, productUpdateDTO);
-            return ResponseEntity.ok(ApiResponse.success("Product updated successfully", product));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        ProductDTO product = productService.updateProduct(id, productUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật sản phẩm thành công", product));
     }
-
 
     @PostMapping("/products/{id}/upload-image")
     public ResponseEntity<ApiResponse<?>> uploadProductImage(
             @PathVariable Integer id,
             @RequestParam("file") MultipartFile file,
             @RequestParam(defaultValue = "false") boolean isPrimary) {
-        try {
-            String imageUrl = productService.uploadProductImage(id, file, isPrimary);
-            return ResponseEntity.ok(ApiResponse.success("Image uploaded successfully", imageUrl));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        String imageUrl = productService.uploadProductImage(id, file, isPrimary);
+        return ResponseEntity.ok(ApiResponse.success("Upload ảnh thành công", imageUrl));
     }
 
     @DeleteMapping("/products/images/{imageId}")
     public ResponseEntity<ApiResponse<?>> deleteProductImage(@PathVariable Integer imageId) {
-        try {
-            productService.deleteProductImage(imageId);
-            return ResponseEntity.ok(ApiResponse.success("Image deleted successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        productService.deleteProductImage(imageId);
+        return ResponseEntity.ok(ApiResponse.success("Xóa ảnh thành công"));
     }
 
     @PutMapping("/products/images/{imageId}/primary")
     public ResponseEntity<ApiResponse<?>> updatePrimaryImage(@PathVariable Integer imageId) {
-        try {
-            productService.updatePrimaryImage(imageId);
-            return ResponseEntity.ok(ApiResponse.success("Primary image updated successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        productService.updatePrimaryImage(imageId);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật ảnh chính thành công"));
     }
 
     @PutMapping("/products/{id}/stock")
     public ResponseEntity<ApiResponse<?>> updateProductStock(
             @PathVariable Integer id,
             @RequestParam Integer quantity) {
-        try {
-            productService.updateProductStock(id, quantity);
-            return ResponseEntity.ok(ApiResponse.success("Product stock updated successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        productService.updateProductStock(id, quantity);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật tồn kho thành công"));
     }
 
     // Category Management
@@ -182,16 +145,10 @@ public class AdminController {
     public ResponseEntity<ApiResponse<?>> createCategory(
             @RequestPart("category") @Valid CategoryDTO categoryDTO,
             @RequestParam(value = "image", required = false) MultipartFile image) {
-        try {
-            // Gán file vào DTO
-            categoryDTO.setImageFile(image);
-
-            CategoryDTO category = categoryService.createCategory(categoryDTO);
-            return ResponseEntity.ok(ApiResponse.success("Category created successfully", category));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        categoryDTO.setImageFile(image);
+        CategoryDTO category = categoryService.createCategory(categoryDTO);
+        return ResponseEntity.ok(ApiResponse.success("Tạo danh mục thành công", category));
     }
 
     @PutMapping(value = "/categories/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -199,23 +156,19 @@ public class AdminController {
             @PathVariable Integer id,
             @RequestPart("category") @Valid CategoryUpdateDTO categoryUpdateDTO,
             @RequestParam(value = "image", required = false) MultipartFile image) {
-        try {
-            // Gán file vào DTO
-            categoryUpdateDTO.setImageFile(image);
+        
+        // Gán file vào DTO
+        categoryUpdateDTO.setImageFile(image);
 
-            // Convert CategoryUpdateDTO to CategoryDTO
-            CategoryDTO categoryDTO = new CategoryDTO();
-            categoryDTO.setCategoryName(categoryUpdateDTO.getCategoryName());
-            categoryDTO.setStatus(categoryUpdateDTO.getStatus());
-            categoryDTO.setImageUrl(categoryUpdateDTO.getImageUrl());
-            categoryDTO.setImageFile(categoryUpdateDTO.getImageFile());
+        // Convert CategoryUpdateDTO to CategoryDTO
+        CategoryDTO categoryDTO = new CategoryDTO();
+        categoryDTO.setCategoryName(categoryUpdateDTO.getCategoryName());
+        categoryDTO.setStatus(categoryUpdateDTO.getStatus());
+        categoryDTO.setImageUrl(categoryUpdateDTO.getImageUrl());
+        categoryDTO.setImageFile(categoryUpdateDTO.getImageFile());
 
-            CategoryDTO category = categoryService.updateCategory(id, categoryDTO);
-            return ResponseEntity.ok(ApiResponse.success("Category updated successfully", category));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        CategoryDTO category = categoryService.updateCategory(id, categoryDTO);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật danh mục thành công", category));
     }
 
     // Order Management
@@ -226,62 +179,39 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
-            Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                    Sort.by(sortBy).descending() :
-                    Sort.by(sortBy).ascending();
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
 
-            Pageable pageable = PageRequest.of(page, size, sort);
-            Page<OrderDTO> orderPage = orderService.getOrdersWithSearch(search, pageable);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<OrderDTO> orderPage = orderService.getOrdersWithSearch(search, pageable);
 
-            return ResponseEntity.ok(ApiResponse.success(orderPage));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(orderPage));
     }
-    // Bỏ (lấy getOrder với search)
+
     @GetMapping("/orders/status/{status}")
     public ResponseEntity<ApiResponse<?>> getOrdersByStatus(@PathVariable Integer status) {
-        try {
-            List<OrderDTO> orders = orderService.getOrdersByStatus(status);
-            return ResponseEntity.ok(ApiResponse.success(orders));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        List<OrderDTO> orders = orderService.getOrdersByStatus(status);
+        return ResponseEntity.ok(ApiResponse.success(orders));
     }
-    // Bỏ (lấy getOrder với search)
+
     @GetMapping("/orders/payment/{paymentStatus}")
     public ResponseEntity<ApiResponse<?>> getOrdersByPaymentStatus(@PathVariable String paymentStatus) {
-        try {
-            List<OrderDTO> orders = orderService.getOrdersByPaymentStatus(paymentStatus);
-            return ResponseEntity.ok(ApiResponse.success(orders));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        List<OrderDTO> orders = orderService.getOrdersByPaymentStatus(paymentStatus);
+        return ResponseEntity.ok(ApiResponse.success(orders));
     }
 
-
-    @PutMapping(value = "/discounts/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/discounts/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> updateDiscount(
             @PathVariable Integer id,
             @RequestPart("discount") @Valid DiscountUpdateDTO discountUpdateDTO,
             @RequestParam(value = "banner", required = false) MultipartFile banner) {
-        try {
-            // Gán file vào DTO
-            discountUpdateDTO.setBannerFile(banner);
-
-            DiscountDTO discount = discountService.updateDiscount(id, discountUpdateDTO);
-            return ResponseEntity.ok(ApiResponse.success("Discount updated successfully", discount));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        discountUpdateDTO.setBannerFile(banner);
+        DiscountDTO discount = discountService.updateDiscount(id, discountUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật mã giảm giá thành công", discount));
     }
-
-
 
     @GetMapping("/discounts")
     public ResponseEntity<ApiResponse<?>> getAllDiscounts(
@@ -290,19 +220,15 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
-            Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                    Sort.by(sortBy).descending() :
-                    Sort.by(sortBy).ascending();
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
 
-            Pageable pageable = PageRequest.of(page, size, sort);
-            Page<DiscountDTO> discounts = discountService.getAllDiscounts(search, pageable);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<DiscountDTO> discounts = discountService.getAllDiscounts(search, pageable);
 
-            return ResponseEntity.ok(ApiResponse.success(discounts));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(discounts));
     }
 
     @GetMapping("/ratings")
@@ -312,31 +238,20 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
-            Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                    Sort.by(sortBy).descending() :
-                    Sort.by(sortBy).ascending();
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
 
-            Pageable pageable = PageRequest.of(page, size, sort);
-            Page<RatingDTO> ratingPage = ratingService.getRatingsWithSearch(search, pageable);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<RatingDTO> ratingPage = ratingService.getRatingsWithSearch(search, pageable);
 
-            return ResponseEntity.ok(ApiResponse.success(ratingPage));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(ratingPage));
     }
 
-
-    // not done
     @GetMapping("/dashboard")
     public ResponseEntity<ApiResponse<?>> getDashboardStatistics() {
-        try {
-            return ResponseEntity.ok(ApiResponse.success(statisticsService.getDashboardStatistics()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(statisticsService.getDashboardStatistics()));
     }
 
     // Get all categories
@@ -347,22 +262,18 @@ public class AdminController {
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(defaultValue = "id") String sortBy,
         @RequestParam(defaultValue = "desc") String sortDir) {
-            try {
-                Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                        Sort.by(sortBy).descending() :
-                        Sort.by(sortBy).ascending();
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
 
-                Pageable pageable = PageRequest.of(page, size, sort);
-                Page<CategoryDTO> categoryPage = categoryService.getCategoriesWithSearch(search, pageable);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<CategoryDTO> categoryPage = categoryService.getCategoriesWithSearch(search, pageable);
 
-                return ResponseEntity.ok(ApiResponse.success(categoryPage));
-            } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(ApiResponse.error(e.getMessage()));
-            }
+        return ResponseEntity.ok(ApiResponse.success(categoryPage));
     }
 
-   // Get all products
+    // Get all products
     @GetMapping("/products")
     public ResponseEntity<ApiResponse<?>> getAllProducts(
             @RequestParam(required = false) String search,
@@ -371,37 +282,27 @@ public class AdminController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
 
-        try {
-            Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                    Sort.by(sortBy).descending() :
-                    Sort.by(sortBy).ascending();
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
 
-            Pageable pageable = PageRequest.of(page, size, sort);
-            Page<ProductDTO> products;
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<ProductDTO> products;
 
-            if (search != null && !search.trim().isEmpty()) {
-                products = productService.getProductsWithSearch(search, pageable);
-            } else {
-                products = productService.getAllProducts(pageable);
-            }
-
-            return ResponseEntity.ok(ApiResponse.success(products));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
+        if (search != null && !search.trim().isEmpty()) {
+            products = productService.getProductsWithSearch(search, pageable);
+        } else {
+            products = productService.getAllProducts(pageable);
         }
+
+        return ResponseEntity.ok(ApiResponse.success(products));
     }
 
     // Get low stock products
     @GetMapping("/products/low-stock")
     public ResponseEntity<ApiResponse<?>> getLowStockProducts() {
-        try {
-            List<ProductDTO> products = productService.getLowStockProducts();
-            return ResponseEntity.ok(ApiResponse.success(products));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        List<ProductDTO> products = productService.getLowStockProducts();
+        return ResponseEntity.ok(ApiResponse.success(products));
     }
 
     // Update order status
@@ -409,13 +310,9 @@ public class AdminController {
     public ResponseEntity<ApiResponse<?>> updateOrderStatus(
             @PathVariable Integer id,
             @RequestParam Integer status) {
-        try {
-            OrderDTO order = orderService.updateOrderStatus(id, status);
-            return ResponseEntity.ok(ApiResponse.success("Order status updated successfully", order));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        OrderDTO order = orderService.updateOrderStatus(id, status);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái đơn hàng thành công", order));
     }
 
     // Update payment status
@@ -423,32 +320,24 @@ public class AdminController {
     public ResponseEntity<ApiResponse<?>> updatePaymentStatus(
             @PathVariable Integer id,
             @RequestParam String paymentStatus) {
-        try {
-            OrderDTO order = orderService.updatePaymentStatus(id, paymentStatus);
-            return ResponseEntity.ok(ApiResponse.success("Payment status updated successfully", order));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        OrderDTO order = orderService.updatePaymentStatus(id, paymentStatus);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật thanh toán thành công", order));
     }
 
-    // not done
     @GetMapping("/statistics/sales")
     public ResponseEntity<ApiResponse<?>> getSalesStatistics(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        try {
-            // Convert string dates to LocalDateTime if provided
-            LocalDateTime start = startDate != null ? LocalDateTime.parse(startDate) : LocalDateTime.now().minusMonths(1);
-            LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : LocalDateTime.now();
+        
+        // Convert string dates to LocalDateTime if provided
+        LocalDateTime start = startDate != null ? LocalDateTime.parse(startDate) : LocalDateTime.now().minusMonths(1);
+        LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : LocalDateTime.now();
 
-            Map<String, Object> statistics = statisticsService.getSalesStatistics(start, end);
-            return ResponseEntity.ok(ApiResponse.success(statistics));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        Map<String, Object> statistics = statisticsService.getSalesStatistics(start, end);
+        return ResponseEntity.ok(ApiResponse.success(statistics));
     }
+
     @GetMapping("/brands")
     public ResponseEntity<ApiResponse<?>> getAllBrands(
             @RequestParam(required = false) String search,
@@ -456,218 +345,148 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
-            Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                    Sort.by(sortBy).descending() :
-                    Sort.by(sortBy).ascending();
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
 
-            Pageable pageable = PageRequest.of(page, size, sort);
-            Page<BrandDTO> brandPage = brandService.getBrandsWithSearch(search, pageable);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<BrandDTO> brandPage = brandService.getBrandsWithSearch(search, pageable);
 
-            return ResponseEntity.ok(ApiResponse.success(brandPage));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(brandPage));
     }
+
     @PostMapping(value = "/brands", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> createBrand(
             @RequestPart("brand") @Valid BrandDTO brandDTO,
             @RequestParam(value = "image", required = false) MultipartFile image) {
-        try {
-            // Gán file vào DTO
-            brandDTO.setImageFile(image);
-
-            BrandDTO brand = brandService.createBrand(brandDTO);
-            return ResponseEntity.ok(ApiResponse.success("Brand created successfully", brand));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        brandDTO.setImageFile(image);
+        BrandDTO brand = brandService.createBrand(brandDTO);
+        return ResponseEntity.ok(ApiResponse.success("Tạo thương hiệu thành công", brand));
     }
+
     @PutMapping(value = "/brands/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> updateBrand(
             @PathVariable Integer id,
             @RequestPart("brand") @Valid BrandDTO brandDTO,
             @RequestParam(value = "image", required = false) MultipartFile image) {
-        try {
-            // Gán file vào DTO
-            brandDTO.setImageFile(image);
+        
+        // Gán file vào DTO
+        brandDTO.setImageFile(image);
 
-            BrandDTO brand = brandService.updateBrand(id, brandDTO);
-            return ResponseEntity.ok(ApiResponse.success("Brand updated successfully", brand));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        BrandDTO brand = brandService.updateBrand(id, brandDTO);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật thương hiệu thành công", brand));
     }
+
     @GetMapping("/shipping-methods")
     public ResponseEntity<ApiResponse<?>> getAllShippingMethods() {
-        try {
-            List<ShippingMethodDTO> shippingMethods = shippingMethodService.getAllShippingMethods();
-            return ResponseEntity.ok(ApiResponse.success(shippingMethods));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        List<ShippingMethodDTO> shippingMethods = shippingMethodService.getAllShippingMethods();
+        return ResponseEntity.ok(ApiResponse.success(shippingMethods));
     }
 
     @GetMapping("/shipping-methods/{id}")
     public ResponseEntity<ApiResponse<?>> getShippingMethodById(@PathVariable Integer id) {
-        try {
-            ShippingMethodDTO shippingMethod = shippingMethodService.getShippingMethodById(id);
-            return ResponseEntity.ok(ApiResponse.success(shippingMethod));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        ShippingMethodDTO shippingMethod = shippingMethodService.getShippingMethodById(id);
+        return ResponseEntity.ok(ApiResponse.success(shippingMethod));
     }
 
     @PostMapping("/shipping-methods")
     public ResponseEntity<ApiResponse<?>> createShippingMethod(@Valid @RequestBody ShippingMethodDTO shippingMethodDTO) {
-        try {
-            ShippingMethodDTO createdShippingMethod = shippingMethodService.createShippingMethod(shippingMethodDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success("Shipping method created successfully", createdShippingMethod));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        ShippingMethodDTO createdShippingMethod = shippingMethodService.createShippingMethod(shippingMethodDTO);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Tạo phương thức vận chuyển thành công", createdShippingMethod));
     }
 
     @PutMapping("/shipping-methods/{id}")
     public ResponseEntity<ApiResponse<?>> updateShippingMethod(
             @PathVariable Integer id,
             @Valid @RequestBody ShippingMethodDTO shippingMethodDTO) {
-        try {
-            ShippingMethodDTO updatedShippingMethod = shippingMethodService.updateShippingMethod(id, shippingMethodDTO);
-            return ResponseEntity.ok(ApiResponse.success("Shipping method updated successfully", updatedShippingMethod));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        ShippingMethodDTO updatedShippingMethod = shippingMethodService.updateShippingMethod(id, shippingMethodDTO);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật phương thức vận chuyển thành công", updatedShippingMethod));
     }
+
     @PutMapping("/shipping-methods/{id}/toggle-status")
     public ResponseEntity<ApiResponse<?>> toggleShippingMethodStatus(@PathVariable Integer id) {
-        try {
-            shippingMethodService.toggleShippingMethodStatus(id);
-            return ResponseEntity.ok(ApiResponse.success("Shipping method status toggled successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        shippingMethodService.toggleShippingMethodStatus(id);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật phương thức vận chuyển thành công"));
     }
+
     // Payment Method Management
     @GetMapping("/payment-methods")
     public ResponseEntity<ApiResponse<?>> getAllPaymentMethods() {
-        try {
-            List<PaymentMethodDTO> paymentMethods = paymentMethodService.getAllPaymentMethods();
-            return ResponseEntity.ok(ApiResponse.success(paymentMethods));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        List<PaymentMethodDTO> paymentMethods = paymentMethodService.getAllPaymentMethods();
+        return ResponseEntity.ok(ApiResponse.success(paymentMethods));
     }
 
     @GetMapping("/payment-methods/{id}")
     public ResponseEntity<ApiResponse<?>> getPaymentMethodById(@PathVariable Integer id) {
-        try {
-            PaymentMethodDTO paymentMethod = paymentMethodService.getPaymentMethodById(id);
-            return ResponseEntity.ok(ApiResponse.success(paymentMethod));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        PaymentMethodDTO paymentMethod = paymentMethodService.getPaymentMethodById(id);
+        return ResponseEntity.ok(ApiResponse.success(paymentMethod));
     }
 
     @PostMapping("/payment-methods")
     public ResponseEntity<ApiResponse<?>> createPaymentMethod(@Valid @RequestBody PaymentMethodDTO paymentMethodDTO) {
-        try {
-            PaymentMethodDTO createdPaymentMethod = paymentMethodService.createPaymentMethod(paymentMethodDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success("Payment method created successfully", createdPaymentMethod));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        PaymentMethodDTO createdPaymentMethod = paymentMethodService.createPaymentMethod(paymentMethodDTO);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Tạo phương thức thanh toán thành công", createdPaymentMethod));
     }
 
     @PutMapping("/payment-methods/{id}")
     public ResponseEntity<ApiResponse<?>> updatePaymentMethod(
             @PathVariable Integer id,
             @Valid @RequestBody PaymentMethodDTO paymentMethodDTO) {
-        try {
-            PaymentMethodDTO updatedPaymentMethod = paymentMethodService.updatePaymentMethod(id, paymentMethodDTO);
-            return ResponseEntity.ok(ApiResponse.success("Payment method updated successfully", updatedPaymentMethod));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        PaymentMethodDTO updatedPaymentMethod = paymentMethodService.updatePaymentMethod(id, paymentMethodDTO);
+        return ResponseEntity.ok(ApiResponse.success("Thay đổi phương thức thanh toán thành công", updatedPaymentMethod));
     }
+
     @PutMapping("/payment-methods/{id}/toggle-status")
     public ResponseEntity<ApiResponse<?>> togglePaymentMethodStatus(@PathVariable Integer id) {
-        try {
-            paymentMethodService.togglePaymentMethodStatus(id);
-            return ResponseEntity.ok(ApiResponse.success("Payment method status toggled successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        paymentMethodService.togglePaymentMethodStatus(id);
+        return ResponseEntity.ok(ApiResponse.success("Thay đổi phương thức thanh toán thành công"));
     }
 
     @PostMapping("/users")
     public ResponseEntity<ApiResponse<?>> createUser(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
-        try {
-            UserDTO createdUser = userService.createUserByAdmin(registrationDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success("User created successfully", createdUser));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        UserDTO createdUser = userService.createUserByAdmin(registrationDTO);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Tạo thành công người dùng", createdUser));
     }
+
     @PostMapping(value = "/discounts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> createDiscount(
             @RequestPart("discount") @Valid DiscountDTO discountDTO,
             @RequestParam(value = "banner", required = false) MultipartFile banner) {
-        try {
-            // Gán file vào DTO
-            discountDTO.setBannerFile(banner);
+        
+        // Gán file vào DTO
+        discountDTO.setBannerFile(banner);
 
-            DiscountDTO discount = discountService.createDiscount(discountDTO);
-            return ResponseEntity.ok(ApiResponse.success("Discount created successfully", discount));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        DiscountDTO discount = discountService.createDiscount(discountDTO);
+        return ResponseEntity.ok(ApiResponse.success("Tạo thành công mã giảm giá", discount));
     }
-
-
 
     // Gắn discount với nhiều sản phẩm
     @PostMapping("/discounts/{discountId}/assign-products")
     public ResponseEntity<ApiResponse<?>> assignDiscountToProducts(
             @PathVariable Integer discountId,
             @RequestBody BatchAssignRequest request) {
-        try {
-            Integer successCount = discountService.assignDiscountToProducts(
-                    discountId,
-                    request.getProductIds(),
-                    request.getDiscountedPrices()
-            );
+        
+        Integer successCount = discountService.assignDiscountToProducts(
+                discountId,
+                request.getProductIds(),
+                request.getDiscountedPrices()
+        );
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("successCount", successCount);
-            response.put("totalCount", request.getProductIds().size());
+        Map<String, Object> response = new HashMap<>();
+        response.put("successCount", successCount);
+        response.put("totalCount", request.getProductIds().size());
 
-            return ResponseEntity.ok(ApiResponse.success(
-                    "Successfully assigned " + successCount + " out of " + request.getProductIds().size() + " products",
-                    response
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(
+                "Gắn thành công" + successCount + " trên" + request.getProductIds().size() + " số sản phẩm",
+                response
+        ));
     }
 
     // gắn discount với nhiều danh mục
@@ -675,131 +494,88 @@ public class AdminController {
     public ResponseEntity<ApiResponse<?>> assignDiscountToCategories(
             @PathVariable Integer discountId,
             @RequestBody Map<String, List<Integer>> request) {
+        
+        List<Integer> categoryIds = request.get("categoryIds");
+        if (categoryIds == null) {
+            throw new IllegalArgumentException("Yêu cầu categoryid");
+        }
+
+        Integer successCount = discountService.assignDiscountToCategories(discountId, categoryIds);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("successCount", successCount);
+        response.put("totalCount", categoryIds.size());
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Gắn thành công " + successCount + " trên " + categoryIds.size() + " danh mục",
+                response
+        ));
+    }
+
+    @GetMapping("/discounts/active")
+    public ResponseEntity<ApiResponse<?>> getActiveDiscounts() {
+        List<DiscountDTO> discounts = discountService.getAllActiveDiscounts();
+        return ResponseEntity.ok(ApiResponse.success(discounts));
+    }
+
+    @GetMapping("/discounts/expired")
+    public ResponseEntity<ApiResponse<?>> getExpiredDiscounts() {
+        List<DiscountDTO> discounts = discountService.getAllExpiredDiscounts();
+        return ResponseEntity.ok(ApiResponse.success(discounts));
+    }
+
+    @GetMapping("/discounts/upcoming")
+    public ResponseEntity<ApiResponse<?>> getUpcomingDiscounts() {
+        List<DiscountDTO> discounts = discountService.getAllUpcomingDiscounts();
+        return ResponseEntity.ok(ApiResponse.success(discounts));
+    }
+
+    @GetMapping("/discounts/product-discounts")
+    public ResponseEntity<ApiResponse<?>> getProductDiscounts() {
+        List<DiscountDTO> discounts = discountService.getAllProductDiscounts();
+        return ResponseEntity.ok(ApiResponse.success(discounts));
+    }
+
+    @GetMapping("/discounts/category-discounts")
+    public ResponseEntity<ApiResponse<?>> getCategoryDiscounts() {
+            List<DiscountDTO> discounts = discountService.getAllCategoryDiscounts();
+            return ResponseEntity.ok(ApiResponse.success(discounts));
+    }
+
+    @DeleteMapping("/discounts/{discountId}/products")
+        public ResponseEntity<ApiResponse<?>> removeProductsFromDiscount(
+            @PathVariable Integer discountId,
+            @RequestBody Map<String, List<Integer>> request) {
         try {
-            List<Integer> categoryIds = request.get("categoryIds");
-            if (categoryIds == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.error("categoryIds is required"));
-            }
-
-            Integer successCount = discountService.assignDiscountToCategories(discountId, categoryIds);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("successCount", successCount);
-            response.put("totalCount", categoryIds.size());
-
-            return ResponseEntity.ok(ApiResponse.success(
-                    "Successfully assigned " + successCount + " out of " + categoryIds.size() + " categories",
-                    response
-            ));
+            List<Integer> productIds = request.get("productIds");
+            Integer count = discountService.removeProductsFromDiscount(discountId, productIds);
+            return ResponseEntity.ok(ApiResponse.success("Xóa thành công " + count + " sản phẩm khỏi discount"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
 
-    @GetMapping("/discounts/active")
-    public ResponseEntity<ApiResponse<?>> getActiveDiscounts() {
-        try {
-            List<DiscountDTO> discounts = discountService.getAllActiveDiscounts();
-            return ResponseEntity.ok(ApiResponse.success(discounts));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    @GetMapping("/discounts/expired")
-    public ResponseEntity<ApiResponse<?>> getExpiredDiscounts() {
-        try {
-            List<DiscountDTO> discounts = discountService.getAllExpiredDiscounts();
-            return ResponseEntity.ok(ApiResponse.success(discounts));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    @GetMapping("/discounts/upcoming")
-    public ResponseEntity<ApiResponse<?>> getUpcomingDiscounts() {
-        try {
-            List<DiscountDTO> discounts = discountService.getAllUpcomingDiscounts();
-            return ResponseEntity.ok(ApiResponse.success(discounts));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    @GetMapping("/discounts/product-discounts")
-    public ResponseEntity<ApiResponse<?>> getProductDiscounts() {
-        try {
-            List<DiscountDTO> discounts = discountService.getAllProductDiscounts();
-            return ResponseEntity.ok(ApiResponse.success(discounts));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    @GetMapping("/discounts/category-discounts")
-    public ResponseEntity<ApiResponse<?>> getCategoryDiscounts() {
-        try {
-            List<DiscountDTO> discounts = discountService.getAllCategoryDiscounts();
-            return ResponseEntity.ok(ApiResponse.success(discounts));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-   @DeleteMapping("/discounts/{discountId}/products")
-    public ResponseEntity<ApiResponse<?>> removeProductsFromDiscount(
-        @PathVariable Integer discountId,
-        @RequestBody Map<String, List<Integer>> request) {
-    try {
-        List<Integer> productIds = request.get("productIds");
-        Integer count = discountService.removeProductsFromDiscount(discountId, productIds);
-        return ResponseEntity.ok(ApiResponse.success("Successfully removed " + count + " products from discount"));
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(e.getMessage()));
-    }
-}
     // API cho Product Discount - Cập nhật giá nhiều sản phẩm
     @PutMapping("/discounts/{discountId}/products/prices")
     public ResponseEntity<ApiResponse<?>> updateProductDiscountPrices(
         @PathVariable Integer discountId,
         @RequestBody Map<String, Map<Integer, Integer>> request) {
-    try {
+        
         Map<Integer, Integer> productPrices = request.get("productPrices");
         Integer count = discountService.updateProductDiscountPrices(discountId, productPrices);
-        return ResponseEntity.ok(ApiResponse.success("Successfully updated " + count + " product prices"));
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(e.getMessage()));
-    }
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật thành công" + count + " Giá trị sản phẩm"));
     }
 
-    // API cho Category Discount - Xóa nhiều danh mục
     @DeleteMapping("/discounts/{discountId}/categories")
     public ResponseEntity<ApiResponse<?>> removeCategoriesFromDiscount(
         @PathVariable Integer discountId,
         @RequestBody Map<String, List<Integer>> request) {
-    try {
         List<Integer> categoryIds = request.get("categoryIds");
         Integer count = discountService.removeCategoriesFromDiscount(discountId, categoryIds);
-        return ResponseEntity.ok(ApiResponse.success("Successfully removed " + count + " categories from discount"));
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(e.getMessage()));
-    }
+        return ResponseEntity.ok(ApiResponse.success("Xóa thành công" + count + " danh mục khỏi discount"));
     }
 
-
-
-
-    // Lấy danh sách sản phẩm đủ điều kiện để áp dụng discount, khi mở admin
     @GetMapping("/products/eligible-for-discount")
     public ResponseEntity<ApiResponse<?>> getProductsEligibleForDiscount(
             @RequestParam(required = false) String search,
@@ -822,54 +598,36 @@ public class AdminController {
         }
     }
 
-    // Product Sales Management
     @GetMapping("/products/best-selling")
     public ResponseEntity<ApiResponse<?>> getBestSellingProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "soldQuantity") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
-            Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                    Sort.by(sortBy).descending() :
-                    Sort.by(sortBy).ascending();
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
 
-            Pageable pageable = PageRequest.of(page, size, sort);
-            Page<ProductDTO> products = productSalesService.getBestSellingProducts(pageable);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<ProductDTO> products = productSalesService.getBestSellingProducts(pageable);
 
-            return ResponseEntity.ok(ApiResponse.success(products));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(products));
     }
-
 
     @PostMapping("/products/recalculate-sold-quantities")
     public ResponseEntity<ApiResponse<?>> recalculateAllSoldQuantities() {
-        try {
-            productSalesService.recalculateAllSoldQuantities();
-            return ResponseEntity.ok(ApiResponse.success("Successfully recalculated all sold quantities"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        productSalesService.recalculateAllSoldQuantities();
+        return ResponseEntity.ok(ApiResponse.success("Successfully recalculated all sold quantities"));
     }
 
     @PostMapping("/products/{id}/recalculate-sold-quantity")
     public ResponseEntity<ApiResponse<?>> recalculateSoldQuantity(@PathVariable Integer id) {
-        try {
-            productSalesService.recalculateSoldQuantity(id);
-            return ResponseEntity.ok(ApiResponse.success("Successfully recalculated sold quantity for product " + id));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        productSalesService.recalculateSoldQuantity(id);
+        return ResponseEntity.ok(ApiResponse.success("Successfully recalculated sold quantity for product " + id));
     }
 
-     /**
-     * Tạo flash sale mới (Admin only)
-     */
+
     @PostMapping("/flash-sales")
     public ResponseEntity<ApiResponse<?>> createFlashSale(@Valid @RequestBody CreateFlashSaleDTO createFlashSaleDTO) {
         try {
@@ -881,7 +639,7 @@ public class AdminController {
                 .build();
             FlashSaleDTO createdFlashSale = flashSaleService.createFlashSale(flashSaleDTO);
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Flash sale created successfully", createdFlashSale));
+                .body(ApiResponse.success("Tạo thành công flashsale", createdFlashSale));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(e.getMessage()));
@@ -892,14 +650,10 @@ public class AdminController {
      */
     @PutMapping("/flash-sale/{id}")
     public ResponseEntity<ApiResponse<?>> updateFlashSale(@PathVariable Integer id,
-                                                         @Valid @RequestBody FlashSaleDTO flashSaleDTO) {
-        try {
-            FlashSaleDTO updatedFlashSale = flashSaleService.updateFlashSale(id, flashSaleDTO);
-            return ResponseEntity.ok(ApiResponse.success("Flash sale updated successfully", updatedFlashSale));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+                                                        @Valid @RequestBody FlashSaleDTO flashSaleDTO) {
+        
+        FlashSaleDTO updatedFlashSale = flashSaleService.updateFlashSale(id, flashSaleDTO);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật FlashSale thành công", updatedFlashSale));
     }
 
     /**
@@ -907,26 +661,18 @@ public class AdminController {
      */
     @DeleteMapping("/flash-sale/{id}")
     public ResponseEntity<ApiResponse<?>> deleteFlashSale(@PathVariable Integer id) {
-        try {
-            flashSaleService.deleteFlashSale(id);
-            return ResponseEntity.ok(ApiResponse.success("Flash sale deleted successfully", null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        flashSaleService.deleteFlashSale(id);
+        return ResponseEntity.ok(ApiResponse.success("Xóa FlashSale thành công", null));
     }
 
-    /**
-     * Lấy tất cả flash sales (Admin only)
-     */
     @GetMapping("/flash-sales")
     public ResponseEntity<ApiResponse<?>> getAllFlashSales(
-        @RequestParam(required = false) String search,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(defaultValue = "id") String sortBy,
-        @RequestParam(defaultValue = "desc") String sortDir) {
-    try {
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        
         Sort sort = sortDir.equalsIgnoreCase("desc") ?
                 Sort.by(sortBy).descending() :
                 Sort.by(sortBy).ascending();
@@ -934,12 +680,8 @@ public class AdminController {
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<FlashSaleDTO> flashSalePage = flashSaleService.getFlashSalesWithSearch(search, pageable);
         
-        return ResponseEntity.ok(ApiResponse.success("Flash sales retrieved successfully", flashSalePage));
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(e.getMessage()));
+        return ResponseEntity.ok(ApiResponse.success("Lấy flassale thành công", flashSalePage));
     }
-}
 
     /**
      * Thêm sản phẩm vào flash sale (Admin only)
@@ -962,14 +704,10 @@ public class AdminController {
      */
     @PutMapping("/flash-sales/items/{flashSaleItemId}")
     public ResponseEntity<ApiResponse<?>> updateFlashSaleItem(@PathVariable Integer flashSaleItemId,
-                                                             @Valid @RequestBody FlashSaleItemDTO flashSaleItemDTO) {
-        try {
-            FlashSaleItemDTO updatedItem = flashSaleService.updateFlashSaleItem(flashSaleItemId, flashSaleItemDTO);
-            return ResponseEntity.ok(ApiResponse.success("Flash sale item updated successfully", updatedItem));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+                                                            @Valid @RequestBody FlashSaleItemDTO flashSaleItemDTO) {
+        
+        FlashSaleItemDTO updatedItem = flashSaleService.updateFlashSaleItem(flashSaleItemId, flashSaleItemDTO);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật thành công FlashSale", updatedItem));
     }
 
     /**
@@ -986,9 +724,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * Lấy danh sách flash sale items theo flash sale id (Admin only)
-     */
     @GetMapping("/flash-sales/{flashSaleId}/items")
     public ResponseEntity<ApiResponse<?>> getFlashSaleItems(@PathVariable Integer flashSaleId) {
         try {
@@ -1005,13 +740,8 @@ public class AdminController {
      */
     @GetMapping("/flash-sales/search")
     public ResponseEntity<ApiResponse<?>> searchFlashSales(@RequestParam String name) {
-        try {
-            List<FlashSaleDTO> flashSales = flashSaleService.searchFlashSalesByName(name);
-            return ResponseEntity.ok(ApiResponse.success("Flash sales found", flashSales));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        List<FlashSaleDTO> flashSales = flashSaleService.searchFlashSalesByName(name);
+        return ResponseEntity.ok(ApiResponse.success("Tìm thấy flashsale", flashSales));
     }
 
     /**
@@ -1019,14 +749,10 @@ public class AdminController {
      */
     @GetMapping("/flash-sales/stats/active-count")
     public ResponseEntity<ApiResponse<?>> getActiveFlashSalesCount() {
-        try {
-            Long count = flashSaleService.countActiveFlashSales();
-            return ResponseEntity.ok(ApiResponse.success("Active flash sales count retrieved", count));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        Long count = flashSaleService.countActiveFlashSales();
+        return ResponseEntity.ok(ApiResponse.success("Số lượng flashSale đang hoạt đông: ", count));
     }
+
     @GetMapping("/revenue-by-interval")
     public ResponseEntity<ApiResponse<?>> getRevenueByTimeInterval(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -1049,14 +775,16 @@ public class AdminController {
     public ResponseEntity<ApiResponse<?>> getRevenueByCategoryPieChart(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        try {
-            LocalDateTime startDateTime = startDate.atStartOfDay();
-            LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
-            Map<String, Object> statistics = statisticsService.getRevenueByCategoryPieChart(startDateTime, endDateTime);
-            return ResponseEntity.ok(ApiResponse.success(statistics));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+        Map<String, Object> statistics = statisticsService.getRevenueByCategoryPieChart(startDateTime, endDateTime);
+        return ResponseEntity.ok(ApiResponse.success(statistics));
+            }
+
+    @GetMapping("/{discountId}/products")
+    public ResponseEntity<ApiResponse<List<ProductDTO>>> getProductsByDiscountId(@PathVariable Integer discountId) {
+        List<ProductDTO> products = discountService.getProductsByDiscountId(discountId);
+        return ResponseEntity.ok(ApiResponse.success("Lấy sản phẩm thuộc discount thành công", products));
     }
 }

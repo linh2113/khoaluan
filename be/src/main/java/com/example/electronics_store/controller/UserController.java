@@ -11,14 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/users")
@@ -36,60 +31,48 @@ public class UserController {
     //get info user by id by pathvariable
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> getUserById(@PathVariable Integer id) {
-        try {
-            return ResponseEntity.ok(ApiResponse.success(userService.getUserById(id)));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        UserDTO user = userService.getUserById(id);
+        return ResponseEntity.ok(ApiResponse.success(user));
     }
     //get userProfile from requestparam
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<?>> getUserProfile(@RequestParam Integer userId) {
-        try {
-            return ResponseEntity.ok(ApiResponse.success(userService.getUserById(userId)));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        UserDTO user = userService.getUserById(userId);
+        return ResponseEntity.ok(ApiResponse.success(user));
     }
     //change in4 user
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> updateUser(@PathVariable Integer id, @Valid @RequestBody UserDTO userDTO) {
-        try {
-            return ResponseEntity.ok(ApiResponse.success("User updated successfully", userService.updateUser(id, userDTO)));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        UserDTO updatedUser = userService.updateUser(id, userDTO);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin người dùng thành công", updatedUser));
     }
     //change avt by user
     @PostMapping("/{id}/upload-avatar")
     public ResponseEntity<ApiResponse<?>> uploadAvatar(@PathVariable Integer id, @RequestParam("file") MultipartFile file) {
         try {
             String imageUrl = userService.uploadAvatar(id, file);
-            return ResponseEntity.ok(ApiResponse.success("Avatar uploaded successfully", imageUrl));
+            return ResponseEntity.ok(ApiResponse.success("Tải ảnh đại diện thành công", imageUrl));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
 
-  @PostMapping("/{id}/change-password")
-public ResponseEntity<ApiResponse<?>> initiatePasswordChange(
+    @PostMapping("/{id}/change-password")
+    public ResponseEntity<ApiResponse<?>> initiatePasswordChange(
         @PathVariable Integer id,
         @RequestBody Map<String, String> request) {
     try {
         Optional<User> userOpt = userService.getUserEntityById(id);
         if (!userOpt.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error("User not found"));
+                    .body(ApiResponse.error("Không tìm thấy người dùng"));
         }
 
         String currentPassword = request.get("currentPassword");
         if (currentPassword == null || currentPassword.trim().isEmpty()) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Current password is required"));
+                    .body(ApiResponse.error("Mật khẩu hiện tại là bắt buộc"));
         }
 
         User user = userOpt.get();
@@ -102,7 +85,7 @@ public ResponseEntity<ApiResponse<?>> initiatePasswordChange(
         userService.resetPassword(user.getEmail());
 
         return ResponseEntity.ok(ApiResponse.success(
-                "Password change verification email sent. Please check your email."
+                "Mật khẩu thay đổi đã được gửi qua Email. Làm ơn kiểm tra email!"
         ));
     } catch (Exception e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

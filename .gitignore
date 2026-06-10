@@ -39,14 +39,17 @@ yarn-error.log*
 *.tsbuildinfo
 fe/next-env.d.ts
 
-# Ignore all log files
-be/logs/
-be/logs/*.log
-be/logs/*.gz
-be/src/main/resources/application.properties
-be/src/main/resources/application-test.properties
-be/src/test/
-be/test_data.sql
+# Ignore API documentation files
+be/DISCOUNT_API_DOCUMENTATION.md
+be/FLASH_SALES_API_DOCUMENTATION.md
+be/spring-boot-parameters-guide.md
+be/VNPAY_API_DOCUMENTATION.md
+be/target/
 
+# Local development environment files
+.env 
 .idea/
 .vscode/
+logs/
+mysql-init/
+README.md

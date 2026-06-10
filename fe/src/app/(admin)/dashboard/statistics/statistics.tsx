@@ -366,7 +366,7 @@ export default function Statistics() {
                               data={
                                  statistics?.topSellingProducts?.map((item) => ({
                                     ...item,
-                                    name: decodeHTML(item.name)
+                                    name: decodeHTML(item.name.slice(0, 30) + '...')
                                  })) || []
                               }
                               layout='vertical'

@@ -30,34 +30,21 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> register(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
-        try {
-            return ResponseEntity.ok(ApiResponse.success("User registered successfully", userService.registerUser(registrationDTO)));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        UserDTO user = userService.registerUser(registrationDTO);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Đăng ký thành công", user));
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<?>> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
-        try {
-            LoginResponseDTO response = userService.login(loginRequest);
-            return ResponseEntity.ok(ApiResponse.success("Login successful", response));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        LoginResponseDTO response = userService.login(loginRequest);
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công", response));
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<?>> forgotPassword(@RequestParam String email) {
-        try {
-            userService.resetPassword(email);
-            return ResponseEntity.ok(ApiResponse.success("Password reset email sent"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        userService.resetPassword(email);
+        return ResponseEntity.ok(ApiResponse.success("Email đặt lại mật khẩu đã được gửi"));
     }
 
     @PostMapping("/reset-password")
@@ -65,16 +52,16 @@ public class AuthController {
         try {
             if (!userService.verifyPasswordResetToken(request.getToken())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.error("Invalid or expired token"));
+                        .body(ApiResponse.error("Token không hợp lệ hoặc đã hết hạn"));
             }
             // Validate password
             if (request.getNewPassword() == null || request.getNewPassword().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.error("New password is required"));
+                        .body(ApiResponse.error("Mật khẩu mới là bắt buộc"));
             }
 
             userService.changePassword(request.getToken(), request.getNewPassword());
-            return ResponseEntity.ok(ApiResponse.success("Password reset successful"));
+            return ResponseEntity.ok(ApiResponse.success("Reset mật khẩu thành công"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
@@ -131,10 +118,10 @@ public class AuthController {
         try {
             boolean verified = userService.verifyEmail(token);
             if (verified) {
-                return ResponseEntity.ok(ApiResponse.success("Email verified successfully"));
+                return ResponseEntity.ok(ApiResponse.success("Xác thực email thành công"));
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.error("Email verification failed"));
+                        .body(ApiResponse.error("Lỗi khi xác thực email"));
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

@@ -118,13 +118,13 @@ export default function Compare() {
                      {products.map((product) => (
                         <th key={product.id} className='border p-4 '>
                            <div className='flex flex-col items-center'>
-                              <div className='w-full'>
+                              <div className='aspect-square w-[500px]'>
                                  <Image
                                     src={product.image || '/placeholder.svg'}
                                     alt={decodeHTML(product.name)}
                                     width={500}
                                     height={500}
-                                    className='mb-2'
+                                    className='mb-2 object-contain'
                                  />
                               </div>
                               <Link

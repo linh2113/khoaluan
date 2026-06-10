@@ -28,13 +28,8 @@ public class CartController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getCart(@RequestParam Integer userId) {
-        try {
             CartDTO cart = cartService.getCartByUserId(userId);
             return ResponseEntity.ok(ApiResponse.success(cart));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
     }
 
     @PostMapping("/add")
@@ -42,17 +37,13 @@ public class CartController {
             @RequestParam Integer userId,
             @RequestParam Integer productId,
             @RequestParam Integer quantity) {
-        try {
             CartDTO cart = cartService.addProductToCart(userId, productId, quantity);
 
             // Record the event for recommendation system
             // recommendationService.recordUserEvent(userId, productId, "addtocart");
 
-            return ResponseEntity.ok(ApiResponse.success("Product added to cart", cart));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+            return ResponseEntity.ok(ApiResponse.success("Thêm thành công sản phẩm vào giỏ hàng", cart));
+        
     }
 
     @PutMapping("/update")
@@ -60,70 +51,45 @@ public class CartController {
             @RequestParam Integer userId,
             @RequestParam Integer cartItemId,
             @RequestParam Integer quantity) {
-        try {
             CartDTO cart = cartService.updateCartItemQuantity(userId, cartItemId, quantity);
-            return ResponseEntity.ok(ApiResponse.success("Cart item updated", cart));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+            return ResponseEntity.ok(ApiResponse.success("Cập nhật sản phẩm gio hàng thành công", cart));
+        
     }
 
     @DeleteMapping("/remove")
     public ResponseEntity<ApiResponse<?>> removeCartItem(
             @RequestParam Integer userId,
             @RequestParam Integer cartItemId) {
-        try {
             CartDTO cart = cartService.removeCartItem(userId, cartItemId);
-            return ResponseEntity.ok(ApiResponse.success("Cart item removed", cart));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+            return ResponseEntity.ok(ApiResponse.success("Xóa sản phẩm khỏi giỏ hàng thành công", cart));
+    
     }
 
     @DeleteMapping("/clear")
     public ResponseEntity<ApiResponse<?>> clearCart(@RequestParam Integer userId) {
-        try {
             cartService.clearCart(userId);
-            return ResponseEntity.ok(ApiResponse.success("Cart cleared"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+            return ResponseEntity.ok(ApiResponse.success("Dọn sạch giỏ hàng thành công"));
     }
 
     @GetMapping("/count")
     public ResponseEntity<ApiResponse<?>> getCartItemCount(@RequestParam Integer userId) {
-        try {
-            Long count = cartService.getCartItemCount(userId);
+           Long count = cartService.getCartItemCount(userId);
             return ResponseEntity.ok(ApiResponse.success(count));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+      
     }
 
     @GetMapping("/total")
     public ResponseEntity<ApiResponse<?>> getCartTotal(@RequestParam Integer userId) {
-        try {
             Float total = cartService.calculateCartTotal(userId);
             return ResponseEntity.ok(ApiResponse.success(total));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+        
     }
     @PutMapping("/select-items")
     public ResponseEntity<ApiResponse<?>> selectCartItems(
             @RequestParam Integer userId,
             @RequestBody List<Integer> cartItemIds) {
-        try {
             CartDTO cart = cartService.updateSelectedCartItems(userId, cartItemIds);
-            return ResponseEntity.ok(ApiResponse.success("Cart items selection updated", cart));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        }
+            return ResponseEntity.ok(ApiResponse.success("cập nhật thành công sản phẩm trong giỏ hàng", cart));
+
     }
 }

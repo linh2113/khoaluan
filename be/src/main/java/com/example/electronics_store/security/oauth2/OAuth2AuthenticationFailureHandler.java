@@ -23,21 +23,20 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) 
-            throws IOException, ServletException {
+        throws IOException, ServletException {
         String targetUrl = CookieUtils.getCookie(request, HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME)
-                .map(Cookie::getValue)
-                .orElse(("/"));
-
-        // Encode error message properly
-        String errorMessage = URLEncoder.encode(exception.getLocalizedMessage(), StandardCharsets.UTF_8.toString());
-        
+            .map(Cookie::getValue)
+            .orElse(("/"));
+         String errorMessage = "Đăng nhập bằng mạng xã hội thất bại";
+        if (exception.getMessage().contains("email")) {
+                errorMessage = "Email không được cung cấp từ nhà cung cấp dịch vụ";
+        }
+        String encodedError = URLEncoder.encode(errorMessage, StandardCharsets.UTF_8.toString());
         targetUrl = UriComponentsBuilder.fromUriString(targetUrl)
-                .queryParam("error", errorMessage)
-                .build(false) // Don't encode twice
+                .queryParam("error", encodedError)
+                .build(false)
                 .toUriString();
-
-        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
-
-        getRedirectStrategy().sendRedirect(request, response, targetUrl);
+                httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+                getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }

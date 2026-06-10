@@ -37,11 +37,11 @@ export function useProductSections() {
       sortDir: 'desc'
    })
 
-   // Sản phẩm giá rẻ (dưới 5 triệu)
+   // Sản phẩm giá rẻ (dưới 1 triệu)
    const budgetProducts = useGetAllProducts({
       page: 0,
       size: 8,
-      maxPrice: 5000000,
+      maxPrice: 1000000,
       sortBy: 'price',
       sortDir: 'asc'
    })

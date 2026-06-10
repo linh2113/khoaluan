@@ -28,7 +28,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
     public PaymentMethodDTO createPaymentMethod(PaymentMethodDTO paymentMethodDTO) {
         // Kiểm tra tên phương thức thanh toán đã tồn tại chưa
         if (paymentMethodRepository.existsByMethodName(paymentMethodDTO.getMethodName())) {
-            throw new RuntimeException("Payment method name already exists");
+            throw new RuntimeException("Tên phương thức thanh toán đã tồn tại");
         }
 
         PaymentMethod paymentMethod = new PaymentMethod();
@@ -44,7 +44,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
     @Transactional
     public PaymentMethodDTO updatePaymentMethod(Integer id, PaymentMethodDTO paymentMethodDTO) {
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Payment method not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức thanh toán"));
 
         // Chỉ cập nhật tên nếu có thay đổi và không trùng với tên khác
         if (paymentMethodDTO.getMethodName() != null && 
@@ -52,7 +52,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
             
             // Kiểm tra tên mới đã tồn tại chưa
             if (paymentMethodRepository.existsByMethodName(paymentMethodDTO.getMethodName())) {
-                throw new RuntimeException("Payment method name already exists");
+                throw new RuntimeException("Tên phương thức thanh toán đã tồn tại");
             }
             paymentMethod.setMethodName(paymentMethodDTO.getMethodName());
         }
@@ -74,7 +74,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
     @Override
     public PaymentMethodDTO getPaymentMethodById(Integer id) {
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Payment method not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức thanh toán"));
         return mapPaymentMethodToDTO(paymentMethod);
     }
 
@@ -96,7 +96,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
     @Transactional
     public void deletePaymentMethod(Integer id) {
         if (!paymentMethodRepository.existsById(id)) {
-            throw new RuntimeException("Payment method not found");
+            throw new RuntimeException("Không tìm thấy phương thức thanh toán");
         }
         paymentMethodRepository.deleteById(id);
     }
@@ -105,7 +105,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
     @Transactional
     public void togglePaymentMethodStatus(Integer id) {
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Payment method not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức thanh toán"));
         
         paymentMethod.setIsActive(!paymentMethod.getIsActive());
         paymentMethodRepository.save(paymentMethod);

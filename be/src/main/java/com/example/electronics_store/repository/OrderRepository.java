@@ -34,15 +34,30 @@ public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpeci
             "GROUP BY DATE(o.create_at) " +
             "ORDER BY order_date", nativeQuery = true)
     List<Object[]> getOrderCountByDay(@Param("startDate") String startDate, @Param("endDate") String endDate);
-    
+
     @Query(value = "SELECT DATE(o.create_at) as order_date, SUM(o.total_price) as total_sales " +
             "FROM orders o " +
-            "WHERE o.create_at BETWEEN :startDate AND :endDate AND o.order_status = 4 " +
+            "WHERE o.create_at BETWEEN STR_TO_DATE(:startDate, '%Y-%m-%d') AND STR_TO_DATE(:endDate, '%Y-%m-%d') AND o.order_status = 4 " +
             "GROUP BY DATE(o.create_at) " +
             "ORDER BY order_date", nativeQuery = true)
     List<Object[]> getSalesByDay(@Param("startDate") String startDate, @Param("endDate") String endDate);
 
     @Query("SELECT o FROM Order o WHERE o.orderStatus = 3 AND o.updatedAt <= :cutoffDate")
     List<Order> findOrdersToAutoComplete(@Param("cutoffDate") LocalDateTime cutoffDate);
+
+@Query("SELECT COUNT(o) FROM Order o WHERE o.createAt >= :startOfDay")
+Long countNewOrdersToday(@Param("startOfDay") LocalDateTime startOfDay);
+
+@Query("SELECT o.orderStatus, COUNT(o) FROM Order o GROUP BY o.orderStatus")
+List<Object[]> countOrdersByStatus();
+
+@Query(value = """
+    SELECT o.id, o.id_user, u.user_name, o.total_price, o.create_at, o.order_status
+    FROM orders o 
+    JOIN users u ON o.id_user = u.id
+    ORDER BY o.create_at DESC 
+    LIMIT 5
+    """, nativeQuery = true)
+List<Object[]> findRecentOrders();
 
 }

@@ -61,15 +61,14 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
     List<Product> findTopRatedProducts();
 
     @Query(value = """
-        SELECT p.* FROM products p
-        LEFT JOIN order_details od ON p.id = od.id_product
-        WHERE p.status = true
-        GROUP BY p.id
-        ORDER BY COUNT(od.id) DESC
-        """,
-            countQuery = "SELECT COUNT(DISTINCT p.id) FROM products p LEFT JOIN order_details od ON p.id = od.id_product WHERE p.status = true",
-            nativeQuery = true)
+    SELECT * FROM products p
+    WHERE p.status = 1
+    ORDER BY p.sold_quantity DESC, p.id ASC
+    """,
+    countQuery = "SELECT COUNT(*) FROM products p WHERE p.status = 1",
+    nativeQuery = true)
     Page<Product> findTopSellingProducts(Pageable pageable);
+
 
     @Query(value = """
     SELECT p.* FROM products p
@@ -96,7 +95,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
 
     @Query(value = """
     SELECT p.* FROM products p
-    JOIN flash_sale_item fsi ON p.id = fsi.product_id
+    JOIN flash_sale_item fsi ON p.id = fsi.id_product
     JOIN flash_sale fs ON fsi.flash_sale_id = fs.id
     WHERE p.status = true
     AND fs.start_time <= :now
@@ -104,7 +103,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
     """,
             countQuery = """
     SELECT COUNT(p.id) FROM products p
-    JOIN flash_sale_item fsi ON p.id = fsi.product_id
+    JOIN flash_sale_item fsi ON p.id = fsi.id_product
     JOIN flash_sale fs ON fsi.flash_sale_id = fs.id
     WHERE p.status = true
     AND fs.start_time <= :now
@@ -113,7 +112,13 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
             nativeQuery = true)
     Page<Product> findActiveFlashSaleProducts(@Param("now") LocalDateTime now, Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.status = true ORDER BY p.createAt DESC")
+    @Query(value = """
+    SELECT * FROM products p
+    WHERE p.status = 1
+    ORDER BY p.create_at DESC, p.id DESC
+    """,
+    countQuery = "SELECT COUNT(*) FROM products p WHERE p.status = 1",
+    nativeQuery = true)
     Page<Product> findByOrderByCreateAtDesc(Pageable pageable);
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);
 
@@ -138,7 +143,9 @@ public interface ProductRepository extends JpaRepository<Product, Integer>,JpaSp
     void recalculateAllSoldQuantities();
 
     // Get products ordered by sold quantity (best sellers)
-    @Query("SELECT p FROM Product p WHERE p.status = true ORDER BY p.soldQuantity DESC")
+     @Query(value = "SELECT * FROM products p WHERE p.status = 1 ORDER BY p.sold_quantity DESC, p.id ASC",
+           countQuery = "SELECT COUNT(*) FROM products p WHERE p.status = 1",
+           nativeQuery = true)
     Page<Product> findBestSellingProducts(Pageable pageable);
 
     @Query("SELECT DISTINCT pd.product.id FROM ProductDiscount pd " +
@@ -149,4 +156,51 @@ List<Integer> findProductIdsWithActiveDiscounts(@Param("now") LocalDateTime now)
 
     @Query("SELECT p FROM Product p WHERE p.productIdString IN :productIdStrings AND p.status = true")
     List<Product> findByProductIdStringsInOrder(@Param("productIdStrings") List<String> productIdStrings);
+
+@Query(value = """
+    SELECT p.*, 
+           COALESCE(fsi.flash_price, pd.discounted_price, p.price * (1 - COALESCE(d.value, 0) / 100)) as final_price
+    FROM products p
+    LEFT JOIN flash_sale_items fsi ON p.id = fsi.id_product 
+        AND EXISTS (SELECT 1 FROM flash_sales fs WHERE fs.id = fsi.id_flash_sale 
+                   AND fs.start_time <= :now AND fs.end_time >= :now)
+    LEFT JOIN product_discounts pd ON p.id = pd.id_product
+    LEFT JOIN discounts d ON pd.id_discount = d.id 
+        AND d.is_active = true 
+        AND d.start_date <= :now 
+        AND d.end_date >= :now
+    WHERE p.status = true
+    AND (:minPrice IS NULL OR COALESCE(fsi.flash_price, pd.discounted_price, p.price * (1 - COALESCE(d.value, 0) / 100)) >= :minPrice)
+    AND (:maxPrice IS NULL OR COALESCE(fsi.flash_price, pd.discounted_price, p.price * (1 - COALESCE(d.value, 0) / 100)) <= :maxPrice)
+    AND (:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+    AND (:categoryId IS NULL OR p.id_category = :categoryId)
+    AND (:brand IS NULL OR EXISTS (SELECT 1 FROM brands b WHERE b.id = p.id_brand AND b.brand_name = :brand))
+    ORDER BY final_price DESC
+    """,
+    countQuery = """
+    SELECT COUNT(p.id) FROM products p
+    LEFT JOIN flash_sale_items fsi ON p.id = fsi.id_product 
+        AND EXISTS (SELECT 1 FROM flash_sales fs WHERE fs.id = fsi.id_flash_sale 
+                   AND fs.start_time <= :now AND fs.end_time >= :now)
+    LEFT JOIN product_discounts pd ON p.id = pd.id_product
+    LEFT JOIN discounts d ON pd.id_discount = d.id 
+        AND d.is_active = true 
+        AND d.start_date <= :now 
+        AND d.end_date >= :now
+    WHERE p.status = true
+    AND (:minPrice IS NULL OR COALESCE(fsi.flash_price, pd.discounted_price, p.price * (1 - COALESCE(d.value, 0) / 100)) >= :minPrice)
+    AND (:maxPrice IS NULL OR COALESCE(fsi.flash_price, pd.discounted_price, p.price * (1 - COALESCE(d.value, 0) / 100)) <= :maxPrice)
+    AND (:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+    AND (:categoryId IS NULL OR p.id_category = :categoryId)
+    AND (:brand IS NULL OR EXISTS (SELECT 1 FROM brands b WHERE b.id = p.id_brand AND b.brand_name = :brand))
+    """,
+    nativeQuery = true)
+Page<Product> findProductsWithPriceFilter(
+    @Param("minPrice") Integer minPrice,
+    @Param("maxPrice") Integer maxPrice,
+    @Param("keyword") String keyword,
+    @Param("categoryId") Integer categoryId,
+    @Param("brand") String brand,
+    @Param("now") LocalDateTime now,
+    Pageable pageable);
 }

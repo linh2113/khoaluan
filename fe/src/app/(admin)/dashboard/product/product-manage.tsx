@@ -498,7 +498,7 @@ export default function ProductManage() {
                               )}
                            />
                         </div>
-                        <div className='space-y-2'>
+                        {/* <div className='space-y-2'>
                            <Label htmlFor='discountId'>Khuyến mãi</Label>
                            <Controller
                               control={control}
@@ -521,7 +521,7 @@ export default function ProductManage() {
                                  </Select>
                               )}
                            />
-                        </div>
+                        </div> */}
                         <div className='space-y-2'>
                            <Label htmlFor='stock'>
                               Số lượng tồn kho <span className='text-red-500'>*</span>
@@ -919,7 +919,7 @@ export default function ProductManage() {
                            )}
                         />
                      </div>
-                     <div className='space-y-2'>
+                     {/* <div className='space-y-2'>
                         <Label htmlFor='discountId'>Giảm giá</Label>
                         <Controller
                            control={control}
@@ -943,7 +943,7 @@ export default function ProductManage() {
                               </Select>
                            )}
                         />
-                     </div>
+                     </div> */}
                      <div className='space-y-2'>
                         <Label htmlFor='stock'>Số lượng tồn kho</Label>
                         <Input

@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -47,7 +48,7 @@ public class UserServiceImpl implements UserService {
     @Value("${spring.mail.username:noreply@example.com}")
     private String fromEmail;
 
-    @Value("${app.frontend-url:http://localhost:3000}")
+    @Value("${app.frontend-url:https://fe-i7eo.vercel.app}")
     private String frontendUrl;
 
     @Autowired
@@ -100,8 +101,7 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
 
-        // Send verification email
-        sendVerificationEmail(savedUser);
+        
 
         return mapUserToDTO(savedUser);
     }
@@ -147,11 +147,11 @@ public class UserServiceImpl implements UserService {
         try {
             // Find user by username
             User user = userRepository.findByUserName(loginRequest.getUserName())
-                    .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+                    .orElseThrow(() -> new BadCredentialsException("Tên đăng nhập hoặc mật khẩu không đúng"));
 
             // Check if user is active
             if (user.getActive() != 1) {
-                throw new RuntimeException("Account is not active");
+                throw new RuntimeException("Tài khoản chưa được kích hoạt");
             }
 
             // Authenticate user, if fall -> throw exception
@@ -187,7 +187,7 @@ public class UserServiceImpl implements UserService {
                 // Check if account should be locked
                 if (user.getLockFail() + 1 >= 5) {
                     userRepository.updateActiveStatus(user.getId(), 0);
-                    throw new RuntimeException("Account has been locked due to too many failed login attempts");
+                    throw new RuntimeException("Tài khoản đã bị khóa do đăng nhập sai quá nhiều lần");
                 }
             }
 
@@ -195,21 +195,21 @@ public class UserServiceImpl implements UserService {
             if (e instanceof RuntimeException) {
                 throw e;
             }
-            throw new RuntimeException("Authentication failed: " + e.getMessage());
+            throw new RuntimeException("Tên đăng nhập hoặc mật khẩu không đúng" + e.getMessage());
         }
     }
 
     @Override
     public UserDTO getUserById(Integer id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("không tìm thấy người dùng"));
         return mapUserToDTO(user);
     }
 
     @Override
     public UserDTO getUserByUsername(String username) {
         User user = userRepository.findByUserName(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
         return mapUserToDTO(user);
     }
 
@@ -238,7 +238,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO updateUser(Integer id, UserDTO userDTO) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
         // Update user fields only if they are not null
         if (userDTO.getSurName() != null) {
@@ -296,7 +296,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void resetPassword(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
         // Generate reset token
         String resetToken = UUID.randomUUID().toString();
@@ -347,7 +347,7 @@ public class UserServiceImpl implements UserService {
     public String uploadAvatar(Integer userId, MultipartFile file) {
         try {
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
                     ObjectUtils.asMap("folder", "avatars"));

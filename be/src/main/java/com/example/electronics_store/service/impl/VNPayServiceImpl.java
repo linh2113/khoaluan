@@ -4,7 +4,12 @@ import com.example.electronics_store.config.VNPayConfig;
 import com.example.electronics_store.dto.PaymentResponseDTO;
 import com.example.electronics_store.model.Order;
 import com.example.electronics_store.repository.OrderRepository;
+import com.example.electronics_store.service.EmailService;
 import com.example.electronics_store.service.VNPayService;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,10 +24,11 @@ public class VNPayServiceImpl implements VNPayService {
 
     @Autowired
     private VNPayConfig vnPayConfig;
-    
     @Autowired
     private OrderRepository orderRepository;
-
+    @Autowired private EmailService emailService;
+    @PersistenceContext
+    private EntityManager entityManager;
     @Override
     public String createPaymentUrl(Integer orderId, Long amount, String orderInfo, String ipAddress) {
         try {
@@ -44,7 +50,7 @@ public class VNPayServiceImpl implements VNPayService {
             vnp_Params.put("vnp_Locale", "vn");
             
             // URL trả về sau khi thanh toán
-            vnp_Params.put("vnp_ReturnUrl", "http://localhost:3000/vnpay-return");
+            vnp_Params.put("vnp_ReturnUrl", "https://fe-i7eo.vercel.app/vnpay-return");
             vnp_Params.put("vnp_IpAddr", ipAddress);
             
             // Thời gian giao dịch
@@ -145,19 +151,37 @@ public class VNPayServiceImpl implements VNPayService {
         boolean isSuccessful = "00".equals(vnp_ResponseCode);
         
         // Lấy orderId từ vnp_TxnRef
-        Integer orderId = Integer.parseInt(vnp_TxnRef.split("_")[0]);
+        System.out.println("vnp_TxnRef: " + vnp_TxnRef);
+        if (vnp_TxnRef == null || !vnp_TxnRef.contains("_")) {
+            throw new RuntimeException("Invalid vnp_TxnRef format: " + vnp_TxnRef);
+        }
+
+        String[] parts = vnp_TxnRef.split("_");
+        System.out.println("Split parts: " + Arrays.toString(parts));
+
+        Integer orderId;
+        try {
+            orderId = Integer.parseInt(parts[0]);
+            System.out.println("Parsed orderId: " + orderId);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Cannot parse orderId from vnp_TxnRef: " + vnp_TxnRef, e);
+        }
         
         // Cập nhật trạng thái đơn hàng nếu thanh toán thành công
         if (isValidSignature && isSuccessful) {
-            Order order = orderRepository.findById(orderId)
-                    .orElseThrow(() -> new RuntimeException("Order not found"));
-            
-            // Cập nhật trạng thái thanh toán
-            order.setPaymentStatus("Paid");
-            order.setOrderStatus(1); // Chuyển sang trạng thái Processing
-            orderRepository.save(order);
+        System.out.println("=== UPDATING ORDER STATUS ===");
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setPaymentStatus("Paid");
+        order.setOrderStatus(1); 
+        Order savedOrder = orderRepository.save(order);
+        entityManager.flush();
+        try {
+            emailService.sendPaymentSuccessEmail(savedOrder);
+        } catch (Exception e) {
+            System.err.println("Lỗi khi gửi email " + e.getMessage());
         }
-        
+}
         // Tạo response
         PaymentResponseDTO response = new PaymentResponseDTO();
         response.setSuccess(isValidSignature && isSuccessful);

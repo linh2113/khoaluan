@@ -3,12 +3,11 @@ package com.example.electronics_store.service.impl;
 import com.example.electronics_store.dto.FlashSaleDTO;
 import com.example.electronics_store.dto.FlashSaleItemDTO;
 import com.example.electronics_store.dto.ProductDTO;
-import com.example.electronics_store.model.Brand;
 import com.example.electronics_store.model.FlashSale;
 import com.example.electronics_store.model.FlashSaleItem;
 import com.example.electronics_store.model.Product;
-import com.example.electronics_store.repository.FlashSaleRepository;
 import com.example.electronics_store.repository.FlashSaleItemRepository;
+import com.example.electronics_store.repository.FlashSaleRepository;
 import com.example.electronics_store.repository.ProductRepository;
 import com.example.electronics_store.service.FlashSaleService;
 
@@ -16,6 +15,10 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,30 +26,39 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class FlashSaleServiceImpl implements FlashSaleService {
 
-    @Autowired
-    private FlashSaleRepository flashSaleRepository;
+    @Autowired private FlashSaleRepository flashSaleRepository;
+    @Autowired private FlashSaleItemRepository flashSaleItemRepository;
+    @Autowired private ProductRepository productRepository;
+    @Autowired private CacheManager cacheManager;
 
-    @Autowired
-    private FlashSaleItemRepository flashSaleItemRepository;
+    /* -------------------- Helpers for cache -------------------- */
 
-    @Autowired
-    private ProductRepository productRepository;
+    private void evictProductsByIds(Collection<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return;
+        var products = cacheManager.getCache("products");
+        if (products != null) {
+            ids.forEach(products::evict);
+        }
+    }
+
+
+    /* -------------------- CRUD flash sale -------------------- */
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "flashSales", allEntries = true),
+        @CacheEvict(value = "productLists", allEntries = true)
+    })
     public FlashSaleDTO createFlashSale(FlashSaleDTO flashSaleDTO) {
-        // Validate thời gian
         validateFlashSaleTime(flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime());
 
-        // Kiểm tra xem có flash sale nào đang hoạt động trong khoảng thời gian này không
         if (flashSaleRepository.existsActiveFlashSaleInTimeRange(
                 flashSaleDTO.getStartTime(), flashSaleDTO.getEndTime())) {
             throw new RuntimeException("There is already an active flash sale in this time range");
@@ -58,161 +70,225 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         flashSale.setStartTime(flashSaleDTO.getStartTime());
         flashSale.setEndTime(flashSaleDTO.getEndTime());
 
-        FlashSale savedFlashSale = flashSaleRepository.save(flashSale);
-        return mapFlashSaleToDTO(savedFlashSale);
+        FlashSale saved = flashSaleRepository.save(flashSale);
+        return mapFlashSaleToDTO(saved);
     }
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "flashSales", allEntries = true),
+        @CacheEvict(value = "productLists", allEntries = true)
+    })
     public FlashSaleDTO updateFlashSale(Integer id, FlashSaleDTO flashSaleDTO) {
-    FlashSale flashSale = flashSaleRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Flash sale not found"));
+        FlashSale flashSale = flashSaleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Flash sale not found"));
 
-    // Kiểm tra xem flash sale đã bắt đầu chưa
-    LocalDateTime now = LocalDateTime.now();
-    if (flashSale.getStartTime().isBefore(now)) {
-        throw new RuntimeException("Cannot update flash sale that has already started");
-    }
-    
-    // Cập nhật thời gian
-    LocalDateTime newStartTime = flashSaleDTO.getStartTime();
-    LocalDateTime newEndTime = flashSaleDTO.getEndTime();
-    
-    // Nếu chỉ cập nhật endTime
-    if (newStartTime == null && newEndTime != null) {
-        // Sử dụng startTime hiện tại
-        newStartTime = flashSale.getStartTime();
-        
-        // Validate thời gian
-        if (newEndTime.isBefore(newStartTime)) {
-            throw new RuntimeException("End time must be after start time");
+        LocalDateTime now = LocalDateTime.now();
+        if (flashSale.getStartTime().isBefore(now)) {
+            throw new RuntimeException("Cannot update flash sale that has already started");
         }
-        
-        // Kiểm tra xem có flash sale nào khác đang hoạt động trong khoảng thời gian mới không
-        if (!flashSale.getEndTime().equals(newEndTime)) {
-            if (flashSaleRepository.existsActiveFlashSaleInTimeRange(
-                    newStartTime, newEndTime)) {
+
+        LocalDateTime newStart = flashSaleDTO.getStartTime();
+        LocalDateTime newEnd = flashSaleDTO.getEndTime();
+
+        if (newStart == null && newEnd != null) {
+            newStart = flashSale.getStartTime();
+            if (newEnd.isBefore(newStart)) throw new RuntimeException("End time must be after start time");
+            if (!flashSale.getEndTime().equals(newEnd)
+                    && flashSaleRepository.existsActiveFlashSaleInTimeRange(newStart, newEnd)) {
                 throw new IllegalArgumentException("There is already another flash sale in this time range");
             }
-        }
-        
-        flashSale.setEndTime(newEndTime);
-    }
-    // Nếu chỉ cập nhật startTime
-    else if (newStartTime != null && newEndTime == null) {
-        // Sử dụng endTime hiện tại
-        newEndTime = flashSale.getEndTime();
-        
-        // Validate thời gian
-        if (newStartTime.isAfter(newEndTime)) {
-            throw new RuntimeException("Start time must be before end time");
-        }
-        
-        if (newStartTime.isBefore(now)) {
-            throw new RuntimeException("Start time cannot be in the past");
-        }
-        
-        // Kiểm tra xem có flash sale nào khác đang hoạt động trong khoảng thời gian mới không
-        if (!flashSale.getStartTime().equals(newStartTime)) {
-            if (flashSaleRepository.existsActiveFlashSaleInTimeRange(
-                    newStartTime, newEndTime)) {
+            flashSale.setEndTime(newEnd);
+        } else if (newStart != null && newEnd == null) {
+            newEnd = flashSale.getEndTime();
+            if (newStart.isAfter(newEnd)) throw new RuntimeException("Start time must be before end time");
+            if (newStart.isBefore(now)) throw new RuntimeException("Start time cannot be in the past");
+            if (!flashSale.getStartTime().equals(newStart)
+                    && flashSaleRepository.existsActiveFlashSaleInTimeRange(newStart, newEnd)) {
                 throw new IllegalArgumentException("There is already another flash sale in this time range");
             }
-        }
-        
-        flashSale.setStartTime(newStartTime);
-    }
-        // Nếu cập nhật cả startTime và endTime
-    else if (newStartTime != null && newEndTime != null) {
-        // Validate thời gian
-        validateFlashSaleTime(newStartTime, newEndTime);
-        
-        // Kiểm tra xem có flash sale nào khác đang hoạt động trong khoảng thời gian mới không
-        if (!flashSale.getStartTime().equals(newStartTime) ||
-            !flashSale.getEndTime().equals(newEndTime)) {
-            if (flashSaleRepository.existsActiveFlashSaleInTimeRange(
-                    newStartTime, newEndTime)) {
+            flashSale.setStartTime(newStart);
+        } else if (newStart != null && newEnd != null) {
+            validateFlashSaleTime(newStart, newEnd);
+            if ((!flashSale.getStartTime().equals(newStart) || !flashSale.getEndTime().equals(newEnd))
+                    && flashSaleRepository.existsActiveFlashSaleInTimeRange(newStart, newEnd)) {
                 throw new IllegalArgumentException("There is already another flash sale in this time range");
             }
+            flashSale.setStartTime(newStart);
+            flashSale.setEndTime(newEnd);
         }
-        
-        flashSale.setStartTime(newStartTime);
-        flashSale.setEndTime(newEndTime);
-    }
 
-    // Cập nhật các trường khác nếu được cung cấp
-    if (flashSaleDTO.getName() != null) {
-        flashSale.setName(flashSaleDTO.getName());
-    }
+        if (flashSaleDTO.getName() != null) flashSale.setName(flashSaleDTO.getName());
+        if (flashSaleDTO.getDescription() != null) flashSale.setDescription(flashSaleDTO.getDescription());
 
-    if (flashSaleDTO.getDescription() != null) {
-        flashSale.setDescription(flashSaleDTO.getDescription());
-    }
+        FlashSale updated = flashSaleRepository.save(flashSale);
 
-    FlashSale updatedFlashSale = flashSaleRepository.save(flashSale);
-    return mapFlashSaleToDTO(updatedFlashSale);
-    }
+        // Evict products under this flash sale (giá “hiện tại” phụ thuộc vào khung giờ)
+        List<Integer> affectedProductIds = flashSaleItemRepository.findByFlashSaleId(id)
+                .stream().map(i -> i.getProduct().getId()).collect(Collectors.toList());
+        evictProductsByIds(affectedProductIds);
+        // flashSales + productLists đã clear bởi @Caching
 
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductDTO> getFlashSaleProductsWithFilters(Integer flashSaleId,String search,Integer minPrice,Integer maxPrice,Pageable pageable) {
-    // Kiểm tra flash sale có tồn tại không
-    FlashSale flashSale = flashSaleRepository.findById(flashSaleId)
-            .orElseThrow(() -> new RuntimeException("Flash sale not found"));
-    
-    // Tạo specification để lọc sản phẩm
-    Specification<Product> spec = (root, query, cb) -> {
-        List<Predicate> predicates = new ArrayList<>();
-        
-        // Join với FlashSaleItem và FlashSale
-        Join<Product, FlashSaleItem> flashSaleItemJoin = root.join("flashSaleItems", JoinType.INNER);
-        Join<FlashSaleItem, FlashSale> flashSaleJoin = flashSaleItemJoin.join("flashSale", JoinType.INNER);
-        
-        // Lọc theo flash sale ID
-        predicates.add(cb.equal(flashSaleJoin.get("id"), flashSaleId));
-        
-        // Lọc theo từ khóa (tên sản phẩm hoặc mô tả)
-        if (search != null && !search.trim().isEmpty()) {
-            String searchTerm = "%" + search.toLowerCase() + "%";
-            predicates.add(cb.or(
-                cb.like(cb.lower(root.get("name")), searchTerm),
-                cb.like(cb.lower(root.get("description")), searchTerm)
-            ));
-        }
-        
-        
-        // Lọc theo khoảng giá (sử dụng giá flash sale)
-        if (minPrice != null) {
-            predicates.add(cb.greaterThanOrEqualTo(flashSaleItemJoin.get("flashPrice"), minPrice));
-        }
-        
-        if (maxPrice != null) {
-            predicates.add(cb.lessThanOrEqualTo(flashSaleItemJoin.get("flashPrice"), maxPrice));
-        }
-        
-        
-        // Chỉ lấy sản phẩm đang active
-        predicates.add(cb.isTrue(root.get("status")));
-        
-        return cb.and(predicates.toArray(new Predicate[0]));
-    };
-    
-    // Thực hiện truy vấn với specification và pageable
-    Page<Product> productPage = productRepository.findAll(spec, pageable);
-    
-    // Chuyển đổi kết quả sang DTO
-    return productPage.map(product -> {
-        // Tìm flash sale item tương ứng
-        FlashSaleItem flashSaleItem = flashSaleItemRepository.findByFlashSaleIdAndProductId(flashSaleId, product.getId())
-                .orElse(null);
-        // Map product sang DTO với thông tin flash sale
-        return mapProductToDTO(product, flashSaleItem);
-    });
+        return mapFlashSaleToDTO(updated);
     }
 
     @Override
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "flashSales", allEntries = true),
+        @CacheEvict(value = "productLists", allEntries = true)
+    })
+    public void deleteFlashSale(Integer id) {
+        FlashSale flashSale = flashSaleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Flash sale not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+        if (flashSale.getStartTime().isBefore(now)) {
+            throw new RuntimeException("Cannot delete flash sale that has already started");
+        }
+
+        // Evict sản phẩm trước khi xóa
+        List<Integer> productIds = flashSaleItemRepository.findByFlashSaleId(id)
+                .stream().map(i -> i.getProduct().getId()).collect(Collectors.toList());
+        evictProductsByIds(productIds);
+
+        flashSaleRepository.deleteById(id);
+        // flashSales + productLists đã clear bởi @Caching
+    }
+
+    /* -------------------- Items (product in flash sale) -------------------- */
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "flashSales", allEntries = true),
+        @CacheEvict(value = "productLists", allEntries = true)
+    })
+    public FlashSaleItemDTO addProductToFlashSale(Integer flashSaleId, FlashSaleItemDTO dto) {
+        FlashSale flashSale = flashSaleRepository.findById(flashSaleId)
+                .orElseThrow(() -> new RuntimeException("Flash sale not found"));
+        Product product = productRepository.findById(dto.getProductId())
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        boolean exists = flashSaleItemRepository.findByFlashSaleId(flashSaleId).stream()
+                .anyMatch(item -> item.getProduct().getId().equals(dto.getProductId()));
+        if (exists) throw new RuntimeException("Product already exists in this flash sale");
+
+        if (dto.getFlashPrice() == null || dto.getFlashPrice() >= product.getPrice()) {
+            throw new RuntimeException("Flash price must be lower than original price");
+        }
+
+        FlashSaleItem item = new FlashSaleItem();
+        item.setFlashSale(flashSale);
+        item.setProduct(product);
+        item.setFlashPrice(dto.getFlashPrice());
+        item.setStockLimit(dto.getStockLimit());
+        item.setSoldCount(0);
+
+        FlashSaleItem saved = flashSaleItemRepository.save(item);
+
+        // Evict đúng sản phẩm
+        evictProductsByIds(List.of(product.getId()));
+
+        return mapFlashSaleItemToDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "flashSales", allEntries = true),
+        @CacheEvict(value = "productLists", allEntries = true)
+    })
+    public FlashSaleItemDTO updateFlashSaleItem(Integer flashSaleItemId, FlashSaleItemDTO dto) {
+        FlashSaleItem item = flashSaleItemRepository.findById(flashSaleItemId)
+                .orElseThrow(() -> new RuntimeException("Flash sale item not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+        if (item.getFlashSale().getStartTime().isBefore(now)) {
+            throw new RuntimeException("Cannot update flash sale item that has already started");
+        }
+
+        if (dto.getFlashPrice() == null || dto.getFlashPrice() >= item.getProduct().getPrice()) {
+            throw new RuntimeException("Flash price must be lower than original price");
+        }
+
+        item.setFlashPrice(dto.getFlashPrice());
+        item.setStockLimit(dto.getStockLimit());
+        FlashSaleItem updated = flashSaleItemRepository.save(item);
+
+        // Evict đúng sản phẩm
+        evictProductsByIds(List.of(item.getProduct().getId()));
+
+        return mapFlashSaleItemToDTO(updated);
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "flashSales", allEntries = true),
+        @CacheEvict(value = "productLists", allEntries = true)
+    })
+    public void removeProductFromFlashSale(Integer flashSaleItemId) {
+        FlashSaleItem item = flashSaleItemRepository.findById(flashSaleItemId)
+                .orElseThrow(() -> new RuntimeException("Flash sale item not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+        if (item.getFlashSale().getStartTime().isBefore(now)) {
+            throw new RuntimeException("Cannot remove product from flash sale that has already started");
+        }
+
+        Integer productId = item.getProduct().getId();
+        flashSaleItemRepository.deleteById(flashSaleItemId);
+
+        // Evict đúng sản phẩm
+        evictProductsByIds(List.of(productId));
+    }
+
+    /* -------------------- Reads with caching -------------------- */
+
+    @Override
     @Transactional(readOnly = true)
+    
+    public Page<ProductDTO> getFlashSaleProductsWithFilters(Integer flashSaleId, String search, Integer minPrice, Integer maxPrice, Pageable pageable) {
+        // Validate & build spec
+        flashSaleRepository.findById(flashSaleId)
+                .orElseThrow(() -> new RuntimeException("Flash sale not found"));
+
+        Specification<Product> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            Join<Product, FlashSaleItem> fsItem = root.join("flashSaleItems", JoinType.INNER);
+            Join<FlashSaleItem, FlashSale> fs = fsItem.join("flashSale", JoinType.INNER);
+
+            predicates.add(cb.equal(fs.get("id"), flashSaleId));
+
+            if (search != null && !search.trim().isEmpty()) {
+                String term = "%" + search.toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), term),
+                        cb.like(cb.lower(root.get("description")), term)
+                ));
+            }
+
+            if (minPrice != null) predicates.add(cb.greaterThanOrEqualTo(fsItem.get("flashPrice"), minPrice));
+            if (maxPrice != null) predicates.add(cb.lessThanOrEqualTo(fsItem.get("flashPrice"), maxPrice));
+
+            predicates.add(cb.isTrue(root.get("status")));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<Product> page = productRepository.findAll(spec, pageable);
+
+        return page.map(p -> {
+            FlashSaleItem fsi = flashSaleItemRepository.findByFlashSaleIdAndProductId(flashSaleId, p.getId()).orElse(null);
+            return mapProductToDTO(p, fsi);
+        });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "flashSales", key = "#id")
     public FlashSaleDTO getFlashSaleById(Integer id) {
         FlashSale flashSale = flashSaleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Flash sale not found"));
@@ -221,6 +297,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "flashSales", key = "'all'")
     public List<FlashSaleDTO> getAllFlashSales() {
         return flashSaleRepository.findAll().stream()
                 .map(this::mapFlashSaleToDTO)
@@ -230,59 +307,48 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     @Override
     @Transactional(readOnly = true)
     public Page<FlashSaleDTO> getFlashSalesWithSearch(String search, Pageable pageable) {
-    Specification<FlashSale> spec = Specification.where(null);
+        Specification<FlashSale> spec = Specification.where(null);
 
-    if (search != null && !search.trim().isEmpty()) {
-        String searchTerm = "%" + search.toLowerCase() + "%";
-        spec = spec.and((root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
+        if (search != null && !search.trim().isEmpty()) {
+            String term = "%" + search.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                try {
+                    Integer id = Integer.parseInt(search);
+                    predicates.add(cb.equal(root.get("id"), id));
+                } catch (NumberFormatException ignored) { }
 
-            // Tìm theo ID
-            try {
-                Integer flashSaleId = Integer.parseInt(search);
-                predicates.add(cb.equal(root.get("id"), flashSaleId));
-            } catch (NumberFormatException ignored) {
-            }
+                predicates.add(cb.like(cb.lower(root.get("name")), term));
+                predicates.add(cb.like(cb.lower(root.get("description")), term));
 
-            // Tìm theo tên và mô tả
-            predicates.add(cb.like(cb.lower(root.get("name")), searchTerm));
-            predicates.add(cb.like(cb.lower(root.get("description")), searchTerm));
+                LocalDateTime now = LocalDateTime.now();
+                if ("active".equalsIgnoreCase(search) || "current".equalsIgnoreCase(search)) {
+                    predicates.add(cb.and(
+                            cb.lessThanOrEqualTo(root.get("startTime"), now),
+                            cb.greaterThanOrEqualTo(root.get("endTime"), now)
+                    ));
+                } else if ("upcoming".equalsIgnoreCase(search) || "future".equalsIgnoreCase(search)) {
+                    predicates.add(cb.greaterThan(root.get("startTime"), now));
+                } else if ("past".equalsIgnoreCase(search) || "ended".equalsIgnoreCase(search)) {
+                    predicates.add(cb.lessThan(root.get("endTime"), now));
+                }
 
-            // Tìm theo trạng thái
-            LocalDateTime now = LocalDateTime.now();
-            if ("active".equalsIgnoreCase(search) || "current".equalsIgnoreCase(search)) {
-                predicates.add(cb.and(
-                    cb.lessThanOrEqualTo(root.get("startTime"), now),
-                    cb.greaterThanOrEqualTo(root.get("endTime"), now)
-                ));
-            } else if ("upcoming".equalsIgnoreCase(search) || "future".equalsIgnoreCase(search)) {
-                predicates.add(cb.greaterThan(root.get("startTime"), now));
-            } else if ("past".equalsIgnoreCase(search) || "ended".equalsIgnoreCase(search)) {
-                predicates.add(cb.lessThan(root.get("endTime"), now));
-            }
+                if (search.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                    predicates.add(cb.like(cb.function("DATE_FORMAT", String.class, root.get("startTime"), cb.literal("%Y-%m-%d")), search));
+                    predicates.add(cb.like(cb.function("DATE_FORMAT", String.class, root.get("endTime"), cb.literal("%Y-%m-%d")), search));
+                }
 
-            // Tìm theo ngày (định dạng yyyy-MM-dd)
-            if (search.matches("\\d{4}-\\d{2}-\\d{2}")) {
-                predicates.add(cb.like(
-                    cb.function("DATE_FORMAT", String.class, root.get("startTime"), cb.literal("%Y-%m-%d")),
-                    search
-                ));
-                predicates.add(cb.like(
-                    cb.function("DATE_FORMAT", String.class, root.get("endTime"), cb.literal("%Y-%m-%d")),
-                    search
-                ));
-            }
+                return cb.or(predicates.toArray(new Predicate[0]));
+            });
+        }
 
-            return cb.or(predicates.toArray(new Predicate[0]));
-        });
-    }
-
-    Page<FlashSale> flashSalePage = flashSaleRepository.findAll(spec, pageable);
-    return flashSalePage.map(this::mapFlashSaleToDTO);
+        Page<FlashSale> page = flashSaleRepository.findAll(spec, pageable);
+        return page.map(this::mapFlashSaleToDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "flashSales", key = "'current'")
     public List<FlashSaleDTO> getCurrentFlashSales() {
         LocalDateTime now = LocalDateTime.now();
         return flashSaleRepository.findCurrentFlashSales(now).stream()
@@ -292,6 +358,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "flashSales", key = "'upcoming'")
     public List<FlashSaleDTO> getUpcomingFlashSales() {
         LocalDateTime now = LocalDateTime.now();
         return flashSaleRepository.findUpcomingFlashSales(now).stream()
@@ -301,6 +368,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "flashSales", key = "'past'")
     public List<FlashSaleDTO> getPastFlashSales() {
         LocalDateTime now = LocalDateTime.now();
         return flashSaleRepository.findPastFlashSales(now).stream()
@@ -309,103 +377,11 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
-    @Transactional
-    public void deleteFlashSale(Integer id) {
-        FlashSale flashSale = flashSaleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Flash sale not found"));
-
-       LocalDateTime now = LocalDateTime.now();
-        if (flashSale.getStartTime().isBefore(now)) {
-        throw new RuntimeException("Cannot delete flash sale that has already started");
-    }
-
-        flashSaleRepository.deleteById(id);
-    }
-
-    @Override
-    @Transactional
-    public FlashSaleItemDTO addProductToFlashSale(Integer flashSaleId, FlashSaleItemDTO flashSaleItemDTO) {
-        FlashSale flashSale = flashSaleRepository.findById(flashSaleId)
-                .orElseThrow(() -> new RuntimeException("Flash sale not found"));
-
-        Product product = productRepository.findById(flashSaleItemDTO.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        // Kiểm tra xem flash sale đã bắt đầu chưa
-        LocalDateTime now = LocalDateTime.now();
-        if (flashSale.getStartTime().isBefore(now)) {
-            throw new RuntimeException("Cannot add product to flash sale that has already started");
-        }
-
-        // Kiểm tra xem sản phẩm đã có trong flash sale này chưa
-        boolean productExists = flashSaleItemRepository.findByFlashSaleId(flashSaleId).stream()
-                .anyMatch(item -> item.getProduct().getId().equals(flashSaleItemDTO.getProductId()));
-
-        if (productExists) {
-            throw new RuntimeException("Product already exists in this flash sale");
-        }
-
-        // Validate flash price
-        if (flashSaleItemDTO.getFlashPrice() >= product.getPrice()) {
-            throw new RuntimeException("Flash price must be lower than original price");
-        }
-
-        FlashSaleItem flashSaleItem = new FlashSaleItem();
-        flashSaleItem.setFlashSale(flashSale);
-        flashSaleItem.setProduct(product);
-        flashSaleItem.setFlashPrice(flashSaleItemDTO.getFlashPrice());
-        flashSaleItem.setStockLimit(flashSaleItemDTO.getStockLimit());
-        flashSaleItem.setSoldCount(0);
-
-        FlashSaleItem savedItem = flashSaleItemRepository.save(flashSaleItem);
-        return mapFlashSaleItemToDTO(savedItem);
-    }
-
-    @Override
-    @Transactional
-    public FlashSaleItemDTO updateFlashSaleItem(Integer flashSaleItemId, FlashSaleItemDTO flashSaleItemDTO) {
-        FlashSaleItem flashSaleItem = flashSaleItemRepository.findById(flashSaleItemId)
-                .orElseThrow(() -> new RuntimeException("Flash sale item not found"));
-
-        // Kiểm tra xem flash sale đã bắt đầu chưa
-        LocalDateTime now = LocalDateTime.now();
-        if (flashSaleItem.getFlashSale().getStartTime().isBefore(now)) {
-            throw new RuntimeException("Cannot update flash sale item that has already started");
-        }
-
-        // Validate flash price
-        if (flashSaleItemDTO.getFlashPrice() >= flashSaleItem.getProduct().getPrice()) {
-            throw new RuntimeException("Flash price must be lower than original price");
-        }
-
-        flashSaleItem.setFlashPrice(flashSaleItemDTO.getFlashPrice());
-        flashSaleItem.setStockLimit(flashSaleItemDTO.getStockLimit());
-
-        FlashSaleItem updatedItem = flashSaleItemRepository.save(flashSaleItem);
-        return mapFlashSaleItemToDTO(updatedItem);
-    }
-
-    @Override
-    @Transactional
-    public void removeProductFromFlashSale(Integer flashSaleItemId) {
-        FlashSaleItem flashSaleItem = flashSaleItemRepository.findById(flashSaleItemId)
-                .orElseThrow(() -> new RuntimeException("Flash sale item not found"));
-
-        // Kiểm tra xem flash sale đã bắt đầu chưa
-        LocalDateTime now = LocalDateTime.now();
-        if (flashSaleItem.getFlashSale().getStartTime().isBefore(now)) {
-            throw new RuntimeException("Cannot remove product from flash sale that has already started");
-        }
-
-        flashSaleItemRepository.deleteById(flashSaleItemId);
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public List<ProductDTO> getFlashSaleProducts(Integer flashSaleId) {
-        List<FlashSaleItem> flashSaleItems = flashSaleItemRepository.findByFlashSaleId(flashSaleId);
-        return flashSaleItems.stream()
-                .map(item -> mapProductToDTO(item.getProduct(), item))
+        List<FlashSaleItem> items = flashSaleItemRepository.findByFlashSaleId(flashSaleId);
+        return items.stream()
+                .map(i -> mapProductToDTO(i.getProduct(), i))
                 .collect(Collectors.toList());
     }
 
@@ -418,17 +394,16 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<FlashSale> getFlashSaleEntityById(Integer id) {
-        return flashSaleRepository.findById(id);
+    @Cacheable(value = "flashSales", key = "'items:' + #flashSaleId")
+    public List<FlashSaleItemDTO> getFlashSaleItems(Integer flashSaleId) {
+        List<FlashSaleItem> items = flashSaleItemRepository.findByFlashSaleId(flashSaleId);
+        return items.stream().map(this::mapFlashSaleItemToDTO).collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<FlashSaleItemDTO> getFlashSaleItems(Integer flashSaleId) {
-        List<FlashSaleItem> flashSaleItems = flashSaleItemRepository.findByFlashSaleId(flashSaleId);
-        return flashSaleItems.stream()
-                .map(this::mapFlashSaleItemToDTO)
-                .collect(Collectors.toList());
+    public Optional<FlashSale> getFlashSaleEntityById(Integer id) {
+        return flashSaleRepository.findById(id);
     }
 
     @Override
@@ -440,42 +415,31 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Long countActiveFlashSales() {
         LocalDateTime now = LocalDateTime.now();
         return flashSaleRepository.countActiveFlashSales(now);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean canCreateFlashSaleInTimeRange(LocalDateTime startTime, LocalDateTime endTime) {
         return !flashSaleRepository.existsActiveFlashSaleInTimeRange(startTime, endTime);
     }
 
-    // Helper methods
+    /* -------------------- Private mappers & validators -------------------- */
+
     private void validateFlashSaleTime(LocalDateTime startTime, LocalDateTime endTime) {
         LocalDateTime now = LocalDateTime.now();
-
-        if (startTime.isBefore(now)) {
-            throw new RuntimeException("Start time cannot be in the past");
-        }
-
-        if (endTime.isBefore(startTime)) {
-            throw new RuntimeException("End time must be after start time");
-        }
-
-        if (startTime.isEqual(endTime)) {
-            throw new RuntimeException("Start time and end time cannot be the same");
-        }
+        if (startTime.isBefore(now)) throw new RuntimeException("Start time cannot be in the past");
+        if (endTime.isBefore(startTime)) throw new RuntimeException("End time must be after start time");
+        if (startTime.isEqual(endTime)) throw new RuntimeException("Start time and end time cannot be the same");
     }
 
     private FlashSaleDTO mapFlashSaleToDTO(FlashSale flashSale) {
         LocalDateTime now = LocalDateTime.now();
-
-        List<FlashSaleItemDTO> items = null;
-        if (flashSale.getFlashSaleItems() != null) {
-            items = flashSale.getFlashSaleItems().stream()
-                    .map(this::mapFlashSaleItemToDTO)
-                    .collect(Collectors.toList());
-        }
+        List<FlashSaleItemDTO> items = (flashSale.getFlashSaleItems() == null) ? null :
+                flashSale.getFlashSaleItems().stream().map(this::mapFlashSaleItemToDTO).collect(Collectors.toList());
 
         return FlashSaleDTO.builder()
                 .id(flashSale.getId())
@@ -525,16 +489,12 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     private Integer calculateDiscountPercentage(Integer originalPrice, Float flashPrice) {
-        if (originalPrice == null || flashPrice == null || originalPrice == 0) {
-            return 0;
-        }
+        if (originalPrice == null || flashPrice == null || originalPrice == 0) return 0;
         return Math.round(((originalPrice - flashPrice) / originalPrice) * 100);
     }
 
     private Integer calculateAvailableStock(FlashSaleItem flashSaleItem) {
-        if (flashSaleItem.getStockLimit() == null) {
-            return flashSaleItem.getProduct().getStock();
-        }
+        if (flashSaleItem.getStockLimit() == null) return flashSaleItem.getProduct().getStock();
         return Math.max(0, flashSaleItem.getStockLimit() - flashSaleItem.getSoldCount());
     }
 }

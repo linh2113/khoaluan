@@ -82,11 +82,11 @@ export default function DashboardLayout({
          href: '/dashboard/category',
          icon: <Tag className='h-5 w-5' />
       },
-      // {
-      //    title: 'Mã giảm giá',
-      //    href: '/dashboard/discount',
-      //    icon: <BadgeDollarSign className='h-5 w-5' />
-      // },
+      {
+         title: 'Mã giảm giá',
+         href: '/dashboard/discount',
+         icon: <BadgeDollarSign className='h-5 w-5' />
+      },
       {
          title: 'Flash Sale',
          href: '/dashboard/flash-sale',

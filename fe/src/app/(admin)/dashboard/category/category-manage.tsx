@@ -156,7 +156,7 @@ export default function CategoryManage() {
       }
       //@ts-ignore
       updateCategory.mutate(
-         { body: formData, id: editingCategory.id },
+         { body: formData as any, id: editingCategory.id },
          {
             onSuccess: () => {
                setIsEditDialogOpen(false)

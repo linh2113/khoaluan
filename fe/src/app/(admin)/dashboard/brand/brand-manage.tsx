@@ -175,7 +175,7 @@ export default function BrandManage() {
 
       //@ts-ignore
       updateBrand.mutate(
-         { body: formData, id: editingBrand.id },
+         { body: formData as any, id: editingBrand.id },
          {
             onSuccess: () => {
                setIsEditDialogOpen(false)

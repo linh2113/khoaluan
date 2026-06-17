@@ -13,7 +13,7 @@ class Http {
       this.refreshToken = ''
       this.refreshTokenRequest = null
       this.instance = axios.create({
-         baseURL: 'http://localhost:8080/api/v1',
+         baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1',
          timeout: 30_000,
          headers: {
             'Content-Type': 'application/json'

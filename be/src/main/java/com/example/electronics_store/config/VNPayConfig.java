@@ -20,9 +20,6 @@ public class VNPayConfig {
     @Value("${vnpay.payment-url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
     private String vnpPayUrl;
 
-    @Value("${app.backend-url:http://localhost:8080}")
-    private String backendUrl;
-
     public String getVnpTmnCode() {
         return vnpTmnCode;
     }
@@ -35,10 +32,7 @@ public class VNPayConfig {
         return vnpPayUrl;
     }
 
-    public String getBackendUrl() {
-        return backendUrl;
-    }
-
+   
     // Tạo mã giao dịch ngẫu nhiên
     public String getRandomNumber(int len) {
         Random rnd = new Random();

@@ -11,7 +11,6 @@ import { Card } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import Paginate from '@/components/paginate'
-
 import { ShoppingBag, Star, TrendingUp, Zap, Scale, Grid3X3, List, SlidersHorizontal, X } from 'lucide-react'
 import { toast } from 'react-toastify'
 import Image from 'next/image'
@@ -25,7 +24,7 @@ import {
    BreadcrumbSeparator
 } from '@/components/ui/breadcrumb'
 import ProductCard from '@/components/product-card'
-import { decodeHTML } from '@/lib/utils'
+import { decodeHTML,formatCurrency } from '@/lib/utils'
 
 function ProductsPageContent() {
    const searchParams = useSearchParams()
@@ -226,14 +225,15 @@ function ProductsPageContent() {
             value: queryParams.brand
          })
       }
-      if (queryParams.minPrice || queryParams.maxPrice) {
+      if (queryParams.minPrice != null || queryParams.maxPrice != null) {
          const minPrice = queryParams.minPrice
          const maxPrice = queryParams.maxPrice
          filters.push({
             key: 'price',
-            label: `${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
-               minPrice
-            )} - ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(maxPrice)}`,
+            label: [
+               minPrice != null && formatCurrency(minPrice),
+               maxPrice != null && formatCurrency(maxPrice)
+             ].filter(Boolean).join(' - '),
             value: 'price'
          })
       }

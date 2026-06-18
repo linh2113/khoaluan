@@ -69,13 +69,17 @@ def fetch_user_purchases(user_id: str) -> List[str]:
 
 IS_CLOUD = "RAILWAY_ENVIRONMENT" in os.environ
 if IS_CLOUD:
-    # --- CẤU HÌNH TRÊN CLOUD ---
-    url_cf = "1L81H5jzdKqfNriQJ1zYrrVgQyodu5RgM"
-    url_stats = "1MrKyMtFl_ncA5tzyK5kHftqhMg6xof8c"
+    id_cf = "1L81H5jzdKqfNriQJ1zYrrVgQyodu5RgM"
+    id_stats = "1MrKyMtFl_ncA5tzyK5kHftqhMg6xof8c"
+
+    
+    url_cf = f"https://google.com{id_cf}"
+    url_stats = f"https://google.com{id_stats}"
 
     response_cf = requests.get(url_cf)
     ITEM_CF = joblib.load(io.BytesIO(response_cf.content))
-    STATS = pd.read_parquet(url_stats)
+    response_stats = requests.get(url_stats)
+    STATS = pd.read_parquet(io.BytesIO(response_stats.content))
 else:
      # --- CẤU HÌNH TẠI LOCAL ---
     ITEM_CF = joblib.load("./best_knn_model.joblib")

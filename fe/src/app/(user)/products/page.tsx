@@ -14,7 +14,7 @@ import Paginate from '@/components/paginate'
 import { ShoppingBag, Star, TrendingUp, Zap, Scale, Grid3X3, List, SlidersHorizontal, X } from 'lucide-react'
 import { toast } from 'react-toastify'
 import Image from 'next/image'
-import Product from '@/components/product'
+import ProductCard from '@/components/product-card'
 import {
    Breadcrumb,
    BreadcrumbItem,
@@ -23,8 +23,7 @@ import {
    BreadcrumbPage,
    BreadcrumbSeparator
 } from '@/components/ui/breadcrumb'
-import ProductCard from '@/components/product-card'
-import { decodeHTML,formatCurrency } from '@/lib/utils'
+import { decodeHTML, formatCurrency } from '@/lib/utils'
 
 function ProductsPageContent() {
    const searchParams = useSearchParams()

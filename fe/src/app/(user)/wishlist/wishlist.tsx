@@ -4,6 +4,7 @@ import { useAppContext } from '@/context/app.context'
 import { useGetWishlist, useRemoveFromWishlist } from '@/queries/useWishlist'
 import { useAddToCart } from '@/queries/useCart'
 import { decodeHTML, formatCurrency, generateNameId } from '@/lib/utils'
+import { getWishlistPriceDisplay } from '@/lib/price'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -152,14 +153,19 @@ export default function Wishlist() {
                   </Link>
 
                   <div className='mt-2 flex items-center justify-between'>
-                     <div className='flex items-center gap-2'>
-                        {item.discountedPrice && item.productPrice && item.discountedPrice < item.productPrice && (
-                           <div className='text-gray-500 text-xs line-through'>{formatCurrency(item.productPrice)}</div>
-                        )}
-                        <div className='text-secondaryColor font-bold'>
-                           {formatCurrency(item.discountedPrice || item.productPrice || 0)}
-                        </div>
-                     </div>
+                     {(() => {
+                        const { originalPrice, salePrice, hasDiscount } = getWishlistPriceDisplay(item)
+                        return (
+                           <div className='flex items-center gap-2'>
+                              {hasDiscount && (
+                                 <div className='text-gray-500 text-xs line-through'>
+                                    {formatCurrency(originalPrice)}
+                                 </div>
+                              )}
+                              <div className='text-secondaryColor font-bold'>{formatCurrency(salePrice)}</div>
+                           </div>
+                        )
+                     })()}
                   </div>
 
                   <div className='text-xs text-gray-500 mb-4'>

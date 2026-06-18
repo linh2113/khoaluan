@@ -2,6 +2,7 @@
 import ProductRating from '@/components/product-rating'
 import QuantityController from '@/components/quantity-controller'
 import { decodeHTML, formatCurrency, formatNumberToK, getIdFromNameId } from '@/lib/utils'
+import { getProductPriceDisplay } from '@/lib/price'
 import { ChevronLeft, ChevronRight, Heart, ImagePlus, SendHorizontal, ShoppingBasket, Star, X, Zap } from 'lucide-react'
 import Image from 'next/image'
 import type React from 'react'
@@ -332,6 +333,8 @@ export default function ProductDetail({ id }: { id: string }) {
       )
    }
 
+   const { originalPrice, salePrice, hasDiscount } = getProductPriceDisplay(product)
+
    return (
       <div className='my-5 container'>
          <div className='bg-secondary rounded-lg p-5 flex flex-col md:flex-row gap-10'>
@@ -435,12 +438,10 @@ export default function ProductDetail({ id }: { id: string }) {
 
                {/* Giá */}
                <div className='bg-background p-5 rounded flex items-center gap-5'>
-                  {product.discountedPrice && product.discountedPrice < product.price ? (
+                  {hasDiscount ? (
                      <>
-                        <span className='line-through text-base text-gray-500'>{formatCurrency(product.price)}</span>
-                        <span className='text-secondaryColor text-2xl font-medium'>
-                           {formatCurrency(product.discountedPrice)}
-                        </span>
+                        <span className='line-through text-base text-gray-500'>{formatCurrency(originalPrice)}</span>
+                        <span className='text-secondaryColor text-2xl font-medium'>{formatCurrency(salePrice)}</span>
                         <span className='rounded-sm bg-secondaryColor px-1 py-[2px] text-xs font-semibold text-white'>
                            {product.discountPercentage.toFixed(0)}% GIẢM
                         </span>
@@ -452,7 +453,7 @@ export default function ProductDetail({ id }: { id: string }) {
                         )}
                      </>
                   ) : (
-                     <span className='text-secondaryColor text-2xl font-medium'>{formatCurrency(product.price)}</span>
+                     <span className='text-secondaryColor text-2xl font-medium'>{formatCurrency(salePrice)}</span>
                   )}
                </div>
 

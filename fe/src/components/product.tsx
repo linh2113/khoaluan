@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Heart, ShoppingCart, Star, Eye, Scale } from 'lucide-react'
 import type { ProductType } from '@/types/product.type'
-import { decodeHTML } from '@/lib/utils'
+import { decodeHTML, formatCurrency } from '@/lib/utils'
+import { getProductPriceDisplay } from '@/lib/price'
 
 interface ProductCardProps {
    product: ProductType
@@ -16,6 +17,14 @@ interface ProductCardProps {
    isSelectedForCompare?: boolean
    layout?: 'grid' | 'list'
 }
+const isNewProduct = (dateString: string | Date) => {
+   const createdDate = new Date(dateString);
+   const currentDate = new Date();
+   const diffTime = Math.abs(currentDate.getTime() - createdDate.getTime());
+   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+   
+   return diffDays <= 7; // Hiển thị nhãn "Mới" nếu đăng chưa quá 7 ngày
+ };
 
 export default function Product({
    product,
@@ -25,19 +34,7 @@ export default function Product({
 }: ProductCardProps) {
    const [isWishlisted, setIsWishlisted] = useState(false)
    const [imageError, setImageError] = useState(false)
-
-   const formatPrice = (price: number) => {
-      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
-   }
-
-   const calculateDiscount = () => {
-      if (product.originalPrice && product.price < product.originalPrice) {
-         return Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-      }
-      return 0
-   }
-
-   const discount = calculateDiscount()
+   const { originalPrice, salePrice, hasDiscount, discountPercent } = getProductPriceDisplay(product)
 
    if (layout === 'list') {
       return (
@@ -57,8 +54,10 @@ export default function Product({
 
                   {/* Badges */}
                   <div className='absolute top-2 left-2 flex flex-col gap-1'>
-                     {discount > 0 && <Badge className='bg-red-500 hover:bg-red-600 text-white'>-{discount}%</Badge>}
-                     {product.isNew && <Badge className='bg-green-500 hover:bg-green-600 text-white'>Mới</Badge>}
+                     {discountPercent > 0 && (
+                        <Badge className='bg-red-500 hover:bg-red-600 text-white'>-{discountPercent}%</Badge>
+                     )}
+                     {<Badge className='bg-green-500 hover:bg-green-600 text-white'>Mới</Badge>}
                   </div>
 
                   {/* Compare Checkbox */}
@@ -81,7 +80,7 @@ export default function Product({
                   <div className='flex justify-between h-full'>
                      <div className='flex-1'>
                         {/* Brand */}
-                        <p className='text-sm text-muted-foreground mb-1'>{product.brand}</p>
+                        <p className='text-sm text-muted-foreground mb-1'>{product.brandName}</p>
 
                         {/* Title */}
                         <Link href={`/products/${product.id}`}>
@@ -97,7 +96,7 @@ export default function Product({
                                  <Star
                                     key={i}
                                     className={`h-4 w-4 ${
-                                       i < (product.rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                       i < (product.averageRating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
                                     }`}
                                  />
                               ))}
@@ -110,12 +109,12 @@ export default function Product({
 
                         {/* Price */}
                         <div className='flex items-center gap-2 mb-4'>
-                           <span className='text-2xl font-bold text-primary'>{formatPrice(product.price)}</span>
-                           {product.originalPrice && product.originalPrice > product.price && (
+                           {hasDiscount && (
                               <span className='text-lg text-muted-foreground line-through'>
-                                 {formatPrice(product.originalPrice)}
+                                 {formatCurrency(originalPrice)}
                               </span>
                            )}
+                           <span className='text-2xl font-bold text-primary'>{formatCurrency(salePrice)}</span>
                         </div>
                      </div>
 
@@ -165,8 +164,10 @@ export default function Product({
 
             {/* Badges */}
             <div className='absolute top-2 left-2 flex flex-col gap-1'>
-               {discount > 0 && <Badge className='bg-red-500 hover:bg-red-600 text-white'>-{discount}%</Badge>}
-               {product.isNew && <Badge className='bg-green-500 hover:bg-green-600 text-white'>Mới</Badge>}
+               {discountPercent > 0 && (
+                  <Badge className='bg-red-500 hover:bg-red-600 text-white'>-{discountPercent}%</Badge>
+               )}
+               {isNewProduct(product.createAt) && <Badge className='bg-green-500 hover:bg-green-600 text-white'>Mới</Badge>}
             </div>
 
             {/* Actions Overlay */}
@@ -200,7 +201,7 @@ export default function Product({
 
          <CardContent className='p-4'>
             {/* Brand */}
-            <p className='text-sm text-muted-foreground mb-1'>{product.brand}</p>
+            <p className='text-sm text-muted-foreground mb-1'>{product.brandName}</p>
 
             {/* Title */}
             <Link href={`/products/${product.id}`}>
@@ -216,7 +217,7 @@ export default function Product({
                      <Star
                         key={i}
                         className={`h-4 w-4 ${
-                           i < (product.rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                           i < (product.averageRating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
                         }`}
                      />
                   ))}
@@ -226,12 +227,10 @@ export default function Product({
 
             {/* Price */}
             <div className='flex items-center gap-2 mb-4'>
-               <span className='text-xl font-bold text-primary'>{formatPrice(product.price)}</span>
-               {product.originalPrice && product.originalPrice > product.price && (
-                  <span className='text-sm text-muted-foreground line-through'>
-                     {formatPrice(product.originalPrice)}
-                  </span>
+               {hasDiscount && (
+                  <span className='text-sm text-muted-foreground line-through'>{formatCurrency(originalPrice)}</span>
                )}
+               <span className='text-xl font-bold text-primary'>{formatCurrency(salePrice)}</span>
             </div>
 
             {/* Add to Cart Button */}

@@ -80,6 +80,7 @@ Chạy tại: http://localhost:3000
 ```text
 khoaluan/
 ├── be/                 # Backend (Spring Boot API)
+├── docs/               # The khoaluan document
 ├── fe/                 # Frontend (Next.js Web App)
 ├── APIRecommend/       # API gợi ý sản phẩm bằng AI (Python)
 ├── mysql-init/         # SQL dump khởi tạo database ban đầu

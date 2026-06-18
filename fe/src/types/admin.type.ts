@@ -72,6 +72,7 @@ export interface DiscountType {
    updatedAt: any
    discountId: number
    assignedCount: any
+   bannerUrl?: string | null; 
 }
 
 export interface CreateDiscountType {

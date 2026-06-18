@@ -1,11 +1,14 @@
 import os
-
+import requests
+import io
 from fastapi import FastAPI
 from typing import List, Dict, Tuple, Any
-import joblib, pandas as pd
+import joblib
+import pandas as pd
 from collections import defaultdict
 from mysql.connector import pooling, Error
 import logging
+import uvicorn
 import sys
 logging.basicConfig(
     level=logging.INFO,
@@ -63,8 +66,21 @@ def fetch_user_purchases(user_id: str) -> List[str]:
     finally:
         if conn: conn.close()
 
-ITEM_CF = joblib.load("./best_knn_model.joblib")
-STATS   = pd.read_parquet("./item_stats.parquet")
+
+IS_CLOUD = "RAILWAY_ENVIRONMENT" in os.environ
+if IS_CLOUD:
+    # --- CẤU HÌNH TRÊN CLOUD ---
+    url_cf = "1L81H5jzdKqfNriQJ1zYrrVgQyodu5RgM"
+    url_stats = "1MrKyMtFl_ncA5tzyK5kHftqhMg6xof8c"
+
+    response_cf = requests.get(url_cf)
+    ITEM_CF = joblib.load(io.BytesIO(response_cf.content))
+    STATS = pd.read_parquet(url_stats)
+else:
+     # --- CẤU HÌNH TẠI LOCAL ---
+    ITEM_CF = joblib.load("./best_knn_model.joblib")
+    STATS   = pd.read_parquet("./item_stats.parquet")
+
 
 # Map giữa inner id <-> raw id dùng bởi Surprise
 
@@ -346,5 +362,9 @@ def recommend_explain(user_id: str, k: int = 8) -> Dict[str, Any]:
     }
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app:app", host="127.0.0.1", port=8001, reload=False, log_level="info")
+    IS_CLOUD = "RAILWAY_ENVIRONMENT" in os.environ
+    host = "0.0.0.0" if IS_CLOUD else "127.0.0.1"
+    port = int(os.environ.get("PORT", 8001)) if IS_CLOUD else 8001
+    uvicorn.run(
+        "app:app", host=host, port=port, reload=not IS_CLOUD, log_level="info"
+    )

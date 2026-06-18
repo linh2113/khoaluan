@@ -277,11 +277,6 @@ export default function Order() {
                                  <h3 className='font-medium line-clamp-2'>{decodeHTML(item.productName)}</h3>
                               </TableCell>
                               <TableCell className='text-center'>
-                                 {item.originalPrice !== item.price && (
-                                    <span className='text-gray-400 line-through block text-sm'>
-                                       {formatCurrency(item.originalPrice)}
-                                    </span>
-                                 )}
                                  <span>{formatCurrency(item.price)}</span>
                               </TableCell>
                               <TableCell className='text-center'>x{item.quantity}</TableCell>

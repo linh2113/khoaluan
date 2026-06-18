@@ -10,6 +10,7 @@ import {
 import QuantityController from '@/components/quantity-controller'
 import { useAppContext } from '@/context/app.context'
 import { formatCurrency, generateNameId } from '@/lib/utils'
+import { getCartPriceDisplay, getCartSavedAmount } from '@/lib/price'
 import { useClearCart, useDeleteCartItem, useGetAllCart, useUpdateCart, useUpdateSelectedCart } from '@/queries/useCart'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -122,11 +123,7 @@ export default function Cart() {
 
    const totalCheckedAmount = checkedCartItems.reduce((sum, item) => sum + item.totalPrice, 0)
 
-   const totalSavedAmount = checkedCartItems.reduce((sum, item) => {
-      const originalPrice = item.originalPrice
-      const savedPerItem = (originalPrice - item.price) * item.quantity
-      return sum + savedPerItem
-   }, 0)
+   const totalSavedAmount = checkedCartItems.reduce((sum, item) => sum + getCartSavedAmount(item), 0)
 
    useEffect(() => {
       if (purchaseId) {
@@ -196,12 +193,19 @@ export default function Cart() {
                            <div className='col-span-6 grid grid-cols-5 items-center'>
                               <div className='col-span-2'>
                                  <div className='flex items-center gap-x-3 justify-center'>
-                                    {cart.originalPrice !== cart.price && (
-                                       <span className='text-gray-400 line-through'>
-                                          {formatCurrency(cart.originalPrice)}
-                                       </span>
-                                    )}
-                                    <span>{formatCurrency(cart.price)}</span>
+                                    {(() => {
+                                       const { originalPrice, salePrice, hasDiscount } = getCartPriceDisplay(cart)
+                                       return (
+                                          <>
+                                             {hasDiscount && (
+                                                <span className='text-gray-400 line-through'>
+                                                   {formatCurrency(originalPrice)}
+                                                </span>
+                                             )}
+                                             <span>{formatCurrency(salePrice)}</span>
+                                          </>
+                                       )
+                                    })()}
                                  </div>
                               </div>
                               <div className='col-span-1'>

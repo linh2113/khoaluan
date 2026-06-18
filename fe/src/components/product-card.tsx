@@ -3,6 +3,7 @@ import type { ProductType } from '@/types/product.type'
 import type React from 'react'
 
 import { decodeHTML, formatCurrency, generateNameId } from '@/lib/utils'
+import { getProductPriceDisplay } from '@/lib/price'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
@@ -37,6 +38,7 @@ export default function ProductCard({
    const [isWishlistLoading, setIsWishlistLoading] = useState(false)
    const [imageError, setImageError] = useState(false)
    const t = useTranslations('ProductCard')
+   const { originalPrice, salePrice, hasDiscount } = getProductPriceDisplay(product)
 
    // Xử lý thêm/xóa sản phẩm khỏi danh sách yêu thích
    const handleWishlistToggle = (e: React.MouseEvent) => {
@@ -165,12 +167,10 @@ export default function ProductCard({
 
                   <div className='mt-4 flex items-center justify-between'>
                      <div className='flex items-center gap-2'>
-                        {product.discountedPrice && product.price && product.discountedPrice < product.price && (
-                           <div className='text-gray-500 text-sm line-through'>{formatCurrency(product.price)}</div>
+                        {hasDiscount && (
+                           <div className='text-gray-500 text-sm line-through'>{formatCurrency(originalPrice)}</div>
                         )}
-                        <div className='text-secondaryColor font-bold text-xl'>
-                           {formatCurrency(product.discountedPrice || product.price || 0)}
-                        </div>
+                        <div className='text-secondaryColor font-bold text-xl'>{formatCurrency(salePrice)}</div>
                      </div>
 
                      <div className='flex gap-2'>
@@ -267,12 +267,10 @@ export default function ProductCard({
             </Link>
             <div className='mt-2 flex items-center justify-between'>
                <div className='flex items-center gap-2'>
-                  {product.discountedPrice && product.price && product.discountedPrice < product.price && (
-                     <div className='text-gray-500 text-xs line-through'>{formatCurrency(product.price)}</div>
+                  {hasDiscount && (
+                     <div className='text-gray-500 text-xs line-through'>{formatCurrency(originalPrice)}</div>
                   )}
-                  <div className='text-secondaryColor font-bold'>
-                     {formatCurrency(product.discountedPrice || product.price || 0)}
-                  </div>
+                  <div className='text-secondaryColor font-bold'>{formatCurrency(salePrice)}</div>
                </div>
                {product.averageRating > 0 && (
                   <div className='flex items-center text-xs px-1.5 py-0.5 rounded'>

@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { decodeHTML, formatCurrency, generateNameId } from '@/lib/utils'
+import { getProductPriceDisplay } from '@/lib/price'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, ShoppingCart } from 'lucide-react'
@@ -157,21 +158,22 @@ export default function Compare() {
                   </tr>
                   <tr>
                      <td className='border p-4 font-medium'>Giá</td>
-                     {products.map((product) => (
-                        <td key={`${product.id}-price`} className='border p-4 text-center'>
-                           {product.discountedPrice && product.discountedPrice < product.price ? (
-                              <div>
-                                 <span className='line-through text-gray-500'>{formatCurrency(product.price)}</span>
-                                 <br />
-                                 <span className='text-red-500 font-medium'>
-                                    {formatCurrency(product.discountedPrice)}
-                                 </span>
-                              </div>
-                           ) : (
-                              <span className='font-medium'>{formatCurrency(product.price)}</span>
-                           )}
-                        </td>
-                     ))}
+                     {products.map((product) => {
+                        const { originalPrice, salePrice, hasDiscount } = getProductPriceDisplay(product)
+                        return (
+                           <td key={`${product.id}-price`} className='border p-4 text-center'>
+                              {hasDiscount ? (
+                                 <div>
+                                    <span className='line-through text-gray-500'>{formatCurrency(originalPrice)}</span>
+                                    <br />
+                                    <span className='text-red-500 font-medium'>{formatCurrency(salePrice)}</span>
+                                 </div>
+                              ) : (
+                                 <span className='font-medium'>{formatCurrency(salePrice)}</span>
+                              )}
+                           </td>
+                        )
+                     })}
                   </tr>
                   <tr>
                      <td className='border p-4 font-medium'>Thương hiệu</td>

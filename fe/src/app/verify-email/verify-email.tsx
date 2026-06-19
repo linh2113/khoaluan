@@ -10,7 +10,28 @@ import React from 'react'
 export default function VerityEmail() {
    const searchParams = useSearchParams()
    const token = searchParams.get('token')
-   const { isError, isLoading } = useVerifyEmail(token!)
+   const { isError, isLoading } = useVerifyEmail(token ?? '')
+
+   if (!token) {
+      return (
+         <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900'>
+            <Card className='w-full max-w-md'>
+               <CardHeader className='space-y-1'>
+                  <div className='flex justify-center'>
+                     <XCircle className='w-16 h-16 text-destructive' />
+                  </div>
+                  <CardTitle className='text-2xl text-center text-destructive'>Xác thực thất bại</CardTitle>
+                  <CardDescription className='text-center'>Link xác thực không hợp lệ hoặc đã hết hạn</CardDescription>
+               </CardHeader>
+               <CardContent className='flex flex-col items-center space-y-4'>
+                  <Button asChild className='w-full'>
+                     <Link href='/login'>Quay lại trang đăng nhập</Link>
+                  </Button>
+               </CardContent>
+            </Card>
+         </div>
+      )
+   }
 
    return (
       <div className='min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900'>

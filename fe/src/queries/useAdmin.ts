@@ -446,8 +446,8 @@ export const useUpdateUser = () => {
       onSuccess: () => {
          queryClient.invalidateQueries({
             queryKey: ['user']
-         }),
-            toast.success('Cập nhật người dùng thành công')
+         })
+         toast.success('Cập nhật người dùng thành công')
       },
       onError: () => {
          toast.error('Cập nhật người dùng thất bại')
@@ -461,8 +461,8 @@ export const useCreateUser = () => {
       onSuccess: () => {
          queryClient.invalidateQueries({
             queryKey: ['user']
-         }),
-            toast.success('Thêm người dùng thành công')
+         })
+         toast.success('Thêm người dùng thành công')
       },
       onError: () => {
          toast.error('Thêm người dùng thất bại')

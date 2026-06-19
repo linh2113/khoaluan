@@ -14,7 +14,7 @@ export const useRegister = () => {
    return useMutation({
       mutationFn: registerAccount,
       onSuccess: () => {
-         toast.success('Đăng ký thành công, vui lòng kiểm tra email để xác nhận tài khoản')
+         toast.success('Đăng ký thành công')
       },
       onError: () => {
          toast.error('Đăng ký thất bại')

@@ -90,7 +90,7 @@ public class UserServiceImpl implements UserService {
         user.setDateOfBirth(registrationDTO.getDateOfBirth());
         user.setGender(registrationDTO.getGender());
         user.setRole(false); // mặc định là user
-        user.setActive(0); // Inactive until email verification
+        user.setActive(1); // Inactive until email verification
         user.setLoginTimes(0);
         user.setLoginBy(0);
         user.setLockFail(0);

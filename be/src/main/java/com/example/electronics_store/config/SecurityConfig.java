@@ -25,8 +25,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import java.util.Arrays;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.User;
 
 @Configuration
 @EnableWebSecurity
@@ -78,6 +80,24 @@ public class SecurityConfig {
         return new HttpCookieOAuth2AuthorizationRequestRepository();
     }
 
+    @Bean
+    public InMemoryUserDetailsManager userDetailsService(PasswordEncoder encoder) {
+        
+        // admin
+        UserDetails adminTrue = User.withUsername("admin")
+                .password(encoder.encode("123456789"))
+                .roles("TRUE") 
+                .build();
+
+        // user
+        UserDetails adminFalse = User.withUsername("user")
+                .password(encoder.encode("123456789"))
+                .roles("FALSE")
+                .build();
+
+        return new InMemoryUserDetailsManager(adminTrue, adminFalse);
+    }
+    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http

@@ -129,7 +129,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000","https://fe-i7eo.vercel.app")); // Frontend URL
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000","https://khoaluan-delta.vercel.app")); // Frontend URL
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

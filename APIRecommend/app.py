@@ -1,9 +1,11 @@
 import os
 import requests
 import io
+import gdown
 from fastapi import FastAPI
 from typing import List, Dict, Tuple, Any
 import joblib
+import tempfile
 import pandas as pd
 from collections import defaultdict
 from mysql.connector import pooling, Error
@@ -72,18 +74,18 @@ if IS_CLOUD:
     id_cf = "1L81H5jzdKqfNriQJ1zYrrVgQyodu5RgM"
     id_stats = "1MrKyMtFl_ncA5tzyK5kHftqhMg6xof8c"
 
-    
-    url_cf = f"https://google.com{id_cf}"
-    url_stats = f"https://google.com{id_stats}"
+    cf_path = os.path.join(tempfile.gettempdir(), "best_knn_model.joblib")
+    stats_path = os.path.join(tempfile.gettempdir(), "item_stats.parquet")
 
-    response_cf = requests.get(url_cf)
-    ITEM_CF = joblib.load(io.BytesIO(response_cf.content))
-    response_stats = requests.get(url_stats)
-    STATS = pd.read_parquet(io.BytesIO(response_stats.content))
+    gdown.download(id=id_cf, output=cf_path, quiet=False)
+    gdown.download(id=id_stats, output=stats_path, quiet=False)
+
+    ITEM_CF = joblib.load(cf_path)
+    STATS = pd.read_parquet(stats_path)
 else:
-     # --- CẤU HÌNH TẠI LOCAL ---
     ITEM_CF = joblib.load("./best_knn_model.joblib")
-    STATS   = pd.read_parquet("./item_stats.parquet")
+    STATS = pd.read_parquet("./item_stats.parquet")
+
 
 
 # Map giữa inner id <-> raw id dùng bởi Surprise

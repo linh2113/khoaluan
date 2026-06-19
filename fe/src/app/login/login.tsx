@@ -10,7 +10,6 @@ import Link from 'next/link'
 import { useLogin } from '@/queries/useAuth'
 import { useAppContext } from '@/context/app.context'
 import { Button } from '@/components/ui/button'
-import { get } from 'http'
 import { getGoogleAuthUrl, getDiscordAuthUrl } from '@/apiRequest/auth'
 
 export default function Login() {

@@ -14,11 +14,14 @@ export const refreshToken = (refreshToken: string) => http.post<LoginResType>('/
 
 export const verifyEmail = (token: string) => http.get('/auth/verify-email?token=' + token)
 //OAuth2
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
 export const getGoogleAuthUrl = () =>
-   `http://localhost:8080/api/v1/oauth2/authorize/google?redirect_uri=http://localhost:3000/oauth2/callback`
+   `${API_BASE_URL}/oauth2/authorize/google?redirect_uri=${APP_URL}/oauth2/callback`
 
 export const getDiscordAuthUrl = () =>
-   `http://localhost:8080/api/v1/oauth2/authorize/discord?redirect_uri=http://localhost:3000/oauth2/callback`
+   `${API_BASE_URL}/oauth2/authorize/discord?redirect_uri=${APP_URL}/oauth2/callback`
 
 export const handleOAuth2Redirect = (token: string, refreshToken: string) =>
    http.get<LoginResType>(`/auth/oauth2/redirect?token=${token}&refreshToken=${refreshToken}`)

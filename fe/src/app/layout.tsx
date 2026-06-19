@@ -24,7 +24,7 @@ export default async function RootLayout({
 }>) {
    const locale = await getLocale()
    return (
-      <html lang={'en'} suppressHydrationWarning>
+      <html lang={locale} suppressHydrationWarning>
          <body suppressHydrationWarning className={`${manrope.className} antialiased text-sm font-normal`}>
             <NextIntlClientProvider>
                <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>

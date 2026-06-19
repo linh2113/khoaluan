@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
@@ -17,7 +17,6 @@ interface PaymentResult {
 
 export default function VNPayReturn() {
    const searchParams = useSearchParams()
-   const router = useRouter()
    const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null)
    const [isLoading, setIsLoading] = useState(true)
 
@@ -172,7 +171,7 @@ export default function VNPayReturn() {
                {paymentResult?.success ? (
                   <>
                      <Link
-                        href={`/order-success/${paymentResult.orderId}`}
+                        href='/purchase'
                         className='w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors block text-center'
                      >
                         Xem chi tiết đơn hàng
